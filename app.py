@@ -917,9 +917,13 @@ auto_seed_database_if_empty()
 # ---------------------------------------------------------
 # VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
+# ---------------------------------------------------------
 if not is_authenticated():
     st.markdown("""
     <style>
+        /* Ocultar barra lateral en pantalla de login */
         section[data-testid="stSidebar"],
         div[data-testid="stSidebarCollapsedControl"] {
             display: none !important;
@@ -929,7 +933,36 @@ if not is_authenticated():
         [data-testid="stMainBlockContainer"] {
             padding-top: 2rem !important;
         }
+        /* Bloquear completamente ventanas emergentes de 'Clear caches' de Streamlit */
+        div[data-testid="stDialog"],
+        div[role="dialog"],
+        div[aria-modal="true"],
+        .stDialog {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        /* Enmascaramiento visual de contraseña evitando que Chrome active 'Sugerir Contraseña' */
+        .pass-masked-input input {
+            -webkit-text-security: disc !important;
+            text-security: disc !important;
+            -moz-text-security: disc !important;
+        }
     </style>
+    <script>
+        // Desactivar atajo 'C' de Streamlit que abre la ventana 'Clear caches'
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'c' || e.key === 'C') {
+                var tag = document.activeElement ? document.activeElement.tagName : '';
+                if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                }
+            }
+        }, true);
+    </script>
     """, unsafe_allow_html=True)
     
     logo_b64 = get_logo_base64()
@@ -952,7 +985,10 @@ if not is_authenticated():
         
         with st.form("form_login_oficial_gzg", clear_on_submit=False):
             u_input = st.text_input("👤 Usuario", value="", placeholder="ej. raul.espinoza", key="log_user_inp")
-            p_input = st.text_input("🔒 Contraseña", value="", type="password", key="log_pass_inp")
+            
+            st.markdown('<div class="pass-masked-input">', unsafe_allow_html=True)
+            p_input = st.text_input("🔒 Contraseña", value="", type="default", key="log_pass_inp")
+            st.markdown('</div>', unsafe_allow_html=True)
             
             st.markdown("<br>", unsafe_allow_html=True)
             btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
