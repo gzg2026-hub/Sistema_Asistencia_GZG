@@ -921,7 +921,7 @@ login_slot = st.empty()
 
 if not is_authenticated():
     with login_slot.container():
-        # Ocultar la barra lateral durante el inicio de sesión
+        # Ocultar la barra lateral durante el inicio de sesión y deshabilitar emergentes
         st.markdown("""
         <style>
             section[data-testid="stSidebar"],
@@ -942,19 +942,27 @@ if not is_authenticated():
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
+            /* Asegurar enmascaramiento por viñeta en el campo de contraseña */
+            input[aria-label="🔒 Contraseña"] {
+                -webkit-text-security: disc !important;
+                text-security: disc !important;
+                -moz-text-security: disc !important;
+            }
         </style>
         <script>
-            // Bloquear la sugerencia emergente de contraseñas de Google Chrome usando readonly temporal
-            setTimeout(function() {
-                var pInput = document.querySelector('input[type="password"]');
-                if (pInput) {
-                    pInput.setAttribute('autocomplete', 'current-password');
-                    pInput.setAttribute('readonly', 'readonly');
-                    pInput.addEventListener('focus', function() {
-                        this.removeAttribute('readonly');
-                    });
-                }
-            }, 200);
+            // Bloquear 100% el Administrador de Contraseñas de Google Chrome manteniendo viñetas ocultas
+            var checkTimer = setInterval(function() {
+                var inputs = document.querySelectorAll('input');
+                inputs.forEach(function(input) {
+                    if (input.getAttribute('aria-label') === '🔒 Contraseña' || input.name === 'login_p_direct') {
+                        input.type = 'text';
+                        input.style.webkitTextSecurity = 'disc';
+                        input.style.textSecurity = 'disc';
+                        input.setAttribute('autocomplete', 'new-password');
+                        input.setAttribute('data-lpignore', 'true');
+                    }
+                });
+            }, 50);
         </script>
         """, unsafe_allow_html=True)
         
@@ -976,7 +984,7 @@ if not is_authenticated():
             ''', unsafe_allow_html=True)
             
             u_input = st.text_input("👤 Usuario", value="", placeholder="", key="login_u_direct")
-            p_input = st.text_input("🔒 Contraseña", value="", type="password", key="login_p_direct")
+            p_input = st.text_input("🔒 Contraseña", value="", type="default", key="login_p_direct")
             
             st.markdown("<br>", unsafe_allow_html=True)
             btn_submit_login = st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_login_direct")
@@ -1005,12 +1013,18 @@ if not is_authenticated():
 login_slot.empty()
 current_user = get_current_user()
 
-# Garantizar la eliminación forzosa de cualquier residuo de la pantalla de login en el navegador
+# Eliminar cualquier residuo del DOM de login
 st.markdown("""
 <script>
     if (window.location.hash) {
         history.replaceState(null, null, window.location.pathname);
     }
+    var targets = document.querySelectorAll('div[data-testid="stColumn"]');
+    targets.forEach(function(t) {
+        if (t.innerText && t.innerText.includes("Iniciar Sesión")) {
+            t.remove();
+        }
+    });
 </script>
 """, unsafe_allow_html=True)
 
