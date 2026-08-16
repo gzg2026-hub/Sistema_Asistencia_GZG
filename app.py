@@ -917,116 +917,66 @@ auto_seed_database_if_empty()
 # ---------------------------------------------------------
 # VERIFICACIÓN DE SESIÓN DE USUARIO (LOGIN RBAC ULTRA-RÁPIDO)
 # ---------------------------------------------------------
-login_slot = st.empty()
-
 if not is_authenticated():
-    with login_slot.container():
-        # Ocultar la barra lateral durante el inicio de sesión y deshabilitar emergentes
-        st.markdown("""
-        <style>
-            section[data-testid="stSidebar"],
-            div[data-testid="stSidebarCollapsedControl"] {
-                display: none !important;
-                visibility: hidden !important;
-                width: 0 !important;
-            }
-            [data-testid="stMainBlockContainer"] {
-                padding-top: 2rem !important;
-            }
-            /* Bloquear ventanas emergentes de 'Clear caches' de Streamlit */
-            div[data-testid="stDialog"],
-            div[role="dialog"],
-            .stDialog {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-            }
-            /* Asegurar enmascaramiento por viñeta en el campo de contraseña */
-            input[aria-label="🔒 Contraseña"] {
-                -webkit-text-security: disc !important;
-                text-security: disc !important;
-                -moz-text-security: disc !important;
-            }
-        </style>
-        <script>
-            // Bloquear 100% el Administrador de Contraseñas de Google Chrome manteniendo viñetas ocultas
-            var checkTimer = setInterval(function() {
-                var inputs = document.querySelectorAll('input');
-                inputs.forEach(function(input) {
-                    if (input.getAttribute('aria-label') === '🔒 Contraseña' || input.name === 'login_p_direct') {
-                        input.type = 'text';
-                        input.style.webkitTextSecurity = 'disc';
-                        input.style.textSecurity = 'disc';
-                        input.setAttribute('autocomplete', 'new-password');
-                        input.setAttribute('data-lpignore', 'true');
-                    }
-                });
-            }, 50);
-        </script>
-        """, unsafe_allow_html=True)
-        
-        logo_b64 = get_logo_base64()
-        st.markdown(f'''
-        <div style="text-align: center; padding: 20px 0;">
-            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
-            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px;">GZG MINERALES PERU S.R.L.</h2>
+    # Ocultar la barra lateral durante el inicio de sesión
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+        }
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 2rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    logo_b64 = get_logo_base64()
+    st.markdown(f'''
+    <div style="text-align: center; padding: 20px 0;">
+        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
+        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px;">GZG MINERALES PERU S.R.L.</h2>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    col_l1, col_l2, col_l3 = st.columns([1, 1.3, 1])
+    with col_l2:
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="color:#ffffff; margin-top:0; text-align:center;">🔑 Iniciar Sesión</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; text-align:center; margin-bottom:20px;">Ingresa tus credenciales autorizadas</p>
         </div>
         ''', unsafe_allow_html=True)
         
-        col_l1, col_l2, col_l3 = st.columns([1, 1.3, 1])
-        with col_l2:
-            st.markdown('''
-            <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                <h3 style="color:#ffffff; margin-top:0; text-align:center;">🔑 Iniciar Sesión</h3>
-                <p style="color:#94a3b8; font-size:0.9rem; text-align:center; margin-bottom:20px;">Ingresa tus credenciales autorizadas</p>
-            </div>
-            ''', unsafe_allow_html=True)
-            
-            u_input = st.text_input("👤 Usuario", value="", placeholder="", key="login_u_direct")
-            p_input = st.text_input("🔒 Contraseña", value="", type="default", key="login_p_direct")
-            
+        with st.form("form_login_oficial_gzg", clear_on_submit=False):
+            u_input = st.text_input("👤 Usuario", value="", placeholder="", key="log_user_inp")
+            p_input = st.text_input("🔒 Contraseña", value="", type="password", key="log_pass_inp")
             st.markdown("<br>", unsafe_allow_html=True)
-            btn_submit_login = st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_login_direct")
+            btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
             
             if btn_submit_login:
                 if u_input and p_input and login_user(u_input, p_input):
-                    login_slot.empty()
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos. Por favor verifica tus datos.")
                     
-            with st.expander("ℹ️ Ver Usuarios de Prueba / Roles del Sistema"):
-                st.markdown("""
-                - **👑 Gerente General**: `raul.espinoza` / `gzg2026*`
-                - **🏬 Gerente de Planta**: `jhon.alva` / `gzg2026*`
-                - **🏛️ Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
-                - **👷 Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
-                - **👷 Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
-                - **💼 Administración RRHH**: `admin` / `gzg2026*`
-                """)
-        st.stop()
+        with st.expander("ℹ️ Ver Usuarios de Prueba / Roles del Sistema"):
+            st.markdown("""
+            - **👑 Gerente General**: `raul.espinoza` / `gzg2026*`
+            - **🏬 Gerente de Planta**: `jhon.alva` / `gzg2026*`
+            - **🏛️ Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
+            - **👷 Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
+            - **👷 Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
+            - **💼 Administración RRHH**: `admin` / `gzg2026*`
+            """)
+    st.stop()
 
 # ---------------------------------------------------------
-# USUARIO AUTENTICADO: LIMPIEZA TOTAL Y RENDERIZADO DEL DASHBOARD
+# USUARIO AUTENTICADO: RENDERIZADO OFICIAL DEL DASHBOARD
 # ---------------------------------------------------------
-login_slot.empty()
 current_user = get_current_user()
-
-# Eliminar cualquier residuo del DOM de login
-st.markdown("""
-<script>
-    if (window.location.hash) {
-        history.replaceState(null, null, window.location.pathname);
-    }
-    var targets = document.querySelectorAll('div[data-testid="stColumn"]');
-    targets.forEach(function(t) {
-        if (t.innerText && t.innerText.includes("Iniciar Sesión")) {
-            t.remove();
-        }
-    });
-</script>
-""", unsafe_allow_html=True)
 
 logo_b64 = get_logo_base64()
 curr_now = datetime.now()
