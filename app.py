@@ -918,7 +918,7 @@ auto_seed_database_if_empty()
 # VERIFICACIÓN DE SESIÓN DE USUARIO (LOGIN RBAC ULTRA-RÁPIDO)
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Ocultar la barra lateral durante el inicio de sesión
+    # Ocultar la barra lateral y bloquear ventanas emergentes
     st.markdown("""
     <style>
         section[data-testid="stSidebar"],
@@ -930,7 +930,48 @@ if not is_authenticated():
         [data-testid="stMainBlockContainer"] {
             padding-top: 2rem !important;
         }
+        /* Bloquear completamente ventanas emergentes de 'Clear caches' de Streamlit */
+        div[data-testid="stDialog"],
+        div[role="dialog"],
+        div[aria-modal="true"],
+        .stDialog {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        /* Ocultar contenido de clave con viñeta negra evitando emergentes de Chrome */
+        .pass-masked-box input {
+            -webkit-text-security: disc !important;
+            text-security: disc !important;
+            -moz-text-security: disc !important;
+        }
     </style>
+    <script>
+        // 1. Desactivar atajo de teclado 'C' que activa el modal 'Clear caches' en Streamlit
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'c' || e.key === 'C') {
+                var tag = document.activeElement ? document.activeElement.tagName : '';
+                if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                    e.preventDefault();
+                }
+            }
+        }, true);
+
+        // 2. Bloquear Administrador de Contraseñas de Google Chrome aplicando viñeta negra sobre text
+        setInterval(function() {
+            var passBox = document.querySelector('.pass-masked-box input');
+            if (passBox) {
+                passBox.type = 'text';
+                passBox.style.webkitTextSecurity = 'disc';
+                passBox.style.textSecurity = 'disc';
+                passBox.setAttribute('autocomplete', 'off');
+                passBox.setAttribute('data-lpignore', 'true');
+            }
+        }, 100);
+    </script>
     """, unsafe_allow_html=True)
     
     logo_b64 = get_logo_base64()
@@ -952,7 +993,11 @@ if not is_authenticated():
         
         with st.form("form_login_oficial_gzg", clear_on_submit=False):
             u_input = st.text_input("👤 Usuario", value="", placeholder="", key="log_user_inp")
-            p_input = st.text_input("🔒 Contraseña", value="", type="password", key="log_pass_inp")
+            
+            st.markdown('<div class="pass-masked-box">', unsafe_allow_html=True)
+            p_input = st.text_input("🔒 Contraseña", value="", type="default", key="log_pass_inp")
+            st.markdown('</div>', unsafe_allow_html=True)
+            
             st.markdown("<br>", unsafe_allow_html=True)
             btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
             
