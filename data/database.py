@@ -483,7 +483,7 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
     
     for username, pass_hash, nombre, rol, area, cargo in users:
         cursor.execute("""
-        INSERT OR IGNORE INTO usuarios (username, password_hash, nombre_completo, rol, area_asignada, cargo)
+        INSERT OR REPLACE INTO usuarios (username, password_hash, nombre_completo, rol, area_asignada, cargo)
         VALUES (?, ?, ?, ?, ?, ?)
         """, (username, pass_hash, nombre, rol, area, cargo))
         
