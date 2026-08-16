@@ -918,7 +918,7 @@ auto_seed_database_if_empty()
 # VERIFICACIÓN DE SESIÓN DE USUARIO (LOGIN RBAC ULTRA-RÁPIDO)
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Ocultar la barra lateral y bloquear cualquier ventana de diálogo de 'Clear caches'
+    # Ocultar la barra lateral y enmascarar contraseña con CSS para eliminar el generador automático de Google Chrome
     st.markdown("""
     <style>
         section[data-testid="stSidebar"],
@@ -939,17 +939,17 @@ if not is_authenticated():
             opacity: 0 !important;
             pointer-events: none !important;
         }
+        /* Enmascarar caracteres con viñetas discos (elimina el aviso de sugerir contraseña de Chrome) */
+        input[aria-label="🔒 Contraseña"] {
+            -webkit-text-security: disc !important;
+            text-security: disc !important;
+        }
     </style>
     <script>
-        // Desactivar activamente el generador / sugeridor automático de contraseñas de Google Chrome
-        setTimeout(function() {
-            var inputs = document.querySelectorAll('input[type="password"]');
-            inputs.forEach(function(input) {
-                input.setAttribute('autocomplete', 'current-password');
-                input.setAttribute('data-lpignore', 'true');
-                input.setAttribute('name', 'login_pass_no_gen');
-            });
-        }, 300);
+        // Limpiar cualquier hash de URL estancado como #iniciar-sesion
+        if (window.location.hash) {
+            history.replaceState(null, null, window.location.pathname);
+        }
     </script>
     """, unsafe_allow_html=True)
     
@@ -971,7 +971,7 @@ if not is_authenticated():
         ''', unsafe_allow_html=True)
         
         u_input = st.text_input("👤 Usuario", value="", placeholder="", key="login_u_direct")
-        p_input = st.text_input("🔒 Contraseña", value="", type="password", key="login_p_direct")
+        p_input = st.text_input("🔒 Contraseña", value="", type="default", key="login_p_direct")
         st.markdown("<br>", unsafe_allow_html=True)
         btn_submit_login = st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_login_direct")
         
