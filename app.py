@@ -932,7 +932,6 @@ if not is_authenticated():
     <div style="text-align: center; padding: 20px 0;">
         {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
         <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px;">GZG MINERALES PERU S.R.L.</h2>
-        <p style="color:#a0aab8; font-size:1.1rem; margin-top:5px;">Sistema de Control de Asistencia y Validación de Horas Extra</p>
     </div>
     ''', unsafe_allow_html=True)
     
