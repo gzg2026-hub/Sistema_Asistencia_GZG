@@ -1295,7 +1295,7 @@ with c_act3:
 
 st.markdown("---")
 
-# NAVEGACIÓN PRINCIPAL POR SECCIONES Y PESTAÑAS (RBAC)
+# NAVEGACIÓN PRINCIPAL POR SECCIONES Y PESTAÑAS (ST.TABS)
 opciones_pestanas = [
     "📊 Dashboard Analítico",
     "✅ Bandeja de Aprobaciones (HE / Incidencias)",
@@ -1304,15 +1304,17 @@ opciones_pestanas = [
 if current_user and current_user.get('rol') == 'ADMINISTRACION':
     opciones_pestanas.append("👥 Gestión de Usuarios")
 
-pestana_activa = st.radio("Sección del Sistema:", opciones_pestanas, horizontal=True, label_visibility="collapsed")
-st.markdown("---")
+pestanas_objs = st.tabs(opciones_pestanas)
+tab_dash = pestanas_objs[0]
+tab_bandeja = pestanas_objs[1]
+tab_kardex = pestanas_objs[2]
+tab_usuarios = pestanas_objs[3] if len(pestanas_objs) > 3 else None
 
 # PESTAÑA 1: DASHBOARD ANALÍTICO
-if pestana_activa == "📊 Dashboard Analítico":
+with tab_dash:
     if not df_asis_db.empty:
         tot_personal = len(df_trab_db)
         
-        # OPCIÓN 1: PRESENTES Y AUSENTES CALCULADOS POR REGISTROS TOTALES (DÍAS-PERSONA EN EL PERÍODO)
         total_presentes = len(df_asis_db[df_asis_db['ESTADO ASISTENCIA'] != 'FALTA'])
         total_ausentes = len(df_asis_db[df_asis_db['ESTADO ASISTENCIA'] == 'FALTA'])
             
@@ -1342,7 +1344,7 @@ if pestana_activa == "📊 Dashboard Analítico":
         prom_tard_min = int(round(tard_only.mean())) if not tard_only.empty else 0
         prom_tard_str = f"Prom. Tardanza: {prom_tard_min} min" if prom_tard_min > 0 else "Total tardanzas"
 
-        # UNICA FILA HORIZONTAL CON 8 TARJETAS CAJÓN
+        # FILA 1: 8 TARJETAS KPI CAJÓN
         k1, k2, k3, k4, k5, k6, k7, k8 = st.columns(8)
         
         with k1:
@@ -1469,6 +1471,7 @@ if pestana_activa == "📊 Dashboard Analítico":
             'FALTA': '#64748b'
         }
 
+        # FILA 2: DONUT CHART Y BAR CHART POR CARGO
         c_chart1, c_chart2 = st.columns([1, 2])
         
         with c_chart1:
@@ -1529,8 +1532,159 @@ if pestana_activa == "📊 Dashboard Analítico":
                 )
                 st.plotly_chart(fig_bar, use_container_width=True, config={'responsive': True})
 
+        # FILA 3: TENDENCIA DIARIA DE ASISTENCIA Y DISTRIBUCIÓN DE HORAS EXTRA POR ÁREA
+        st.markdown("<br>", unsafe_allow_html=True)
+        c_tr1, c_tr2 = st.columns([1.5, 1])
+
+        with c_tr1:
+            st.markdown('<div class="section-title">📈 Tendencia Diaria de Asistencias, Tardanzas e Incidencias</div>', unsafe_allow_html=True)
+            if 'FECHA' in df_asis_db.columns:
+                df_trend = df_asis_db.groupby('FECHA').agg(
+                    Asistencias=('ESTADO ASISTENCIA', lambda x: (x != 'FALTA').sum()),
+                    Tardanzas=('TARDANZA (MIN)', lambda x: (to_numeric_minutes(x) > 0).sum()),
+                    Incidencias=('ESTADO ASISTENCIA', lambda x: (x == 'ASISTIO CON INCIDENCIAS').sum())
+                ).reset_index()
+
+                fig_line = go.Figure()
+                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Asistencias'], name='Asistencias', mode='lines+markers', line=dict(color='#22c55e', width=3)))
+                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Tardanzas'], name='Tardanzas', mode='lines+markers', line=dict(color='#f59e0b', width=2.5)))
+                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Incidencias'], name='Incidencias', mode='lines+markers', line=dict(color='#ef4444', width=2.5)))
+
+                fig_line.update_layout(
+                    paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
+                    font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
+                    xaxis=dict(title='Fecha', showgrid=False, tickfont=dict(color='#ffffff')),
+                    yaxis=dict(title='Cantidad de Personal', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
+                    legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center", bgcolor="#090a0f"),
+                    margin=dict(t=20, b=60, l=10, r=10), height=380
+                )
+                st.plotly_chart(fig_line, use_container_width=True, config={'responsive': True})
+
+        with c_tr2:
+            st.markdown('<div class="section-title">📊 Horas Extra Acumuladas por Área</div>', unsafe_allow_html=True)
+            if not df_he_db.empty and ('ÁREA' in df_he_db.columns or 'AREA' in df_he_db.columns):
+                col_area_he = 'ÁREA' if 'ÁREA' in df_he_db.columns else 'AREA'
+                col_he_target = 'DURACIÓN' if 'DURACIÓN' in df_he_db.columns else 'DURACIÓN (HH:MM)'
+                df_he_area = df_he_db.copy()
+                df_he_area['MINUTOS'] = to_numeric_minutes(df_he_area[col_he_target])
+                df_he_grouped = df_he_area.groupby(col_area_he)['MINUTOS'].sum().reset_index()
+                df_he_grouped['HH:MM'] = df_he_grouped['MINUTOS'].apply(format_hhmm)
+                df_he_grouped = df_he_grouped.sort_values(by='MINUTOS', ascending=True)
+
+                fig_he_bar = px.bar(
+                    df_he_grouped, y=col_area_he, x='MINUTOS', orientation='h',
+                    text='HH:MM', color_discrete_sequence=['#3b82f6'], height=380
+                )
+                fig_he_bar.update_traces(textposition='outside', textfont=dict(color='#ffffff', size=12, weight='bold'))
+                fig_he_bar.update_layout(
+                    paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
+                    font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
+                    xaxis=dict(title='Minutos Acumulados', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
+                    yaxis=dict(title='Área', showgrid=False, tickfont=dict(color='#ffffff')),
+                    margin=dict(t=20, b=40, l=10, r=10)
+                )
+                st.plotly_chart(fig_he_bar, use_container_width=True, config={'responsive': True})
+            else:
+                st.info("Sin registros de Horas Extra para mostrar por área.")
+
+        # FILA 4: RANKINGS TOP 10 EJECUTIVOS
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🏆 Rankings Ejecutivos - Top 10 Incidencias, Tardanzas y Horas Extra</div>', unsafe_allow_html=True)
+
+        col_top1, col_top2, col_top3 = st.columns(3)
+
+        with col_top1:
+            st.markdown('''
+            <div class="top10-container">
+                <div class="top10-title-yellow">⚠️ TOP 10 TARDANZAS</div>
+            ''', unsafe_allow_html=True)
+            if 'TARDANZA (MIN)' in df_asis_db.columns:
+                df_tard_rank = df_asis_db.copy()
+                df_tard_rank['MINUTOS'] = to_numeric_minutes(df_tard_rank['TARDANZA (MIN)'])
+                df_tard_sum = df_tard_rank.groupby(['DNI', 'APELLIDOS', 'NOMBRES'])['MINUTOS'].sum().reset_index()
+                df_tard_sum = df_tard_sum[df_tard_sum['MINUTOS'] > 0].sort_values(by='MINUTOS', ascending=False).head(10)
+                
+                if not df_tard_sum.empty:
+                    rows_html = ""
+                    for idx, (_, r) in enumerate(df_tard_sum.iterrows(), start=1):
+                        nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
+                        if len(nombre) > 22:
+                            nombre = nombre[:20] + ".."
+                        min_str = format_hhmm(r['MINUTOS'])
+                        rows_html += f"<tr><td class='top10-num'>#{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
+                    
+                    st.markdown(f'''
+                    <table class="top10-table-custom">
+                        <thead><tr><th>#</th><th style="text-align:left;">Personal</th><th>HH:MM</th></tr></thead>
+                        <tbody>{rows_html}</tbody>
+                    </table>
+                    ''', unsafe_allow_html=True)
+                else:
+                    st.info("Sin tardanzas registradas.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_top2:
+            st.markdown('''
+            <div class="top10-container">
+                <div class="top10-title-blue">⏱️ TOP 10 HORAS EXTRA</div>
+            ''', unsafe_allow_html=True)
+            if not df_he_db.empty:
+                col_he_target = 'DURACIÓN' if 'DURACIÓN' in df_he_db.columns else 'DURACIÓN (HH:MM)'
+                df_he_rank = df_he_db.copy()
+                df_he_rank['MINUTOS'] = to_numeric_minutes(df_he_rank[col_he_target])
+                df_he_sum = df_he_rank.groupby(['DNI', 'APELLIDOS', 'NOMBRES'])['MINUTOS'].sum().reset_index()
+                df_he_sum = df_he_sum[df_he_sum['MINUTOS'] > 0].sort_values(by='MINUTOS', ascending=False).head(10)
+                
+                if not df_he_sum.empty:
+                    rows_html = ""
+                    for idx, (_, r) in enumerate(df_he_sum.iterrows(), start=1):
+                        nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
+                        if len(nombre) > 22:
+                            nombre = nombre[:20] + ".."
+                        min_str = format_hhmm(r['MINUTOS'])
+                        rows_html += f"<tr><td class='top10-num' style='color:#3b82f6;'>#{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
+                    
+                    st.markdown(f'''
+                    <table class="top10-table-custom">
+                        <thead><tr><th>#</th><th style="text-align:left;">Personal</th><th>HH:MM</th></tr></thead>
+                        <tbody>{rows_html}</tbody>
+                    </table>
+                    ''', unsafe_allow_html=True)
+                else:
+                    st.info("Sin horas extra registradas.")
+            st.markdown('</div>', unsafe_allow_html=True)
+
+        with col_top3:
+            st.markdown('''
+            <div class="top10-container">
+                <div class="top10-title-red">🚨 TOP 10 INCIDENCIAS</div>
+            ''', unsafe_allow_html=True)
+            if not df_inc_db.empty:
+                df_inc_rank = df_inc_db.groupby(['DNI', 'APELLIDOS', 'NOMBRES']).size().reset_index(name='CANTIDAD')
+                df_inc_rank = df_inc_rank.sort_values(by='CANTIDAD', ascending=False).head(10)
+                
+                if not df_inc_rank.empty:
+                    rows_html = ""
+                    for idx, (_, r) in enumerate(df_inc_rank.iterrows(), start=1):
+                        nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
+                        if len(nombre) > 20:
+                            nombre = nombre[:18] + ".."
+                        rows_html += f"<tr><td class='top10-num' style='color:#ef4444;'>#{idx}</td><td style='text-align:left;'>{nombre}</td><td>{r['CANTIDAD']} reg.</td></tr>"
+                    
+                    st.markdown(f'''
+                    <table class="top10-table-custom">
+                        <thead><tr><th>#</th><th style="text-align:left;">Personal</th><th>Total</th></tr></thead>
+                        <tbody>{rows_html}</tbody>
+                    </table>
+                    ''', unsafe_allow_html=True)
+                else:
+                    st.info("Sin incidencias registradas.")
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.info("👋 **Bienvenido al Sistema de Asistencia GZG**. Selecciona o carga un archivo de transacciones Hikvision en el panel izquierdo y presiona **PROCESAR ASISTENCIA** para visualizar los indicadores y guardar en la Base de Datos.")
+
 # PESTAÑA 2: BANDEJA DE APROBACIONES
-elif pestana_activa == "✅ Bandeja de Aprobaciones (HE / Incidencias)":
+with tab_bandeja:
     st.subheader("✅ Bandeja de Validación y Aprobación de Jornadas")
     st.markdown("Permite a los Jefes de Área, Superintendencia y Administración autorizar o justificar registros de Horas Extra e Inconsistencias.")
     
@@ -1617,7 +1771,7 @@ elif pestana_activa == "✅ Bandeja de Aprobaciones (HE / Incidencias)":
             st.info("Sin incidencias registradas para mostrar.")
 
 # PESTAÑA 3: KARDEX Y TABLAS DETALLADAS
-elif pestana_activa == "📋 Kardex y Tablas Detalladas":
+with tab_kardex:
     st.subheader("📋 Kardex Consolidado y Tablas Detalladas")
     t_k1, t_k2, t_k3, t_k4 = st.tabs(["03_ASISTENCIA", "04_HORAS_EXTRA", "05_INCIDENCIAS", "MARCACIONES_RAW"])
     
@@ -1635,49 +1789,47 @@ elif pestana_activa == "📋 Kardex y Tablas Detalladas":
         st.dataframe(df_marc_db, use_container_width=True, hide_index=True)
 
 # PESTAÑA 4: GESTIÓN DE USUARIOS (SOLO ADMIN)
-elif pestana_activa == "👥 Gestión de Usuarios":
-    st.subheader("👥 Gestión de Usuarios y Roles de Acceso (RBAC)")
-    st.markdown("Módulo exclusivo para Administración de Recursos Humanos.")
-    
-    col_u1, col_u2 = st.columns([1, 1.2])
-    
-    with col_u1:
-        st.markdown("#### ➕ Registrar Nuevo Usuario")
-        with st.form("form_nuevo_usuario"):
-            u_name = st.text_input("Nombre de Usuario (Username)", placeholder="ej. juan.perez")
-            u_nombre = st.text_input("Nombre Completo", placeholder="ej. Ing. Juan Pérez")
-            u_pass = st.text_input("Contraseña", type="password")
-            u_rol = st.selectbox("Rol de Acceso", ["JEFE_SUPERVISOR", "SUPERINTENDENTE", "GERENTE_PLANTA", "GERENTE_GENERAL", "ADMINISTRACION"])
-            u_area = st.selectbox("Área Asignada", ["OPER&MTTO", "JEFATURA", "TODAS"])
-            u_cargo = st.text_input("Cargo Oficial", placeholder="ej. Jefe de Mantenimiento")
-            
-            btn_crear_u = st.form_submit_button("➕ CREAR USUARIO", type="primary", use_container_width=True)
-            if btn_crear_u:
-                if u_name and u_pass and u_nombre:
-                    pass_h = hash_password(u_pass)
-                    res = crear_usuario(u_name, pass_h, u_nombre, u_rol, u_area, u_cargo)
-                    if res:
-                        st.toast("✅ Usuario creado exitosamente", icon="🎉")
-                        st.success(f"Usuario '{u_name}' registrado correctamente.")
-                        st.rerun()
+if tab_usuarios:
+    with tab_usuarios:
+        st.subheader("👥 Gestión de Usuarios y Roles de Acceso (RBAC)")
+        st.markdown("Módulo exclusivo para Administración de Recursos Humanos.")
+        
+        col_u1, col_u2 = st.columns([1, 1.2])
+        
+        with col_u1:
+            st.markdown("#### ➕ Registrar Nuevo Usuario")
+            with st.form("form_nuevo_usuario"):
+                u_name = st.text_input("Nombre de Usuario (Username)", placeholder="ej. juan.perez")
+                u_nombre = st.text_input("Nombre Completo", placeholder="ej. Ing. Juan Pérez")
+                u_pass = st.text_input("Contraseña", type="password")
+                u_rol = st.selectbox("Rol de Acceso", ["JEFE_SUPERVISOR", "SUPERINTENDENTE", "GERENTE_PLANTA", "GERENTE_GENERAL", "ADMINISTRACION"])
+                u_area = st.selectbox("Área Asignada", ["OPER&MTTO", "JEFATURA", "TODAS"])
+                u_cargo = st.text_input("Cargo Oficial", placeholder="ej. Jefe de Mantenimiento")
+                
+                btn_crear_u = st.form_submit_button("➕ CREAR USUARIO", type="primary", use_container_width=True)
+                if btn_crear_u:
+                    if u_name and u_pass and u_nombre:
+                        pass_h = hash_password(u_pass)
+                        res = crear_usuario(u_name, pass_h, u_nombre, u_rol, u_area, u_cargo)
+                        if res:
+                            st.toast("✅ Usuario creado exitosamente", icon="🎉")
+                            st.success(f"Usuario '{u_name}' registrado correctamente.")
+                            st.rerun()
+                        else:
+                            st.error("Error al crear usuario. El username ya podría existir.")
                     else:
-                        st.error("Error al crear usuario. El username ya podría existir.")
-                else:
-                    st.warning("Completa todos los campos obligatorios.")
+                        st.warning("Completa todos los campos obligatorios.")
 
-    with col_u2:
-        st.markdown("#### 📜 Usuarios Registrados")
-        df_users = obtener_todos_usuarios()
-        if not df_users.empty:
-            st.dataframe(df_users, use_container_width=True, hide_index=True)
-            
-            st.markdown("---")
-            st.markdown("#### 🗑️ Eliminar Usuario")
-            u_del_id = st.selectbox("Seleccionar ID de Usuario a Eliminar", df_users['id'].tolist(), format_func=lambda x: f"ID {x} - {df_users[df_users['id']==x]['username'].values[0]}")
-            if st.button("🗑️ Eliminar Usuario Seleccionado"):
-                eliminar_usuario(u_del_id)
-                st.toast("✅ Usuario eliminado correctamente")
-                st.rerun()
-
-else:
-    st.info("👋 **Bienvenido al Sistema de Asistencia GZG**. Selecciona o carga un archivo de transacciones Hikvision en el panel izquierdo y presiona **PROCESAR ASISTENCIA** para visualizar los indicadores y guardar en la Base de Datos.")
+        with col_u2:
+            st.markdown("#### 📜 Usuarios Registrados")
+            df_users = obtener_todos_usuarios()
+            if not df_users.empty:
+                st.dataframe(df_users, use_container_width=True, hide_index=True)
+                
+                st.markdown("---")
+                st.markdown("#### 🗑️ Eliminar Usuario")
+                u_del_id = st.selectbox("Seleccionar ID de Usuario a Eliminar", df_users['id'].tolist(), format_func=lambda x: f"ID {x} - {df_users[df_users['id']==x]['username'].values[0]}")
+                if st.button("🗑️ Eliminar Usuario Seleccionado"):
+                    eliminar_usuario(u_del_id)
+                    st.toast("✅ Usuario eliminado correctamente")
+                    st.rerun()
