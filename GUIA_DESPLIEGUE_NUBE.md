@@ -1,4 +1,4 @@
-# 🌐 GUÍA DE DESPLIEGUE EN LA NUBE GRATUITA - GZG MINERALES S.A.C.
+# 🌐 GUÍA DE DESPLIEGUE EN LA NUBE GRATUITA - GZG MINERALES PERU S.R.L.
 
 Esta guía paso a paso te explica cómo publicar el **Sistema de Control de Asistencia GZG** en **Streamlit Community Cloud** (servidor 100% gratuito) para que cualquier persona autorizada (Superintendente, Supervisores, Administración) pueda ingresar desde cualquier computadora, teléfono o tablet mediante un enlace web.
 
