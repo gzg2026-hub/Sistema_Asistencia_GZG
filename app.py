@@ -921,7 +921,7 @@ login_slot = st.empty()
 
 if not is_authenticated():
     with login_slot.container():
-        # Ocultar la barra lateral y enmascarar contraseña mediante CSS wrapper
+        # Ocultar la barra lateral durante el inicio de sesión
         st.markdown("""
         <style>
             section[data-testid="stSidebar"],
@@ -942,13 +942,20 @@ if not is_authenticated():
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
-            /* Enmascarar contraseña con discos CSS evitando el aviso de Google Chrome */
-            .login-pass-container input {
-                -webkit-text-security: disc !important;
-                text-security: disc !important;
-                -moz-text-security: disc !important;
-            }
         </style>
+        <script>
+            // Bloquear la sugerencia emergente de contraseñas de Google Chrome usando readonly temporal
+            setTimeout(function() {
+                var pInput = document.querySelector('input[type="password"]');
+                if (pInput) {
+                    pInput.setAttribute('autocomplete', 'current-password');
+                    pInput.setAttribute('readonly', 'readonly');
+                    pInput.addEventListener('focus', function() {
+                        this.removeAttribute('readonly');
+                    });
+                }
+            }, 200);
+        </script>
         """, unsafe_allow_html=True)
         
         logo_b64 = get_logo_base64()
@@ -969,10 +976,7 @@ if not is_authenticated():
             ''', unsafe_allow_html=True)
             
             u_input = st.text_input("👤 Usuario", value="", placeholder="", key="login_u_direct")
-            
-            st.markdown('<div class="login-pass-container">', unsafe_allow_html=True)
-            p_input = st.text_input("🔒 Contraseña", value="", type="default", key="login_p_direct")
-            st.markdown('</div>', unsafe_allow_html=True)
+            p_input = st.text_input("🔒 Contraseña", value="", type="password", key="login_p_direct")
             
             st.markdown("<br>", unsafe_allow_html=True)
             btn_submit_login = st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_login_direct")
