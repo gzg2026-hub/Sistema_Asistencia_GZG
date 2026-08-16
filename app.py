@@ -927,6 +927,21 @@ st.markdown(f'''
 
 # VERIFICACIÓN DE SESIÓN DE USUARIO (LOGIN RBAC)
 if not is_authenticated():
+    # Ocultar la barra lateral durante el inicio de sesión para evitar elementos estancados o sobreposiciones
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+        }
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 2rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
     logo_b64 = get_logo_base64()
     st.markdown(f'''
     <div style="text-align: center; padding: 20px 0;">
@@ -944,13 +959,13 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
         
-        with st.form("login_form_gzg"):
+        with st.form("login_form_gzg", clear_on_submit=True):
             u_input = st.text_input("👤 Usuario", placeholder="")
             p_input = st.text_input("🔒 Contraseña", type="password")
             btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
             
             if btn_submit_login:
-                if login_user(u_input, p_input):
+                if u_input and p_input and login_user(u_input, p_input):
                     st.toast("✅ Sesión iniciada correctamente", icon="🔓")
                     st.rerun()
                 else:
