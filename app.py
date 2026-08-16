@@ -945,7 +945,7 @@ if not is_authenticated():
         ''', unsafe_allow_html=True)
         
         with st.form("login_form_gzg"):
-            u_input = st.text_input("👤 Usuario", placeholder="Ej: admin, jefe.operaciones, superintendente")
+            u_input = st.text_input("👤 Usuario", placeholder="")
             p_input = st.text_input("🔒 Contraseña", type="password")
             btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
             
