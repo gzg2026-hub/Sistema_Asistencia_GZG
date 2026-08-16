@@ -888,8 +888,98 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# RENDERIZADO DEL ENCABEZADO OFICIAL GZG MINERALES v1.0
+# VERIFICACIÓN DE SESIÓN DE USUARIO (LOGIN RBAC)
 # ---------------------------------------------------------
+if not is_authenticated():
+    # Ocultar la barra lateral durante el inicio de sesión para evitar elementos estancados o sobreposiciones
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+        }
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 2rem !important;
+        }
+    </style>
+    <script>
+        // Desactivar el generador / sugeridor automático de contraseñas de Google Chrome
+        setTimeout(function() {
+            var inputs = document.querySelectorAll('input[type="password"]');
+            inputs.forEach(function(input) {
+                input.setAttribute('autocomplete', 'current-password');
+                input.setAttribute('data-lpignore', 'true');
+            });
+        }, 500);
+    </script>
+    """, unsafe_allow_html=True)
+    
+    logo_b64 = get_logo_base64()
+    st.markdown(f'''
+    <div style="text-align: center; padding: 20px 0;">
+        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
+        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px;">GZG MINERALES PERU S.R.L.</h2>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    col_l1, col_l2, col_l3 = st.columns([1, 1.3, 1])
+    with col_l2:
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="color:#ffffff; margin-top:0; text-align:center;">🔑 Iniciar Sesión</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; text-align:center; margin-bottom:20px;">Ingresa tus credenciales autorizadas</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        with st.form("login_form_gzg", clear_on_submit=False):
+            u_input = st.text_input("👤 Usuario", value="", placeholder="")
+            p_input = st.text_input("🔒 Contraseña", value="", type="password")
+            btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+            
+            if btn_submit_login:
+                if u_input and p_input and login_user(u_input, p_input):
+                    st.toast("✅ Sesión iniciada correctamente", icon="🔓")
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos. Por favor verifica tus datos.")
+                    
+        with st.expander("ℹ️ Ver Usuarios de Prueba / Roles del Sistema"):
+            st.markdown("""
+            - **👑 Gerente General**: `raul.espinoza` / `gzg2026*`
+            - **🏬 Gerente de Planta**: `jhon.alva` / `gzg2026*`
+            - **🏛️ Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
+            - **👷 Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
+            - **👷 Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
+            - **💼 Administración RRHH**: `admin` / `gzg2026*`
+            """)
+    st.stop()
+
+# ---------------------------------------------------------
+# USUARIO AUTENTICADO: ENCABEZADO Y AUTO-POBLADO DE DATOS
+# ---------------------------------------------------------
+current_user = get_current_user()
+
+# Auto-poblado de base de datos SQLite si está vacía (Garantiza KPIs 100% cargados al desplegar en la nube)
+_, _, df_asis_chk, _, _ = obtener_datos_db()
+if df_asis_chk.empty:
+    sample_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico", "Transacciones_2026-08-01_2026-08-11.xlsx")
+    if os.path.exists(sample_file):
+        try:
+            df_t_samp, df_m_samp, df_he_samp = cargar_datos_excel(sample_file)
+            base_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsm")
+            if os.path.exists(base_file):
+                df_t_master, _, _ = cargar_datos_excel(base_file)
+                if df_t_samp.empty:
+                    df_t_samp = df_t_master
+            guardar_trabajadores(df_t_samp)
+            guardar_marcaciones_raw(df_m_samp, archivo_origen=sample_file)
+            df_asis_s, df_he_s, df_inc_s, _ = procesar_asistencia_df(df_t_samp, df_m_samp, df_he_samp, AttendanceConfig())
+            guardar_asistencia_y_reportes(df_asis_s, df_he_s, df_inc_s)
+        except Exception as e:
+            print(f"Error al auto-cargar datos iniciales: {e}")
+
 logo_b64 = get_logo_base64()
 curr_now = datetime.now()
 date_display = curr_now.strftime("%d/%m/%Y")
@@ -924,66 +1014,6 @@ st.markdown(f'''
     </div>
 </div>
 ''', unsafe_allow_html=True)
-
-# VERIFICACIÓN DE SESIÓN DE USUARIO (LOGIN RBAC)
-if not is_authenticated():
-    # Ocultar la barra lateral durante el inicio de sesión para evitar elementos estancados o sobreposiciones
-    st.markdown("""
-    <style>
-        section[data-testid="stSidebar"],
-        div[data-testid="stSidebarCollapsedControl"] {
-            display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-        }
-        [data-testid="stMainBlockContainer"] {
-            padding-top: 2rem !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    logo_b64 = get_logo_base64()
-    st.markdown(f'''
-    <div style="text-align: center; padding: 20px 0;">
-        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
-        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px;">GZG MINERALES PERU S.R.L.</h2>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    col_l1, col_l2, col_l3 = st.columns([1, 1.3, 1])
-    with col_l2:
-        st.markdown('''
-        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <h3 style="color:#ffffff; margin-top:0; text-align:center;">🔑 Iniciar Sesión</h3>
-            <p style="color:#94a3b8; font-size:0.9rem; text-align:center; margin-bottom:20px;">Ingresa tus credenciales autorizadas</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        with st.form("login_form_gzg", clear_on_submit=True):
-            u_input = st.text_input("👤 Usuario", placeholder="")
-            p_input = st.text_input("🔒 Contraseña", type="password")
-            btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
-            
-            if btn_submit_login:
-                if u_input and p_input and login_user(u_input, p_input):
-                    st.toast("✅ Sesión iniciada correctamente", icon="🔓")
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos. Por favor verifica tus datos.")
-                    
-        with st.expander("ℹ️ Ver Usuarios de Prueba / Roles del Sistema"):
-            st.markdown("""
-            - **👑 Gerente General**: `raul.espinoza` / `gzg2026*`
-            - **🏬 Gerente de Planta**: `jhon.alva` / `gzg2026*`
-            - **🏛️ Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
-            - **👷 Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
-            - **👷 Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
-            - **💼 Administración RRHH**: `admin` / `gzg2026*`
-            """)
-    st.stop()
-
-# USUARIO AUTENTICADO
-current_user = get_current_user()
 
 DEFAULT_ASISTENCIA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico")
 os.makedirs(DEFAULT_ASISTENCIA_DIR, exist_ok=True)
