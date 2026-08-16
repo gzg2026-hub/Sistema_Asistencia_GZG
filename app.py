@@ -915,19 +915,65 @@ def auto_seed_database_if_empty():
 auto_seed_database_if_empty()
 
 # ---------------------------------------------------------
-# USUARIO AUTENTICADO / ACCESO DIRECTO AL DASHBOARD
+# VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Asignación automática de usuario por defecto (Administración) para acceso directo
-    st.session_state['authenticated'] = True
-    st.session_state['user'] = {
-        'id': 1,
-        'username': 'admin',
-        'nombre_completo': 'Administración RRHH',
-        'rol': 'ADMINISTRACION',
-        'area_asignada': 'TODAS',
-        'cargo': 'Administrador de Sistema'
-    }
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarCollapsedControl"] {
+            display: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+        }
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 2rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    logo_b64 = get_logo_base64()
+    st.markdown(f'''
+    <div style="text-align: center; padding: 25px 0 10px 0;">
+        {f'<img src="data:image/png;base64,{logo_b64}" style="height:95px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
+        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+        <p style="color:#94a3b8; font-size:1.05rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
+    with col_l2:
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔐 Iniciar Sesión</h3>
+            <p style="color:#94a3b8; font-size:0.9rem; text-align:center; margin-bottom:20px;">Ingresa tu usuario y contraseña autorizados</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        with st.form("form_login_oficial_gzg", clear_on_submit=False):
+            u_input = st.text_input("👤 Usuario", value="", placeholder="ej. raul.espinoza", key="log_user_inp")
+            p_input = st.text_input("🔒 Contraseña", value="", type="password", key="log_pass_inp")
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+            
+            if btn_submit_login:
+                if u_input and p_input and login_user(u_input, p_input):
+                    st.toast("✅ Sesión iniciada correctamente", icon="🔓")
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos. Por favor verifica tus datos.")
+                    
+        with st.expander("ℹ️ Ver Usuarios Autorizados del Sistema"):
+            st.markdown("""
+            - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
+            - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
+            - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
+            - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
+            - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
+            - 💼 **Administración RRHH**: `admin` / `gzg2026*`
+            """)
+    st.stop()
 
 current_user = get_current_user()
 
