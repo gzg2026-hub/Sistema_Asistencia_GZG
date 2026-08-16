@@ -491,10 +491,10 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
     conn.close()
 
 def obtener_usuario_by_username(username: str, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
-    """Obtiene la información de un usuario según su nombre de usuario."""
+    """Obtiene la información de un usuario según su nombre de usuario (búsqueda case-insensitive)."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, username, password_hash, nombre_completo, rol, area_asignada, cargo, activo FROM usuarios WHERE username = ?", (username,))
+    cursor.execute("SELECT id, username, password_hash, nombre_completo, rol, area_asignada, cargo, activo FROM usuarios WHERE LOWER(username) = LOWER(?)", (username.strip(),))
     row = cursor.fetchone()
     conn.close()
     if row:

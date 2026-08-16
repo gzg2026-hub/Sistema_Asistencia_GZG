@@ -20,9 +20,11 @@ def init_auth():
 
 def login_user(username: str, password: str) -> bool:
     """Intenta iniciar sesión para el usuario ingresado."""
+    if not username or not password:
+        return False
     user = obtener_usuario_by_username(username.strip())
     if user and user.get('activo', 1) == 1:
-        if verify_password(password, user['password_hash']):
+        if verify_password(password.strip(), user['password_hash']):
             st.session_state['authenticated'] = True
             st.session_state['user'] = {
                 'id': user['id'],
