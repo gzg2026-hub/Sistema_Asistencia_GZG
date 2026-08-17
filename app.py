@@ -545,23 +545,28 @@ st.markdown("""
         padding: 12px !important;
     }
 
-    div[data-testid="stPopoverBody"] span,
-    div[data-testid="stPopoverContent"] span {
+    /* CHECKBOXES DENTRO DEL POPOVER */
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"],
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] {
+        padding: 4px 0 !important;
+    }
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label,
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label {
         color: #ffffff !important;
         font-weight: 600 !important;
         font-size: 0.90rem !important;
+        cursor: pointer !important;
     }
-
-    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label span[role="checkbox"],
-    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label span[role="checkbox"] {
-        border: 1.5px solid #dfa86a !important;
-        border-radius: 4px !important;
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] input[type="checkbox"],
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] input[type="checkbox"] {
+        accent-color: #f59e0b !important;
+        width: 18px !important;
+        height: 18px !important;
+        cursor: pointer !important;
     }
-
-    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label span[role="checkbox"][aria-checked="true"],
-    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label span[role="checkbox"][aria-checked="true"] {
-        background-color: #f59e0b !important;
-        border-color: #f59e0b !important;
+    div[data-testid="stPopoverBody"] div[data-baseweb="checkbox"] div,
+    div[data-testid="stPopoverContent"] div[data-baseweb="checkbox"] div {
+        border-color: #dfa86a !important;
     }
 
     div[data-baseweb="tag"] svg,
@@ -1215,22 +1220,18 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# INICIALIZACIÓN DE CASILLAS DE CARGOS ACTIVAS POR DEFECTO
-if 'chk_cargos_initialized' not in st.session_state:
-    st.session_state['chk_cargos_initialized'] = True
+# INICIALIZACIÓN DE CASILLAS DE CARGOS ACTIVAS POR DEFECTO (V2)
+if 'chk_cargos_v2_init' not in st.session_state:
+    st.session_state['chk_cargos_v2_init'] = True
     for c in opciones_cargos:
-        st.session_state[f"chk_c_{c}"] = True
-
-def cb_set_cargos(state_val: bool):
-    for c in opciones_cargos:
-        st.session_state[f"chk_c_{c}"] = state_val
+        st.session_state[f"chk_v2_{c}"] = True
 
 # 1. SELECTOR MULTIPLE DE CARGO (CON BOTONES 'TODOS' Y 'DESMARCAR')
 for c in opciones_cargos:
-    if f"chk_c_{c}" not in st.session_state:
-        st.session_state[f"chk_c_{c}"] = True
+    if f"chk_v2_{c}" not in st.session_state:
+        st.session_state[f"chk_v2_{c}"] = True
 
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_c_{c}", True)]
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_v2_{c}", True)]
 
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
@@ -1251,23 +1252,23 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; fo
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        if st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos"):
+        if st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos_v2"):
             for c in opciones_cargos:
-                st.session_state[f"chk_c_{c}"] = True
+                st.session_state[f"chk_v2_{c}"] = True
             st.rerun()
     with col_all2:
-        if st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos"):
+        if st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos_v2"):
             for c in opciones_cargos:
-                st.session_state[f"chk_c_{c}"] = False
+                st.session_state[f"chk_v2_{c}"] = False
             st.rerun()
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"chk_c_{cargo_item}")
+        st.checkbox(cargo_item, key=f"chk_v2_{cargo_item}")
 
 # RE-EVALUAR CARGOS SELECCIONADOS TRAS INTERACCIÓN CON CHECKBOXES
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_c_{c}", True)]
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_v2_{c}", True)]
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
