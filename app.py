@@ -1058,9 +1058,9 @@ if not df_trab_master_db.empty:
         cargos_clean = [str(c).strip() for c in cargos_raw if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']]
         opciones_cargos = sorted(list(set(cargos_clean)))
 
-# INICIALIZACIÓN DE SESSION STATE PARA BÚSQUEDA NO AUTOMÁTICA
-if 'active_cargos' not in st.session_state:
-    st.session_state['active_cargos'] = []
+# INICIALIZACIÓN DE SESSION STATE PARA BÚSQUEDA Y DASHBOARD
+if 'active_cargos' not in st.session_state or not st.session_state['active_cargos']:
+    st.session_state['active_cargos'] = opciones_cargos
 if 'active_worker' not in st.session_state:
     st.session_state['active_worker'] = "TODO EL PERSONAL"
 if 'active_f_ini' not in st.session_state:
@@ -1096,9 +1096,7 @@ for c in opciones_cargos:
 
 selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_c_{c}", True)]
 
-if len(selected_cargos_keys) == len(opciones_cargos):
-    pending_cargos = []
-elif len(selected_cargos_keys) == 0:
+if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
     pending_cargos = selected_cargos_keys
