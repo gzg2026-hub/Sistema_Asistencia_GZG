@@ -886,11 +886,20 @@ if not is_authenticated():
                 border: none !important;
             }
             [data-testid="stMainBlockContainer"],
+            .stMainBlockContainer {
+                max-width: 480px !important;
+                width: 100% !important;
+                margin: 0 auto !important;
+                padding-top: 3rem !important;
+            }
             div[data-testid="stForm"],
             .stForm {
-                max-width: 440px !important;
-                margin: 0 auto !important;
-                padding-top: 2rem !important;
+                width: 100% !important;
+                border: 1px solid #1c1e29 !important;
+                background-color: #0d0f17 !important;
+                border-radius: 12px !important;
+                padding: 24px !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
             }
             /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
             [data-testid="stInputInstructions"],
@@ -928,43 +937,39 @@ if not is_authenticated():
         </style>
         """, unsafe_allow_html=True)
 
-        c1, c2, c3 = st.columns([1.8, 1, 1.8])
-        with c2:
-            logo_b64 = get_logo_base64()
-            st.markdown(f'''
-            <div style="text-align: center; padding-bottom: 20px;">
-                {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
-                <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-                <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
-            </div>
-            ''', unsafe_allow_html=True)
-            
-            st.markdown('''
-            <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px;">
-                <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
-            </div>
-            ''', unsafe_allow_html=True)
+        logo_b64 = get_logo_base64()
+        st.markdown(f'''
+        <div style="text-align: center; padding-bottom: 20px; width: 100%;">
+            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
+            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px; width: 100%;">
+            <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
+        </div>
+        ''', unsafe_allow_html=True)
 
-            with st.form("gzg_login_form", clear_on_submit=False):
-                u_val = st.text_input("Usuario", value="", key="login_user_field")
-                p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
-                st.markdown("<br>", unsafe_allow_html=True)
-                btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+        with st.form("gzg_login_form", clear_on_submit=False):
+            u_val = st.text_input("Usuario", value="", key="login_user_field")
+            p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
 
-            u_s = str(st.session_state.get("login_user_field", "") or u_val or "").strip()
-            p_s = str(st.session_state.get("login_pass_field", "") or p_val or "").strip()
+        u_s = str(st.session_state.get("login_user_field", "") or u_val or "").strip()
+        p_s = str(st.session_state.get("login_pass_field", "") or p_val or "").strip()
 
-            if btn_login or (u_s and p_s):
-                if u_s and p_s:
-                    if login_user(u_s, p_s):
-                        st.session_state['cargos_version'] = 0
-                        st.session_state['cargos_master_state'] = True
-                        login_holder.empty()
-                        st.rerun()
-                    else:
-                        st.error("❌ Usuario o contraseña incorrectos.")
+        if btn_login or (u_s and p_s):
+            if u_s and p_s:
+                if login_user(u_s, p_s):
+                    login_holder.empty()
+                    st.rerun()
                 else:
-                    st.warning("⚠️ Ingrese su usuario y contraseña.")
+                    st.error("❌ Usuario o contraseña incorrectos.")
+            else:
+                st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
 
