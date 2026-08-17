@@ -1301,19 +1301,16 @@ if current_user and current_user.get('area_asignada', 'TODAS') != 'TODAS' and cu
 
 with c_act2:
     if not df_asis_db.empty:
-        if st.button("📊 PREPARAR EXCEL BASE v1.0", use_container_width=True):
-            with st.spinner("Generando reporte Excel v1.0..."):
-                excel_bytes = exportar_asistencia_excel(
-                    df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db, BASE_EXCEL
-                )
-                st.download_button(
-                    label="💾 CONFIRMAR DESCARGA (.xlsx)",
-                    data=excel_bytes,
-                    file_name=f"Sistema_Asistencia_GZG_{f_ini_str}_a_{f_fin_str}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    type="primary"
-                )
+        excel_bytes = exportar_asistencia_excel(
+            df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db, BASE_EXCEL
+        )
+        st.download_button(
+            label="📊 DESCARGAR EXCEL BASE v1.0 (.xlsx)",
+            data=excel_bytes,
+            file_name=f"Sistema_Asistencia_GZG_{f_ini_str}_a_{f_fin_str}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
 with c_act3:
     st.info(f"📁 Filtro ({f_ini_str} al {f_fin_str}): **{len(df_trab_db)} Personal**, **{len(df_marc_db)} Marcaciones**, **{len(df_asis_db)} Registros Asistencia**")
