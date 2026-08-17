@@ -361,31 +361,6 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
-@st.cache_data(ttl=120, show_spinner=False)
-def obtener_trabajadores_db(db_path: str = DB_PATH) -> pd.DataFrame:
-    """Obtiene el DataFrame de trabajadores de la base de datos de forma ultra-rápida."""
-    conn = get_connection(db_path)
-    try:
-        return pd.read_sql_query("SELECT dni as DNI, apellidos as APELLIDOS, nombres as NOMBRES, cargo as CARGO, area as AREA FROM trabajadores ORDER BY apellidos, nombres", conn)
-    except Exception:
-        return pd.DataFrame()
-    finally:
-        conn.close()
-
-@st.cache_data(ttl=300, show_spinner=False)
-def obtener_cargos_unicos_db(db_path: str = DB_PATH) -> list:
-    """Obtiene la lista única de cargos de trabajadores en milisegundos."""
-    conn = get_connection(db_path)
-    try:
-        df = pd.read_sql_query("SELECT DISTINCT cargo FROM trabajadores WHERE cargo IS NOT NULL AND cargo != ''", conn)
-        cargos = [str(c).strip() for c in df['cargo'].tolist() if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']]
-        return sorted(list(set(cargos)))
-    except Exception:
-        return []
-    finally:
-        conn.close()
-
-@st.cache_data(ttl=120, show_spinner=False)
 def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, db_path: str = DB_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Obtiene DataFrames acumulados desde la base de datos:
