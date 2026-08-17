@@ -863,7 +863,9 @@ st.markdown("""
         font-size: 1.15rem;
     }
     /* BOTONES DENTRO DE POPOVER SELECTOR DE CARGO */
-    [data-testid="stPopoverBody"] button {
+    [data-testid="stPopoverBody"] button,
+    [data-testid="stPopoverContent"] button,
+    .stPopover button {
         white-space: nowrap !important;
         font-size: 0.85rem !important;
         padding: 0.2rem 0.4rem !important;
@@ -873,7 +875,9 @@ st.markdown("""
         align-items: center !important;
         justify-content: center !important;
     }
-    [data-testid="stPopoverBody"] button p {
+    [data-testid="stPopoverBody"] button p,
+    [data-testid="stPopoverContent"] button p,
+    .stPopover button p {
         font-size: 0.85rem !important;
         white-space: nowrap !important;
         margin: 0 !important;
@@ -1182,7 +1186,11 @@ with st.sidebar.popover(texto_boton, use_container_width=True):
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"chk_c_{cargo_item}")
+        st.checkbox(
+            cargo_item,
+            value=st.session_state.get(f"chk_c_{cargo_item}", True),
+            key=f"chk_c_{cargo_item}"
+        )
 
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
