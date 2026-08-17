@@ -1024,7 +1024,12 @@ def _inject_dashboard_css():
         text-align: center !important;
         font-size: 1.15rem;
     }
-    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) CON ALTURA MÁXIMA COMPACTA */
+    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) ALINEADO PERFECTAMENTE */
+    div[data-baseweb="popover"] {
+        left: auto !important;
+        right: 0 !important;
+        max-width: 100% !important;
+    }
     [data-testid="stPopoverBody"],
     [data-testid="stPopoverContent"],
     div[data-baseweb="popover"] > div {
@@ -1034,16 +1039,20 @@ def _inject_dashboard_css():
         border: 1.5px solid #dfa86a !important;
         border-radius: 10px !important;
         box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
-    /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) */
+    /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) - FUENTE MÁS PEQUEÑA (0.76rem) */
     [data-testid="stPopoverBody"] button,
     [data-testid="stPopoverContent"] button {
         white-space: nowrap !important;
-        font-size: 0.85rem !important;
+        font-size: 0.76rem !important;
         font-weight: 600 !important;
-        padding: 0.4rem 0.6rem !important;
+        padding: 0.3rem 0.5rem !important;
         height: auto !important;
-        min-height: 38px !important;
+        min-height: 32px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: flex-start !important;
@@ -1052,7 +1061,7 @@ def _inject_dashboard_css():
         background-color: #11131c !important;
         border: 1px solid #222638 !important;
         border-radius: 6px !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 3px !important;
         width: 100% !important;
     }
     [data-testid="stPopoverBody"] button:hover,
@@ -1064,7 +1073,7 @@ def _inject_dashboard_css():
     [data-testid="stPopoverBody"] button *,
     [data-testid="stPopoverContent"] button * {
         color: #ffffff !important;
-        font-size: 0.85rem !important;
+        font-size: 0.76rem !important;
         font-weight: 600 !important;
         white-space: nowrap !important;
         margin: 0 !important;
