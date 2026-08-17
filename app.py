@@ -119,21 +119,12 @@ st.markdown("""
     }
 
     /* OCULTAR DEFINITIVAMENTE DE RAÍZ 'Press Enter to apply' Y 'Press Enter to submit form' */
+    [data-testid="stInputInstructions"],
     div[data-testid="stInputInstructions"],
     small[data-testid="stInputInstructions"],
     span[data-testid="stInputInstructions"],
-    [data-testid="stInputInstructions"],
     div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
-    div[data-testid="stTextInput"] div[data-testid="stInputInstructions"],
-    div[data-baseweb="input"] > *:not(input):not(button):not(svg):not(path),
-    div[data-baseweb="base-input"] > *:not(input):not(button):not(svg):not(path),
-    div[data-baseweb="input"] span,
-    div[data-baseweb="input"] p,
-    div[data-baseweb="input"] small,
-    div[data-baseweb="base-input"] div,
-    div[data-baseweb="base-input"] span,
-    div[data-baseweb="base-input"] small,
-    div[data-baseweb="base-input"] p {
+    div[data-testid="stTextInput"] div[data-testid="stInputInstructions"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
@@ -149,10 +140,6 @@ st.markdown("""
         top: -9999px !important;
         left: -9999px !important;
         pointer-events: none !important;
-    }
-        line-height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
     }
 
     /* BARRA CABECERA STREAMLIT TRANSPARENTE */
@@ -965,30 +952,21 @@ if not is_authenticated():
                 padding-top: 3.5rem !important;
             }
             /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' DE RAÍZ */
-            div[data-baseweb="base-input"] > *:not(input),
-            div[data-baseweb="input"] > *:not(div:first-child),
-            div[data-baseweb="base-input"] div,
-            div[data-baseweb="base-input"] span,
-            div[data-baseweb="base-input"] small,
-            div[data-baseweb="base-input"] p,
+            [data-testid="stInputInstructions"],
             div[data-testid="stInputInstructions"],
             small[data-testid="stInputInstructions"],
             span[data-testid="stInputInstructions"],
-            [data-testid="stInputInstructions"],
-            div[data-baseweb="input"] > span,
-            div[data-baseweb="input"] > div:not(:first-child),
-            div[data-baseweb="input"] span,
-            div[data-baseweb="input"] p,
-            div[data-baseweb="input"] small,
-            div[data-baseweb="base-input"] + div,
-            div[data-testid="stTextInput"] small,
-            div[data-testid="stTextInput"] [data-testid="stInputInstructions"] {
+            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+            div[data-testid="stTextInput"] div[data-testid="stInputInstructions"] {
                 display: none !important;
                 visibility: hidden !important;
                 opacity: 0 !important;
+                color: transparent !important;
+                -webkit-text-fill-color: transparent !important;
+                font-size: 0px !important;
+                line-height: 0 !important;
                 height: 0px !important;
                 width: 0px !important;
-                font-size: 0px !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 position: absolute !important;
