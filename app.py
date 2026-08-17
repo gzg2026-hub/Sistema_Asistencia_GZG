@@ -448,7 +448,7 @@ st.markdown("""
        (100% Idéntico para Cargos, Trabajador, Fechas y Rutas en Sidebar)
        ========================================================================= */
 
-    /* 1. CAJÓN SELECTOR DE CARGOS (Popover Button) */
+    /* 1. CAJONES SELECTORES DE CARGOS Y TRABAJADOR (Popover Buttons 100% Idénticos) */
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
         background-color: #11131c !important;
@@ -468,9 +468,17 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Exactamente Idéntico a Cargos */
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"],
-    section[data-testid="stSidebar"] .stSelectbox {
+    /* 2. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"],
+    section[data-testid="stSidebar"] div[data-testid="stTextInput"] div[data-baseweb="input"],
+    section[data-testid="stSidebar"] div[data-baseweb="input"] {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -479,8 +487,7 @@ st.markdown("""
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
-        padding: 0 !important;
-        overflow: hidden !important;
+        padding: 0 12px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
@@ -488,34 +495,14 @@ st.markdown("""
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"],
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] div {
-        width: 100% !important;
-        margin: 0 !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-        padding: 0 12px !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:hover,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:focus,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:active,
-    section[data-testid="stSidebar"] .stSelectbox *,
-    section[data-testid="stSidebar"] .stSelectbox *:hover,
-    section[data-testid="stSidebar"] .stSelectbox *:focus,
-    section[data-testid="stSidebar"] .stSelectbox *:active {
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"]:hover,
-    section[data-testid="stSidebar"] .stSelectbox:hover {
+
+    /* 3. HOVER Y FOCUS: AQUÍ ES DONDE SE ENCIENDE EL BRILLO DORADO AL ACERCAR EL MOUSE */
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus,
+    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"]:hover,
+    section[data-testid="stSidebar"] div[data-testid="stTextInput"] div[data-baseweb="input"]:hover {
         border-color: #f59e0b !important;
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
@@ -1329,14 +1316,27 @@ opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajad
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
-curr_w_idx = 0
-if st.session_state.get('pending_worker_val') in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['pending_worker_val'])
-elif st.session_state['applied_worker'] in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['applied_worker'])
+if 'pending_worker_val' not in st.session_state or st.session_state['pending_worker_val'] not in opciones_trabajadores:
+    st.session_state['pending_worker_val'] = st.session_state.get('applied_worker', 'TODO EL PERSONAL')
+    if st.session_state['pending_worker_val'] not in opciones_trabajadores:
+        st.session_state['pending_worker_val'] = "TODO EL PERSONAL"
 
-trabajador_seleccionado = st.sidebar.selectbox("Filtrar por Trabajador", opciones_trabajadores, index=curr_w_idx, key="sidebar_worker_select", label_visibility="collapsed")
-st.session_state['pending_worker_val'] = trabajador_seleccionado
+titulo_trabajador = st.session_state['pending_worker_val']
+
+with st.sidebar.popover(titulo_trabajador, use_container_width=True):
+    def cb_change_worker():
+        st.session_state['pending_worker_val'] = st.session_state.get('popover_worker_radio', 'TODO EL PERSONAL')
+
+    curr_w_idx = opciones_trabajadores.index(st.session_state['pending_worker_val']) if st.session_state['pending_worker_val'] in opciones_trabajadores else 0
+    trabajador_seleccionado = st.radio(
+        "Seleccionar Trabajador:",
+        opciones_trabajadores,
+        index=curr_w_idx,
+        key="popover_worker_radio",
+        on_change=cb_change_worker,
+        label_visibility="collapsed"
+    )
+    st.session_state['pending_worker_val'] = trabajador_seleccionado
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📅 Consulta por Rango de Fechas")
