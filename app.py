@@ -1093,7 +1093,8 @@ if not is_authenticated():
             if btn_login or (u_s and p_s):
                 if u_s and p_s:
                     if login_user(u_s, p_s):
-                        st.session_state['cargos_seleccionados'] = None
+                        if 'cargos_seleccionados' in st.session_state:
+                            del st.session_state['cargos_seleccionados']
                         login_holder.empty()
                         st.rerun()
                     else:
@@ -1213,7 +1214,7 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
 # 1. SELECTOR MULTIPLE DE CARGO (SINCRONIZACIÓN ATÓMICA SIN DESFASE NI LAG)
-if 'cargos_seleccionados' not in st.session_state or not isinstance(st.session_state['cargos_seleccionados'], set) or not st.session_state['cargos_seleccionados']:
+if 'cargos_seleccionados' not in st.session_state or not isinstance(st.session_state['cargos_seleccionados'], set):
     st.session_state['cargos_seleccionados'] = set(opciones_cargos)
     for c in opciones_cargos:
         st.session_state[f"cargo_chk_{c}"] = True
