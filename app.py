@@ -1076,8 +1076,9 @@ if not is_authenticated():
         if btn_login or (u_s and p_s):
             if u_s and p_s:
                 if login_user(u_s, p_s):
-                    st.session_state['cargos_ver'] = 0
-                    st.session_state['cargos_def_val'] = True
+                    for k in list(st.session_state.keys()):
+                        if str(k).startswith("cargo_chk_"):
+                            st.session_state[k] = True
                     login_holder.empty()
                     st.rerun()
                 else:
@@ -1183,17 +1184,20 @@ if not df_trab_master_db.empty and 'CARGO' in df_trab_master_db.columns:
     cargos_clean = sorted([str(c).strip() for c in cargos_raw if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']])
     opciones_cargos = cargos_clean
 
-if 'cargos_ver' not in st.session_state:
-    st.session_state['cargos_ver'] = 0
-    st.session_state['cargos_def_val'] = True
+def cb_select_all_cargos():
     for c in opciones_cargos:
-        st.session_state[f"chk_{c}_0"] = True
+        st.session_state[f"cargo_chk_{c}"] = True
 
-c_ver = st.session_state['cargos_ver']
-def_val = st.session_state['cargos_def_val']
+def cb_deselect_all_cargos():
+    for c in opciones_cargos:
+        st.session_state[f"cargo_chk_{c}"] = False
+
+for c in opciones_cargos:
+    if f"cargo_chk_{c}" not in st.session_state:
+        st.session_state[f"cargo_chk_{c}"] = True
 
 # Evaluar pre-render de los cargos seleccionados
-selected_cargos_pre = [c for c in opciones_cargos if st.session_state.get(f"chk_{c}_{c_ver}", def_val)]
+selected_cargos_pre = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
 
 if len(selected_cargos_pre) == len(opciones_cargos):
     titulo_cargos = "TODOS LOS CARGOS"
@@ -1209,30 +1213,17 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; fo
 with st.sidebar.popover(titulo_cargos, use_container_width=True):
     col_t1, col_t2 = st.columns(2)
     with col_t1:
-        if st.button("✅ Todos", use_container_width=True, key=f"btn_all_{c_ver}"):
-            st.session_state['cargos_ver'] = c_ver + 1
-            st.session_state['cargos_def_val'] = True
-            for c in opciones_cargos:
-                st.session_state[f"chk_{c}_{c_ver+1}"] = True
-            st.rerun()
+        st.button("✅ Todos", use_container_width=True, key="btn_select_all_cargos", on_click=cb_select_all_cargos)
     with col_t2:
-        if st.button("🧹 Desmarcar", use_container_width=True, key=f"btn_none_{c_ver}"):
-            st.session_state['cargos_ver'] = c_ver + 1
-            st.session_state['cargos_def_val'] = False
-            for c in opciones_cargos:
-                st.session_state[f"chk_{c}_{c_ver+1}"] = False
-            st.rerun()
+        st.button("🧹 Desmarcar", use_container_width=True, key="btn_deselect_all_cargos", on_click=cb_deselect_all_cargos)
 
     st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
     
     for cargo_item in opciones_cargos:
-        k = f"chk_{cargo_item}_{c_ver}"
-        if k not in st.session_state:
-            st.session_state[k] = def_val
-        st.checkbox(cargo_item, value=st.session_state[k], key=k)
+        st.checkbox(cargo_item, key=f"cargo_chk_{cargo_item}")
 
 # Lista final de cargos confirmados
-cargos_seleccionados = [c for c in opciones_cargos if st.session_state.get(f"chk_{c}_{c_ver}", def_val)]
+cargos_seleccionados = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
 
 # Filtrar trabajadores según los cargos seleccionados
 df_trab_opciones = df_trab_master_db.copy()
