@@ -1,8 +1,8 @@
 import io
 import os
 import openpyxl
-from openpyxl.utils import get_column_letter
 import pandas as pd
+import streamlit as st
 from datetime import datetime
 from typing import Optional, Dict
 
@@ -46,6 +46,7 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
+@st.cache_data(ttl=60, show_spinner=False)
 def exportar_asistencia_excel(
     df_trabajadores: pd.DataFrame,
     df_marcaciones: pd.DataFrame,
@@ -54,13 +55,8 @@ def exportar_asistencia_excel(
     df_incidencias: pd.DataFrame,
     template_path: str = BASE_EXCEL_TEMPLATE
 ) -> bytes:
-    """
-    Genera un archivo Excel totalmente limpio con exactamente las 5 pestañas oficiales
-    y ajusta automáticamente el ancho de las columnas.
-    """
-    wb = openpyxl.Workbook()
-    default_sheet = wb.active
-    wb.remove(default_sheet)
+    """Genera un archivo Excel limpio y ultra-rápido en memoria RAM con las 5 pestañas oficiales."""
+    output = io.BytesIO()
     
     OFFICIAL_SCHEMAS = {
         '01_TRABAJADORES': ['DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'AREA'],
@@ -91,85 +87,18 @@ def exportar_asistencia_excel(
         ('05_INCIDENCIAS', df_incidencias)
     ]
     
-    for sheet_name, df in target_sheets:
-        ws = wb.create_sheet(title=sheet_name)
-        official_headers = OFFICIAL_SCHEMAS.get(sheet_name, list(df.columns) if df is not None else [])
-        
-        # Escribir encabezados oficiales
-        ws.append(official_headers)
-        
-        # Formato de celda de encabezado
-        for col_idx in range(1, len(official_headers) + 1):
-            cell = ws.cell(row=1, column=col_idx)
-            cell.font = openpyxl.styles.Font(bold=True, color="FFFFFF")
-            cell.fill = openpyxl.styles.PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-            cell.alignment = openpyxl.styles.Alignment(horizontal="center", vertical="center")
-            
-        if df is not None and not df.empty:
-            current_cols = list(df.columns)
-            col_map = {}
-            for target_col in official_headers:
-                t_clean = target_col.lower().replace('á', 'a').replace('ó', 'o').replace('é', 'e').replace(' (min)', '').replace(' (hh:mm)', '').strip()
-                for c in current_cols:
-                    c_clean = c.lower().replace('á', 'a').replace('ó', 'o').replace('é', 'e').replace(' (min)', '').replace(' (hh:mm)', '').strip()
-                    if c_clean == t_clean:
-                        col_map[target_col] = c
-                        break
-                        
-            for r_idx, row in df.iterrows():
-                # Omitir filas basura o desalineadas
-                dni_val = str(row.get('DNI', row.get('ID', ''))).strip().lower()
-                if 'fecha:' in dni_val or 'semana:' in dni_val or dni_val == 'desconocido':
-                    continue
-
-                raw_date = row.get('FECHA', row.get('Fecha', row.get('fecha', '')))
-                formatted_date = format_date_ddmmyyyy(raw_date)
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        for sheet_name, df_raw in target_sheets:
+            official_headers = OFFICIAL_SCHEMAS.get(sheet_name, [])
+            if df_raw is not None and not df_raw.empty:
+                df_clean = df_raw.copy()
+                valid_cols = [c for c in official_headers if c in df_clean.columns]
+                if valid_cols:
+                    df_clean = df_clean[valid_cols]
+                df_clean.to_excel(writer, sheet_name=sheet_name, index=False)
+            else:
+                pd.DataFrame(columns=official_headers).to_excel(writer, sheet_name=sheet_name, index=False)
                 
-                row_data = []
-                for target_col in official_headers:
-                    if target_col in ['FECHA', 'Fecha']:
-                        row_data.append(formatted_date)
-                    elif target_col == 'HORAS TRABAJADAS (HH:MM)':
-                        actual_col_name = col_map.get(target_col, 'HORAS TRABAJADAS (HH:MM)')
-                        raw_val = row.get(actual_col_name, row.get('HORAS TRABAJADAS', 0.0))
-                        row_data.append(format_hhmm_cell(raw_val, is_hours_float=True))
-                    elif target_col == 'TARDANZA (HH:MM)':
-                        actual_col_name = col_map.get(target_col, 'TARDANZA (HH:MM)')
-                        raw_val = row.get(actual_col_name, row.get('TARDANZA (MIN)', 0))
-                        row_data.append(format_hhmm_cell(raw_val, is_hours_float=False))
-                    elif target_col == 'SALIDA ANTICIPADA (HH:MM)':
-                        actual_col_name = col_map.get(target_col, 'SALIDA ANTICIPADA (HH:MM)')
-                        raw_val = row.get(actual_col_name, row.get('SALIDA ANTICIPADA (MIN)', 0))
-                        row_data.append(format_hhmm_cell(raw_val, is_hours_float=False))
-                    elif target_col == 'EXCESO JORNADA (HH:MM)':
-                        actual_col_name = col_map.get(target_col, 'EXCESO JORNADA (HH:MM)')
-                        raw_val = row.get(actual_col_name, row.get('EXCESO JORNADA', 0))
-                        row_data.append(format_hhmm_cell(raw_val, is_hours_float=False))
-                    elif target_col == 'TOTAL HORAS ADICIONALES (HH:MM)':
-                        actual_col_name = col_map.get(target_col, 'TOTAL HORAS ADICIONALES (HH:MM)')
-                        raw_val = row.get(actual_col_name, row.get('TOTAL HORAS ADICIONALES', 0))
-                        row_data.append(format_hhmm_cell(raw_val, is_hours_float=False))
-                    elif target_col == 'DURACIÓN (HH:MM)':
-                        actual_col_name = col_map.get(target_col, 'DURACIÓN (HH:MM)')
-                        raw_val = row.get(actual_col_name, row.get('DURACIÓN', row.get('DURACION_MIN', 0)))
-                        row_data.append(format_hhmm_cell(raw_val, is_hours_float=False))
-                    else:
-                        actual_col_name = col_map.get(target_col, target_col)
-                        row_data.append(row.get(actual_col_name, ""))
-                ws.append(row_data)
-                
-            # Auto-ajustar ancho de columnas
-            for col in ws.columns:
-                max_len = max(len(str(cell.value or '')) for cell in col)
-                col_letter = get_column_letter(col[0].column)
-                ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
-        else:
-            for col in ws.columns:
-                col_letter = get_column_letter(col[0].column)
-                ws.column_dimensions[col_letter].width = 18
-
-    output = io.BytesIO()
-    wb.save(output)
     return output.getvalue()
 
 def guardar_excel_base(
