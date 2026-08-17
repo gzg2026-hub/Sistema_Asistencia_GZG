@@ -1389,7 +1389,6 @@ with tab_dash:
                 <div class="kpi-text-block">
                     <div class="kpi-cajon-single-title">PRESENTES</div>
                     <div class="kpi-cajon-single-number">{total_presentes}</div>
-                    <div class="kpi-cajon-single-subtext">{pct_asis}% Asistencia</div>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
@@ -1403,7 +1402,6 @@ with tab_dash:
                 <div class="kpi-text-block">
                     <div class="kpi-cajon-single-title">AUSENTES</div>
                     <div class="kpi-cajon-single-number">{total_ausentes}</div>
-                    <div class="kpi-cajon-single-subtext">{pct_aus}% Faltas</div>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
@@ -1417,7 +1415,6 @@ with tab_dash:
                 <div class="kpi-text-block">
                     <div class="kpi-cajon-single-title">TARDANZAS</div>
                     <div class="kpi-cajon-single-number">{total_tardanzas}</div>
-                    <div class="kpi-cajon-single-subtext">{prom_tard_str}</div>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
@@ -1431,7 +1428,6 @@ with tab_dash:
                 <div class="kpi-text-block">
                     <div class="kpi-cajon-single-title">EXCESO JORNADA</div>
                     <div class="kpi-cajon-single-number">{exceso_fmt}</div>
-                    <div class="kpi-cajon-single-subtext">Acumulado HH:MM</div>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
@@ -1445,7 +1441,6 @@ with tab_dash:
                 <div class="kpi-text-block">
                     <div class="kpi-cajon-single-title">HORAS EXTRA H.E.</div>
                     <div class="kpi-cajon-single-number">{he_fmt}</div>
-                    <div class="kpi-cajon-single-subtext">H.E. Programadas</div>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
@@ -1459,7 +1454,6 @@ with tab_dash:
                 <div class="kpi-text-block">
                     <div class="kpi-cajon-single-title">INCIDENCIAS</div>
                     <div class="kpi-cajon-single-number">{total_incidencias}</div>
-                    <div class="kpi-cajon-single-subtext">Alertas en marcapuntos</div>
                 </div>
             </div>
             ''', unsafe_allow_html=True)
