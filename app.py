@@ -434,25 +434,30 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* Inputs, Selectbox, Combobox en Sidebar (ILUMINACIÓN DORADA PERMANENTE) */
+    /* Inputs, Selectbox, Date Inputs en Sidebar (UN SOLO CAJÓN CON ILUMINACIÓN DORADA) */
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+
     section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"],
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         background-color: #11131c !important;
         border: 1.5px solid #dfa86a !important;
         border-radius: 8px !important;
-        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45), inset 0 0 4px rgba(223, 168, 106, 0.15) !important;
+        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
         transition: all 0.3s ease !important;
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"]:hover,
     section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"]:focus-within,
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within {
         border-color: #f59e0b !important;
-        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), inset 0 0 6px rgba(245, 158, 11, 0.25) !important;
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
 
     /* Estilos Popover Selector de Cargos con Casillas */
