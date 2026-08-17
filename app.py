@@ -455,7 +455,7 @@ st.markdown("""
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
         border-radius: 8px !important;
-        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        box-shadow: none !important;
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
@@ -468,7 +468,7 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Unico Cajón Dorado Limpio */
+    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Unico Cajón Limpio */
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"],
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div,
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] {
@@ -486,7 +486,7 @@ st.markdown("""
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
         border-radius: 8px !important;
-        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        box-shadow: none !important;
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
@@ -521,7 +521,7 @@ st.markdown("""
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
         border-radius: 8px !important;
-        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        box-shadow: none !important;
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
@@ -534,7 +534,7 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    /* 4. HOVER Y FOCUS IDÉNTICO EN TODOS LOS CAJONES */
+    /* 4. HOVER Y FOCUS: AQUÍ ES DONDE SE ENCIENDE EL BRILLO DORADO AL ACERCAR EL MOUSE */
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
@@ -1274,7 +1274,7 @@ with st.sidebar.popover(titulo_cargos, use_container_width=True):
     st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
     
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"cargo_chk_{cargo_item}")
+        st.checkbox(cargo_item, value=st.session_state.get(f"cargo_chk_{cargo_item}", True), key=f"cargo_chk_{cargo_item}")
 
 # Inicialización de filtros aplicados (SOLO se actualizan tras presionar [🔍 FILTRAR])
 if 'applied_cargos' not in st.session_state or st.session_state['applied_cargos'] is None:
