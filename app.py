@@ -1024,7 +1024,17 @@ def _inject_dashboard_css():
         text-align: center !important;
         font-size: 1.15rem;
     }
-    /* BOTONES DENTRO DE POPOVER SELECTOR DE CARGO */
+    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) CON ALTURA MÁXIMA COMPACTA */
+    [data-testid="stPopoverBody"],
+    [data-testid="stPopoverContent"],
+    div[data-baseweb="popover"] > div {
+        max-height: 260px !important;
+        overflow-y: auto !important;
+        background-color: #0d0f17 !important;
+        border: 1.5px solid #dfa86a !important;
+        border-radius: 10px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
+    }
     [data-testid="stPopoverBody"] button,
     [data-testid="stPopoverContent"] button,
     .stPopover button {
