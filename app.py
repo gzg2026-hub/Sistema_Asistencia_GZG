@@ -1821,48 +1821,6 @@ with tab_dash:
             'FALTA': '#64748b'
         }
 
-        # FILA 2: DONUT CHART Y BAR CHART POR CARGO
-        c_chart1, c_chart2 = st.columns([1, 2])
-        
-        with c_chart1:
-            st.markdown('<div class="section-title">📊 Distribución de Estados de Asistencia</div>', unsafe_allow_html=True)
-            estado_counts = df_asis_db['ESTADO ASISTENCIA'].value_counts().reset_index()
-            estado_counts.columns = ['Estado', 'Cantidad']
-            total_reg = int(estado_counts['Cantidad'].sum())
-            
-            legend_labels = []
-            colors_list = []
-            for _, r in estado_counts.iterrows():
-                est = str(r['Estado'])
-                cnt = int(r['Cantidad'])
-                pct = (cnt / total_reg * 100.0) if total_reg > 0 else 0.0
-                lbl = f"{est}<br><b>{cnt:,}</b> ({pct:.1f}%)"
-                legend_labels.append(lbl)
-                colors_list.append(COLOR_MAP_ESTADOS.get(est, '#3b82f6'))
-
-            fig_donut_est = go.Figure(data=[go.Pie(
-                labels=legend_labels,
-                values=estado_counts['Cantidad'],
-                hole=0.55,
-                marker=dict(colors=colors_list, line=dict(color='#0e1017', width=2)),
-                textinfo='percent',
-                texttemplate='%{percent:.1%}',
-                textfont=dict(color='#ffffff', size=14, family='Segoe UI, sans-serif'),
-                sort=False,
-                direction='clockwise'
-            )])
-
-            fig_donut_est.update_layout(
-                paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
-                font=dict(color='#ffffff', size=14, family='Segoe UI, sans-serif'),
-                showlegend=True,
-                legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center", bgcolor="#090a0f", font=dict(color='#ffffff', size=14, family='Segoe UI, sans-serif')),
-                annotations=[dict(text="<b style='letter-spacing: 2px;'>TOTAL</b>", x=0.5, y=0.56, font=dict(color='#94a3b8', size=11, family='Segoe UI, sans-serif'), showarrow=False),
-                             dict(text=f"<b style='font-size: 26px; color: #ffffff;'>{total_reg:,}</b>", x=0.5, y=0.44, font=dict(color='#ffffff', size=26, family='Segoe UI, sans-serif'), showarrow=False)],
-                margin=dict(t=20, b=90, l=20, r=20), height=460
-            )
-            st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True})
-
         # LOGICA Y CALCULO DE MEDICION DE SOLICITUDES DE HORAS EXTRA Y POR AREAS
         he_total_solicitadas_min = 0
         he_aprobadas_min = 0
