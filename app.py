@@ -906,10 +906,12 @@ if not is_authenticated():
             div[data-testid="stSidebarCollapsedControl"] {
                 display: none !important;
             }
-            [data-testid="stMainBlockContainer"] {
-                max-width: 460px !important;
+            [data-testid="stMainBlockContainer"],
+            div[data-testid="stForm"],
+            .stForm {
+                max-width: 440px !important;
                 margin: 0 auto !important;
-                padding-top: 3.5rem !important;
+                padding-top: 2rem !important;
             }
             /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
             [data-testid="stInputInstructions"],
