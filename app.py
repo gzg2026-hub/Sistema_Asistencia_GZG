@@ -123,6 +123,8 @@ st.markdown("""
     small[data-testid="stInputInstructions"],
     span[data-testid="stInputInstructions"],
     [data-testid="stInputInstructions"],
+    div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+    div[data-testid="stTextInput"] div[data-testid="stInputInstructions"],
     div[data-baseweb="input"] > *:not(input):not(button):not(svg):not(path),
     div[data-baseweb="base-input"] > *:not(input):not(button):not(svg):not(path),
     div[data-baseweb="input"] span,
@@ -135,10 +137,12 @@ st.markdown("""
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
-        height: 0px !important;
-        width: 0px !important;
+        color: transparent !important;
+        -webkit-text-fill-color: transparent !important;
         font-size: 0px !important;
         line-height: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
         margin: 0 !important;
         padding: 0 !important;
         position: absolute !important;
@@ -146,18 +150,6 @@ st.markdown("""
         left: -9999px !important;
         pointer-events: none !important;
     }
-
-    /* OCULTAR LAS INSTRUCCIONES DE 'Press Enter to submit form' / 'Press Enter to apply' EN TODOS LOS CAMPOS */
-    div[data-testid="stInputInstructions"],
-    small[data-testid="stInputInstructions"],
-    span[data-testid="stInputInstructions"],
-    [data-testid="stInputInstructions"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        width: 0 !important;
-        font-size: 0 !important;
         line-height: 0 !important;
         margin: 0 !important;
         padding: 0 !important;
