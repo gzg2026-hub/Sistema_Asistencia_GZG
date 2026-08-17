@@ -1207,6 +1207,13 @@ with st.sidebar.popover(texto_boton, use_container_width=True):
     for cargo_item in opciones_cargos:
         st.checkbox(cargo_item, key=f"chk_c_{cargo_item}")
 
+# RE-EVALUAR CARGOS SELECCIONADOS TRAS INTERACCIÓN CON CHECKBOXES
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_c_{c}", True)]
+if len(selected_cargos_keys) == 0:
+    pending_cargos = ["__NINGUNO__"]
+else:
+    pending_cargos = selected_cargos_keys
+
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
 opciones_trabajadores = ["TODO EL PERSONAL"]
