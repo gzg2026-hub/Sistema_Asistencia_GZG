@@ -945,11 +945,13 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
         
-        u_val = st.text_input("Usuario", value="", placeholder="ej. admin", key="std_user_input")
-        p_val = st.text_input("Contraseña", value="", type="password", key="std_pass_input")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="std_login_btn"):
+        with st.form("login_form", clear_on_submit=False):
+            u_val = st.text_input("Usuario", value="", key="std_user_input")
+            p_val = st.text_input("Contraseña", value="", type="password", key="std_pass_input")
+            st.markdown("<br>", unsafe_allow_html=True)
+            submitted = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+            
+        if submitted:
             if u_val and p_val:
                 if login_user(u_val.strip(), p_val.strip()):
                     login_holder.empty()
