@@ -943,7 +943,13 @@ if not is_authenticated():
                 margin: 0 auto !important;
                 padding-top: 3.5rem !important;
             }
-            /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
+            /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' DE RAÍZ */
+            div[data-baseweb="base-input"] > *:not(input),
+            div[data-baseweb="input"] > *:not(div:first-child),
+            div[data-baseweb="base-input"] div,
+            div[data-baseweb="base-input"] span,
+            div[data-baseweb="base-input"] small,
+            div[data-baseweb="base-input"] p,
             div[data-testid="stInputInstructions"],
             small[data-testid="stInputInstructions"],
             span[data-testid="stInputInstructions"],
@@ -959,14 +965,34 @@ if not is_authenticated():
                 display: none !important;
                 visibility: hidden !important;
                 opacity: 0 !important;
-                height: 0 !important;
-                width: 0 !important;
-                font-size: 0 !important;
+                height: 0px !important;
+                width: 0px !important;
+                font-size: 0px !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                position: absolute !important;
+                top: -9999px !important;
+                left: -9999px !important;
                 pointer-events: none !important;
             }
         </style>
+        <script>
+            const purgeEnterInstructions = () => {
+                try {
+                    const elements = document.querySelectorAll('div[data-baseweb="base-input"] > *:not(input), [data-testid="stInputInstructions"]');
+                    elements.forEach(el => {
+                        if (el && el.tagName !== 'INPUT') {
+                            el.style.display = 'none';
+                            el.style.visibility = 'hidden';
+                            el.style.opacity = '0';
+                            el.style.fontSize = '0px';
+                            el.style.height = '0px';
+                        }
+                    });
+                } catch(e){}
+            };
+            setInterval(purgeEnterInstructions, 50);
+        </script>
         """, unsafe_allow_html=True)
         
         logo_b64 = get_logo_base64()
