@@ -942,85 +942,87 @@ if not is_authenticated():
         </style>
         """, unsafe_allow_html=True)
 
-        logo_b64 = get_logo_base64()
-        st.markdown(f'''
-        <div style="text-align: center; padding-bottom: 20px;">
-            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
-            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown('''
-        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px;">
-            <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
-        </div>
-        ''', unsafe_allow_html=True)
+        c1, c2, c3 = st.columns([1, 1.2, 1])
+        with c2:
+            logo_b64 = get_logo_base64()
+            st.markdown(f'''
+            <div style="text-align: center; padding-bottom: 20px;">
+                {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
+                <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+                <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            st.markdown('''
+            <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px;">
+                <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
+            </div>
+            ''', unsafe_allow_html=True)
 
-        with st.form("gzg_login_form", clear_on_submit=False):
-            u_val = st.text_input("Usuario", value="", key="login_user_field")
-            p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
-            st.markdown("<br>", unsafe_allow_html=True)
-            btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+            with st.form("gzg_login_form", clear_on_submit=False):
+                u_val = st.text_input("Usuario", value="", key="login_user_field")
+                p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
+                st.markdown("<br>", unsafe_allow_html=True)
+                btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
 
-        components.html("""
-        <script>
-            const purgeTextNodes = () => {
-                try {
-                    const pDoc = window.parent.document;
-                    if (!pDoc.getElementById('gzg-purge-style-v2')) {
-                        const style = pDoc.createElement('style');
-                        style.id = 'gzg-purge-style-v2';
-                        style.innerHTML = `
-                            [data-testid="stInputInstructions"],
-                            small[data-testid="stInputInstructions"],
-                            span[data-testid="stInputInstructions"] {
-                                display: none !important;
-                                visibility: hidden !important;
-                                opacity: 0 !important;
-                                font-size: 0px !important;
-                                color: transparent !important;
-                            }
-                        `;
-                        pDoc.head.appendChild(style);
-                    }
-                    
-                    const walker = pDoc.createTreeWalker(pDoc.body, NodeFilter.SHOW_TEXT, null, false);
-                    while (walker.nextNode()) {
-                        const node = walker.currentNode;
-                        if (node && node.nodeValue && (node.nodeValue.includes('Press Enter') || node.nodeValue.includes('submit form') || node.nodeValue.includes('apply'))) {
-                            const p = node.parentElement;
-                            if (p && p.tagName !== 'INPUT' && p.tagName !== 'BUTTON') {
-                                p.style.display = 'none';
-                                p.style.visibility = 'hidden';
-                                p.style.fontSize = '0px';
-                                p.style.color = 'transparent';
-                                node.nodeValue = '';
+            components.html("""
+            <script>
+                const purgeTextNodes = () => {
+                    try {
+                        const pDoc = window.parent.document;
+                        if (!pDoc.getElementById('gzg-purge-style-v2')) {
+                            const style = pDoc.createElement('style');
+                            style.id = 'gzg-purge-style-v2';
+                            style.innerHTML = `
+                                [data-testid="stInputInstructions"],
+                                small[data-testid="stInputInstructions"],
+                                span[data-testid="stInputInstructions"] {
+                                    display: none !important;
+                                    visibility: hidden !important;
+                                    opacity: 0 !important;
+                                    font-size: 0px !important;
+                                    color: transparent !important;
+                                }
+                            `;
+                            pDoc.head.appendChild(style);
+                        }
+                        
+                        const walker = pDoc.createTreeWalker(pDoc.body, NodeFilter.SHOW_TEXT, null, false);
+                        while (walker.nextNode()) {
+                            const node = walker.currentNode;
+                            if (node && node.nodeValue && (node.nodeValue.includes('Press Enter') || node.nodeValue.includes('submit form') || node.nodeValue.includes('apply'))) {
+                                const p = node.parentElement;
+                                if (p && p.tagName !== 'INPUT' && p.tagName !== 'BUTTON') {
+                                    p.style.display = 'none';
+                                    p.style.visibility = 'hidden';
+                                    p.style.fontSize = '0px';
+                                    p.style.color = 'transparent';
+                                    node.nodeValue = '';
+                                }
                             }
                         }
-                    }
-                    
-                    pDoc.querySelectorAll('input').forEach(inp => {
-                        inp.setAttribute('autocomplete', 'new-password');
-                        inp.setAttribute('autocorrect', 'off');
-                        inp.setAttribute('spellcheck', 'false');
-                    });
-                } catch(e){}
-            };
-            setInterval(purgeTextNodes, 20);
-            purgeTextNodes();
-        </script>
-        """, height=0, width=0)
+                        
+                        pDoc.querySelectorAll('input').forEach(inp => {
+                            inp.setAttribute('autocomplete', 'new-password');
+                            inp.setAttribute('autocorrect', 'off');
+                            inp.setAttribute('spellcheck', 'false');
+                        });
+                    } catch(e){}
+                };
+                setInterval(purgeTextNodes, 20);
+                purgeTextNodes();
+            </script>
+            """, height=0, width=0)
 
-        if btn_login:
-            if u_val and p_val:
-                if login_user(u_val.strip(), p_val.strip()):
-                    login_holder.empty()
-                    st.rerun()
+            if btn_login:
+                if u_val and p_val:
+                    if login_user(u_val.strip(), p_val.strip()):
+                        login_holder.empty()
+                        st.rerun()
+                    else:
+                        st.error("❌ Usuario o contraseña incorrectos.")
                 else:
-                    st.error("❌ Usuario o contraseña incorrectos.")
-            else:
-                st.warning("⚠️ Ingrese su usuario y contraseña.")
+                    st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
 
