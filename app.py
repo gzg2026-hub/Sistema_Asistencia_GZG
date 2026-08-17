@@ -471,9 +471,32 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox Tradicional Desplegable) - Exactamente Idéntico */
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"],
-    section[data-testid="stSidebar"] .stSelectbox {
+    /* 2. CAJÓN SELECTOR DE TRABAJADOR Y SELECTBOXES */
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] label,
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] label p {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 4px !important;
+        padding: 0 !important;
+        display: block !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -490,31 +513,13 @@ st.markdown("""
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] span,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"],
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] * {
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div * {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
-        box-shadow: none !important;
         color: #ffffff !important;
         font-weight: 700 !important;
         font-size: 0.95rem !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
-        padding: 0 !important;
-        margin: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        width: 100% !important;
-        height: 100% !important;
     }
     section[data-testid="stSidebar"] [data-testid="stSelectbox"] [role="combobox"] {
         padding: 0 !important;
@@ -572,49 +577,6 @@ st.markdown("""
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
         background-color: #11131c !important;
         background: #11131c !important;
-    }
-
-    /* 3. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-    }
-    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-testid="stTextInput"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="input"] {
-        background-color: #11131c !important;
-        background: #11131c !important;
-        border: 1.5px solid #dfa86a !important;
-        border-radius: 8px !important;
-        box-shadow: none !important;
-        height: 42px !important;
-        min-height: 42px !important;
-        max-height: 42px !important;
-        padding: 0 12px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        transition: all 0.3s ease !important;
-    }
-
-    /* 4. HOVER Y FOCUS: AQUÍ ES DONDE SE ENCIENDE EL BRILLO DORADO AL ACERCAR EL MOUSE */
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus,
-    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div:hover,
-    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"]:hover,
-    section[data-testid="stSidebar"] div[data-testid="stTextInput"] div[data-baseweb="input"]:hover {
-        border-color: #f59e0b !important;
-        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
 
     /* Estilos Popover Selector de Cargos con Casillas */
