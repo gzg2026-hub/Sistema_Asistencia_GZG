@@ -922,89 +922,47 @@ if not is_authenticated():
     with login_holder.container():
         st.markdown("""
         <style>
-            /* Ocultar barra lateral por completo en pantalla de login */
+            /* Ocultar barra lateral en pantalla de login */
             section[data-testid="stSidebar"],
             div[data-testid="stSidebarCollapsedControl"] {
                 display: none !important;
-                visibility: hidden !important;
-                width: 0 !important;
             }
             [data-testid="stMainBlockContainer"] {
-                max-width: 500px !important;
+                max-width: 480px !important;
                 margin: 0 auto !important;
-                padding-top: 3rem !important;
-            }
-            /* Ocultar modales emergentes de Streamlit */
-            div[data-testid="stDialog"], div[role="dialog"], .stDialog {
-                display: none !important;
-            }
-            /* Ocultar botones e iconos de autocompletado nativos de Chrome */
-            ::-webkit-contacts-auto-fill-button,
-            ::-webkit-credentials-auto-fill-button {
-                visibility: hidden !important;
-                display: none !important;
-                pointer-events: none !important;
-                position: absolute !important;
-                right: -9999px !important;
-            }
-            /* Mascara de puntos negros para ocultar clave */
-            .no-autofill-mask input {
-                -webkit-text-security: disc !important;
-                text-security: disc !important;
-                -moz-text-security: disc !important;
+                padding-top: 3.5rem !important;
             }
         </style>
-        <script>
-            // Erradicar 100% popups de contraseñas y globos de historial de Chrome
-            setInterval(function() {
-                var inps = document.querySelectorAll('input');
-                inps.forEach(function(el) {
-                    var r = Math.random().toString(36).substring(7);
-                    el.setAttribute('autocomplete', 'no-autofill-' + r);
-                    el.setAttribute('autocorrect', 'off');
-                    el.setAttribute('autocapitalize', 'off');
-                    el.setAttribute('spellcheck', 'false');
-                    el.setAttribute('aria-autocomplete', 'none');
-                    el.setAttribute('data-lpignore', 'true');
-                    el.setAttribute('data-form-type', 'other');
-                    el.setAttribute('role', 'presentation');
-                    el.setAttribute('name', 'field_' + r);
-                });
-            }, 30);
-        </script>
         """, unsafe_allow_html=True)
         
         logo_b64 = get_logo_base64()
         st.markdown(f'''
-        <div style="text-align: center; padding-bottom: 15px;">
-            {f'<img src="data:image/png;base64,{logo_b64}" style="height:85px; margin-bottom:8px;"><br>' if logo_b64 else ''}
-            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-            <p style="color:#94a3b8; font-size:0.9rem; margin-top:4px;">Sistema de Control de Asistencia y Aprobación de Horas Extra</p>
+        <div style="text-align: center; padding-bottom: 20px;">
+            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
+            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
         </div>
         ''', unsafe_allow_html=True)
         
         st.markdown('''
-        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px 25px 15px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔑 Acceso al Sistema</h3>
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 22px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px;">
+            <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
         </div>
         ''', unsafe_allow_html=True)
         
-        u_val = st.text_input("Usuario Acceso", value="", placeholder="ej. admin", key="usr_input_login_clean")
-        
-        st.markdown('<div class="no-autofill-mask">', unsafe_allow_html=True)
-        p_val = st.text_input("Código de Acceso", value="", type="default", key="pwd_input_login_clean")
-        st.markdown('</div>', unsafe_allow_html=True)
+        u_val = st.text_input("Usuario", value="", placeholder="ej. admin", key="std_user_input")
+        p_val = st.text_input("Contraseña", value="", type="password", key="std_pass_input")
         
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_clean_v4"):
+        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="std_login_btn"):
             if u_val and p_val:
                 if login_user(u_val.strip(), p_val.strip()):
                     login_holder.empty()
                     st.rerun()
                 else:
-                    st.error("❌ Usuario o código de acceso incorrectos.")
+                    st.error("❌ Usuario o contraseña incorrectos.")
             else:
-                st.warning("⚠️ Ingrese su usuario y código de acceso.")
+                st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 
 current_user = get_current_user()
