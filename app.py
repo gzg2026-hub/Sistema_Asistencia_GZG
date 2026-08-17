@@ -2013,17 +2013,31 @@ with tab_dash:
                 st.plotly_chart(fig_top5, use_container_width=True, config={'responsive': True}, key="dash_chart_top5_cargos")
 
         with c_tr2:
-            st.markdown('<div class="section-title">🎯 Solicitudes de Horas Extra por Área y Estado</div>', unsafe_allow_html=True)
-            if not df_he_db.empty and ('ÁREA' in df_he_db.columns or 'AREA' in df_he_db.columns):
-                col_area_he = 'ÁREA' if 'ÁREA' in df_he_db.columns else 'AREA'
-                col_est_he = 'ESTADO' if 'ESTADO' in df_he_db.columns else ('ESTADO_SOLICITUD' if 'ESTADO_SOLICITUD' in df_he_db.columns else None)
+            st.markdown('<div class="section-title">🎯 Solicitudes de Horas Extra por Cargo y Estado</div>', unsafe_allow_html=True)
+            if not df_he_db.empty:
+                df_he_cargo = df_he_db.copy()
+                if 'CARGO' not in df_he_cargo.columns and not df_trab_db.empty and 'DNI' in df_trab_db.columns and 'CARGO' in df_trab_db.columns:
+                    df_trab_map = df_trab_db[['DNI', 'CARGO']].drop_duplicates(subset=['DNI'])
+                    df_he_cargo['DNI_STR'] = df_he_cargo['DNI'].astype(str).str.strip()
+                    df_trab_map['DNI_STR'] = df_trab_map['DNI'].astype(str).str.strip()
+                    df_he_cargo = df_he_cargo.merge(df_trab_map[['DNI_STR', 'CARGO']], on='DNI_STR', how='left')
+
+                col_cargo_he = 'CARGO' if 'CARGO' in df_he_cargo.columns else ('DNI' if 'DNI' in df_he_cargo.columns else df_he_cargo.columns[0])
+                col_est_he = 'ESTADO' if 'ESTADO' in df_he_cargo.columns else ('ESTADO_SOLICITUD' if 'ESTADO_SOLICITUD' in df_he_cargo.columns else None)
                 
-                df_he_area = df_he_db.copy()
                 if not col_est_he:
-                    df_he_area['ESTADO_CALC'] = 'APROBADO'
+                    df_he_cargo['ESTADO_CALC'] = 'APROBADO'
                     col_est_he = 'ESTADO_CALC'
 
-                df_he_grouped = df_he_area.groupby([col_area_he, col_est_he]).size().reset_index(name='Cantidad_Solicitudes')
+                # Rellenar valores nulos de cargo si existieran
+                df_he_cargo[col_cargo_he] = df_he_cargo[col_cargo_he].fillna('SIN CARGO').astype(str).str.strip()
+
+                df_he_grouped = df_he_cargo.groupby([col_cargo_he, col_est_he]).size().reset_index(name='Cantidad_Solicitudes')
+                
+                # Ordenar por total de solicitudes acumuladas por cargo
+                top_cargos_order = df_he_grouped.groupby(col_cargo_he)['Cantidad_Solicitudes'].sum().sort_values(ascending=True).index
+                df_he_grouped[col_cargo_he] = pd.Categorical(df_he_grouped[col_cargo_he], categories=top_cargos_order, ordered=True)
+                df_he_grouped = df_he_grouped.sort_values(by=[col_cargo_he])
 
                 color_map_he_status = {
                     'APROBADO': '#22c55e',
@@ -2034,7 +2048,7 @@ with tab_dash:
                 }
 
                 fig_he_bar = px.bar(
-                    df_he_grouped, y=col_area_he, x='Cantidad_Solicitudes', color=col_est_he,
+                    df_he_grouped, y=col_cargo_he, x='Cantidad_Solicitudes', color=col_est_he,
                     orientation='h', barmode='stack', text='Cantidad_Solicitudes',
                     color_discrete_map=color_map_he_status, height=380
                 )
@@ -2043,13 +2057,13 @@ with tab_dash:
                     paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
                     font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
                     xaxis=dict(title='N° de Solicitudes H.E.', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
-                    yaxis=dict(title='Área', showgrid=False, tickfont=dict(color='#ffffff')),
+                    yaxis=dict(title='Cargo', showgrid=False, tickfont=dict(color='#ffffff')),
                     legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center", bgcolor="#090a0f"),
                     margin=dict(t=20, b=60, l=10, r=10)
                 )
-                st.plotly_chart(fig_he_bar, use_container_width=True, config={'responsive': True}, key="dash_chart_he_area_status")
+                st.plotly_chart(fig_he_bar, use_container_width=True, config={'responsive': True}, key="dash_chart_he_cargo_status")
             else:
-                st.info("Sin registros de Solicitudes de Horas Extra por área.")
+                st.info("Sin registros de Solicitudes de Horas Extra por cargo.")
 
 
 
