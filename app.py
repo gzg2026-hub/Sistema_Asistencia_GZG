@@ -28,9 +28,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Inicializar Base de Datos y Autenticación RBAC
-init_db()
-init_auth()
+# Inicialización diferida - se ejecuta solo una vez vía cache
 
 def get_logo_base64(logo_path="assets/gzg_logo_transparent.png"):
     """Convierte el logo corporativo transparente de GZG a Base64 para incrustar en HTML."""
@@ -1123,15 +1121,23 @@ if not is_authenticated():
     </div>
     ''', unsafe_allow_html=True)
 
-    with st.form("gzg_login_form", clear_on_submit=False):
-        u_val = st.text_input("Usuario", value="", key="login_u_k")
-        p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k")
+    # Formulario de login con soporte Enter key
+    with st.form("gzg_login_form", clear_on_submit=False, enter_to_submit=True):
+        u_val = st.text_input("Usuario", value="", key="login_u_k",
+                              placeholder="Ingrese su usuario...")
+        p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k",
+                              placeholder="Ingrese su contraseña...",
+                              autocomplete="current-password")
         st.markdown("<br>", unsafe_allow_html=True)
-        btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+        btn_login = st.form_submit_button(
+            "🚀 INGRESAR AL SISTEMA",
+            use_container_width=True,
+            type="primary"
+        )
 
     if btn_login:
-        u_s = str(u_val or st.session_state.get("login_u_k", "")).strip()
-        p_s = str(p_val or st.session_state.get("login_p_k", "")).strip()
+        u_s = u_val.strip() if u_val else ""
+        p_s = p_val.strip() if p_val else ""
         if u_s and p_s:
             if login_user(u_s, p_s):
                 st.session_state['authenticated'] = True
