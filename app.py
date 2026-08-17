@@ -922,7 +922,7 @@ if not is_authenticated():
     with login_holder.container():
         st.markdown("""
         <style>
-            /* Ocultar barra lateral en pantalla de login */
+            /* Ocultar barra lateral por completo en pantalla de login */
             section[data-testid="stSidebar"],
             div[data-testid="stSidebarCollapsedControl"] {
                 display: none !important;
@@ -938,7 +938,16 @@ if not is_authenticated():
             div[data-testid="stDialog"], div[role="dialog"], .stDialog {
                 display: none !important;
             }
-            /* Mascara de puntos negros sin activar sugerencias de Chrome */
+            /* Ocultar botones e iconos de autocompletado nativos de Chrome */
+            ::-webkit-contacts-auto-fill-button,
+            ::-webkit-credentials-auto-fill-button {
+                visibility: hidden !important;
+                display: none !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                right: -9999px !important;
+            }
+            /* Mascara de puntos negros para ocultar clave */
             .no-autofill-mask input {
                 -webkit-text-security: disc !important;
                 text-security: disc !important;
@@ -946,7 +955,7 @@ if not is_authenticated():
             }
         </style>
         <script>
-            // Bloquear activamente la sugerencia flotante y autocompletado de Chrome
+            // Erradicar 100% popups de contraseñas y globos de historial de Chrome
             setInterval(function() {
                 var inps = document.querySelectorAll('input');
                 inps.forEach(function(el) {
@@ -954,10 +963,12 @@ if not is_authenticated():
                     el.setAttribute('autocorrect', 'off');
                     el.setAttribute('autocapitalize', 'off');
                     el.setAttribute('spellcheck', 'false');
+                    el.setAttribute('aria-autocomplete', 'none');
                     el.setAttribute('data-lpignore', 'true');
-                    el.setAttribute('name', 'no_autofill_field');
+                    el.setAttribute('data-form-type', 'other');
+                    el.setAttribute('role', 'search');
                 });
-            }, 50);
+            }, 30);
         </script>
         """, unsafe_allow_html=True)
         
