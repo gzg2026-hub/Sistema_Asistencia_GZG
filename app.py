@@ -1116,7 +1116,43 @@ if current_user:
         st.toast("👋 Sesión cerrada correctamente")
         st.rerun()
 
-# 1. CARGA DE TRANSACCIONES HIKVISION
+# 1. SELECTOR DE PERSONAL (FILTRO POR CARGO Y TRABAJADOR)
+st.sidebar.markdown("---")
+st.sidebar.subheader("👤 Selector de Personal")
+
+opciones_cargos = ["TODOS LOS CARGOS"]
+if not df_trab_master_db.empty and 'CARGO' in df_trab_master_db.columns:
+    cargos_raw = df_trab_master_db['CARGO'].dropna().unique()
+    cargos_clean = sorted([str(c).strip() for c in cargos_raw if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']])
+    opciones_cargos += cargos_clean
+
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo</p>", unsafe_allow_html=True)
+cargo_seleccionado = st.sidebar.selectbox("Filtrar por Cargo", opciones_cargos, label_visibility="collapsed")
+
+# Filtrar trabajadores según el cargo seleccionado
+df_trab_opciones = df_trab_master_db.copy()
+if cargo_seleccionado != "TODOS LOS CARGOS" and not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
+    df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+
+opciones_trabajadores = ["TODO EL PERSONAL"]
+worker_options_map = {"TODO EL PERSONAL": "TODOS"}
+
+if not df_trab_opciones.empty:
+    for _, r in df_trab_opciones.iterrows():
+        dni = str(r.get('DNI', '')).strip()
+        ape = str(r.get('APELLIDOS', '')).strip()
+        nom = str(r.get('NOMBRES', '')).strip()
+        if dni and (ape or nom):
+            disp = f"{dni} - {ape} {nom}".strip()
+            worker_options_map[disp] = dni
+            opciones_trabajadores.append(disp)
+
+opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
+
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
+trabajador_seleccionado = st.sidebar.selectbox("Filtrar por Trabajador", opciones_trabajadores, label_visibility="collapsed")
+
+# 2. CARGA DE TRANSACCIONES HIKVISION
 st.sidebar.markdown("---")
 st.sidebar.subheader("📂 Carga de Transacciones Hikvision")
 asistencia_folder = st.sidebar.text_input("Ruta Carpeta 'Asistencia GZG'", DEFAULT_ASISTENCIA_DIR)
@@ -1211,6 +1247,37 @@ if btn_procesar:
 
 # CARGAR DATOS COMPLETOS DE LA BASE DE DATOS
 df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db()
+
+# APLICAR FILTRO POR TRABAJADOR O CARGO
+if trabajador_seleccionado in worker_options_map and worker_options_map[trabajador_seleccionado] != "TODOS":
+    selected_dni = worker_options_map[trabajador_seleccionado]
+    if not df_trab_db.empty and 'DNI' in df_trab_db.columns:
+        df_trab_db = df_trab_db[df_trab_db['DNI'].astype(str).str.strip() == selected_dni]
+    if not df_asis_db.empty and 'DNI' in df_asis_db.columns:
+        df_asis_db = df_asis_db[df_asis_db['DNI'].astype(str).str.strip() == selected_dni]
+    if not df_inc_db.empty and 'DNI' in df_inc_db.columns:
+        df_inc_db = df_inc_db[df_inc_db['DNI'].astype(str).str.strip() == selected_dni]
+    if not df_he_db.empty and 'DNI' in df_he_db.columns:
+        df_he_db = df_he_db[df_he_db['DNI'].astype(str).str.strip() == selected_dni]
+    if not df_marc_db.empty:
+        col_dni = 'ID' if 'ID' in df_marc_db.columns else ('DNI' if 'DNI' in df_marc_db.columns else None)
+        if col_dni:
+            df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip() == selected_dni]
+
+elif cargo_seleccionado != "TODOS LOS CARGOS":
+    if not df_trab_db.empty and 'CARGO' in df_trab_db.columns:
+        df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+    if not df_asis_db.empty and 'CARGO' in df_asis_db.columns:
+        df_asis_db = df_asis_db[df_asis_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+    if not df_inc_db.empty and 'CARGO' in df_inc_db.columns:
+        df_inc_db = df_inc_db[df_inc_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+    if not df_he_db.empty and 'CARGO' in df_he_db.columns:
+        df_he_db = df_he_db[df_he_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+    if not df_marc_db.empty and not df_trab_db.empty:
+        valid_dnis = set(df_trab_db['DNI'].astype(str).str.strip())
+        col_dni = 'ID' if 'ID' in df_marc_db.columns else ('DNI' if 'DNI' in df_marc_db.columns else None)
+        if col_dni:
+            df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip().isin(valid_dnis)]
 
 # APLICACIÓN DE RESTRICCIÓN POR ÁREA ASIGNADA AL USUARIO (RBAC)
 if current_user and current_user.get('area_asignada', 'TODAS') != 'TODAS' and current_user['rol'] == 'JEFE_SUPERVISOR':
