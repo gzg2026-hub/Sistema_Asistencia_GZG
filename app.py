@@ -1024,10 +1024,10 @@ def _inject_dashboard_css():
         text-align: center !important;
         font-size: 1.15rem;
     }
-    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) ALINEADO EXACTAMENTE CON LOS CAJONES SUPERIORES */
+    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) LIMITADO AL ANCHO COMPACTO DE LA BARRA LATERAL (320px) */
     div[data-baseweb="popover"] {
-        width: 100% !important;
-        max-width: 100% !important;
+        width: 320px !important;
+        max-width: 320px !important;
         box-sizing: border-box !important;
     }
     [data-testid="stPopoverBody"],
@@ -1039,9 +1039,8 @@ def _inject_dashboard_css():
         border: 1.5px solid #dfa86a !important;
         border-radius: 10px !important;
         box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: 100% !important;
+        width: 320px !important;
+        max-width: 320px !important;
         box-sizing: border-box !important;
     }
     /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) - FUENTE MÁS PEQUEÑA (0.76rem) Y TEXTO ALINEADO A LA IZQUIERDA */
