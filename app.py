@@ -1078,8 +1078,22 @@ if not is_authenticated():
         [data-testid="stMainBlockContainer"]{
             max-width:460px!important;margin:0 auto!important;padding-top:2.5rem!important;
         }
-        [data-testid="stInputInstructions"]{display:none!important;}
-        small[data-testid="stInputInstructions"]{display:none!important;}
+        /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' */
+        [data-testid="stInputInstructions"],
+        [data-testid="InputInstructions"],
+        .stInputInstructions,
+        div[data-testid="stForm"] small,
+        div[data-testid="stTextInput"] small,
+        div[data-baseweb="input"] small {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            height: 0px !important;
+            width: 0px !important;
+            overflow: hidden !important;
+            font-size: 0px !important;
+            line-height: 0 !important;
+        }
         div[data-testid="stForm"]{
             background:#0d0f17;border:1px solid #1c1e29;
             border-radius:12px;padding:24px;
@@ -1091,14 +1105,38 @@ if not is_authenticated():
             border:none!important;border-radius:8px!important;
             height:46px!important;font-size:1rem!important;
         }
-        div[data-testid="stTextInput"] label{color:#94a3b8!important;font-size:.9rem!important;}
-        div[data-testid="stTextInput"] input{
-            background:#11131c!important;color:#fff!important;
-            border:1.5px solid #2a2d3e!important;border-radius:8px!important;
+        div[data-testid="stTextInput"] label{color:#94a3b8!important;font-size:.9rem!important;margin-bottom:4px!important;}
+        
+        /* UN SOLO CAJÓN LIMPIO Y UNIFICADO PARA ENTRADAS DE TEXTO EN LOGIN */
+        div[data-testid="stTextInput"] > div[data-baseweb="input"] {
+            background-color: #11131c !important;
+            background: #11131c !important;
+            border: 1.5px solid #2a2d3e !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            outline: none !important;
+            padding: 0 4px !important;
+            transition: all 0.2s ease !important;
         }
-        div[data-testid="stTextInput"] input:focus{
-            border-color:#dfa86a!important;
-            box-shadow:0 0 0 2px rgba(223,168,106,.25)!important;
+        div[data-testid="stTextInput"] > div[data-baseweb="input"]:focus-within,
+        div[data-testid="stTextInput"] > div[data-baseweb="input"]:hover {
+            border-color: #dfa86a !important;
+            box-shadow: 0 0 12px rgba(223, 168, 106, 0.5) !important;
+        }
+        div[data-testid="stTextInput"] input {
+            background: transparent !important;
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border: none !important;
+            border-width: 0px !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+        div[data-testid="stTextInput"] input:focus {
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
         }
     </style>
     """, unsafe_allow_html=True)
