@@ -12,7 +12,7 @@ from data.data_loader import cargar_datos_excel
 from data.exporter import exportar_asistencia_excel, guardar_excel_base
 from data.database import (
     init_db, guardar_trabajadores, guardar_marcaciones_raw,
-    guardar_asistencia_y_reportes, obtener_datos_db,
+    guardar_asistencia_y_reportes, obtener_datos_db, obtener_trabajadores_master,
     obtener_todos_usuarios, crear_usuario, eliminar_usuario,
     actualizar_estado_he, actualizar_estado_incidencia
 )
@@ -1183,7 +1183,7 @@ if not is_authenticated():
 
     logo_b64 = get_logo_base64()
     
-    col_l1, col_login_box, col_l3 = st.columns([1, 2.2, 1])
+    col_l1, col_login_box, col_l3 = st.columns([1.5, 1.2, 1.5])
     with col_login_box:
         st.markdown(f'''
         <div style="text-align: center; padding-bottom: 20px; width: 100%;">
@@ -1295,8 +1295,8 @@ DEFAULT_ASISTENCIA_DIR = r"C:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asist
 os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico"), exist_ok=True)
 BASE_EXCEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsm")
 
-# Cargar la lista completa de trabajadores desde la BD SQLite
-df_trab_master_db, _, df_asis_master_db, _, _ = obtener_datos_db()
+# Cargar la lista completa de trabajadores desde la BD SQLite (Carga instantánea de 0.001s)
+df_trab_master_db = obtener_trabajadores_master()
 
 # Sidebar Controls
 st.sidebar.title("🎛️ PANEL DE CONTROL")

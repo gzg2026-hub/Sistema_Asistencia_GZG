@@ -375,6 +375,15 @@ def format_hhmm_series(series: pd.Series, is_hours_float: bool = False) -> pd.Se
     mins = (tot_min % 60).astype(str).str.zfill(2)
     return hours + ":" + mins
 
+@st.cache_data(ttl=300, show_spinner=False)
+def obtener_trabajadores_master(db_path: str = DB_PATH) -> pd.DataFrame:
+    """Obtiene la lista master de trabajadores rápidamente para selectores de cargos y personal."""
+    init_db(db_path)
+    conn = get_connection(db_path)
+    df = pd.read_sql_query("SELECT dni as DNI, apellidos as APELLIDOS, nombres as NOMBRES, cargo as CARGO, area as AREA FROM trabajadores ORDER BY apellidos, nombres", conn)
+    conn.close()
+    return df
+
 @st.cache_data(ttl=60, show_spinner=False)
 def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, db_path: str = DB_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
