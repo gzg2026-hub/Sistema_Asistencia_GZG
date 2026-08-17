@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import os
+import streamlit as st
 from typing import Tuple, Dict, Any, Optional
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "asistencia.db")
@@ -360,6 +361,20 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
+@st.cache_data(ttl=300, show_spinner=False)
+def obtener_cargos_unicos_db(db_path: str = DB_PATH) -> list:
+    """Obtiene la lista única de cargos de trabajadores en milisegundos."""
+    conn = get_connection(db_path)
+    try:
+        df = pd.read_sql_query("SELECT DISTINCT cargo FROM trabajadores WHERE cargo IS NOT NULL AND cargo != ''", conn)
+        cargos = [str(c).strip() for c in df['cargo'].tolist() if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']]
+        return sorted(list(set(cargos)))
+    except Exception:
+        return []
+    finally:
+        conn.close()
+
+@st.cache_data(ttl=120, show_spinner=False)
 def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, db_path: str = DB_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Obtiene DataFrames acumulados desde la base de datos:

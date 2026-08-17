@@ -11,7 +11,7 @@ from data.data_loader import cargar_datos_excel
 from data.exporter import exportar_asistencia_excel, guardar_excel_base
 from data.database import (
     init_db, guardar_trabajadores, guardar_marcaciones_raw,
-    guardar_asistencia_y_reportes, obtener_datos_db,
+    guardar_asistencia_y_reportes, obtener_datos_db, obtener_cargos_unicos_db,
     obtener_todos_usuarios, crear_usuario, eliminar_usuario,
     actualizar_estado_he, actualizar_estado_incidencia
 )
@@ -1006,18 +1006,9 @@ DEFAULT_ASISTENCIA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__))
 os.makedirs(DEFAULT_ASISTENCIA_DIR, exist_ok=True)
 BASE_EXCEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsm")
 
-# Cargar la lista completa de trabajadores desde la BD SQLite
-df_trab_master_db, _, df_asis_master_db, _, _ = obtener_datos_db()
-
+# Cargar la lista de cargos desde la BD SQLite de forma instantánea
+opciones_cargos = obtener_cargos_unicos_db()
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
-opciones_cargos = []
-
-if not df_trab_master_db.empty:
-    col_c_master = 'CARGO' if 'CARGO' in df_trab_master_db.columns else None
-    if col_c_master:
-        cargos_raw = df_trab_master_db[col_c_master].dropna().unique()
-        cargos_clean = [str(c).strip() for c in cargos_raw if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']]
-        opciones_cargos = sorted(list(set(cargos_clean)))
 
 # INICIALIZACIÓN DE SESSION STATE PARA BÚSQUEDA Y DASHBOARD
 if 'active_cargos' not in st.session_state or not st.session_state['active_cargos']:
