@@ -1118,20 +1118,16 @@ if not is_authenticated():
         ''', unsafe_allow_html=True)
 
         with st.form("gzg_login_form", clear_on_submit=False):
-            u_val = st.text_input("Usuario", value="", key="login_user_field")
-            p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
+            u_val = st.text_input("Usuario", value="")
+            p_val = st.text_input("Contraseña", value="", type="password")
             st.markdown("<br>", unsafe_allow_html=True)
             btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
 
-        u_s = str(st.session_state.get("login_user_field", "") or u_val or "").strip()
-        p_s = str(st.session_state.get("login_pass_field", "") or p_val or "").strip()
-
         if btn_login:
+            u_s = str(u_val or "").strip()
+            p_s = str(p_val or "").strip()
             if u_s and p_s:
                 if login_user(u_s, p_s):
-                    for k in list(st.session_state.keys()):
-                        if str(k).startswith("cargo_chk_"):
-                            st.session_state[k] = True
                     login_holder.empty()
                     st.rerun()
                 else:
@@ -1225,10 +1221,6 @@ if current_user:
 
     def cb_logout():
         logout_user()
-        for k in list(st.session_state.keys()):
-            del st.session_state[k]
-        st.session_state['authenticated'] = False
-        st.session_state['user'] = None
 
     st.sidebar.button("🔴 CERRAR SESIÓN", use_container_width=True, key="btn_logout_user", on_click=cb_logout)
 
