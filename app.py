@@ -946,13 +946,16 @@ if not is_authenticated():
             }
         </style>
         <script>
-            // Forzar desactivacion de autocompletado y menues flotantes de contraseñas en Chrome
+            // Bloquear activamente la sugerencia flotante y autocompletado de Chrome
             setInterval(function() {
                 var inps = document.querySelectorAll('input');
                 inps.forEach(function(el) {
-                    el.setAttribute('autocomplete', 'one-time-code');
-                    el.setAttribute('aria-autocomplete', 'none');
+                    el.setAttribute('autocomplete', 'off');
+                    el.setAttribute('autocorrect', 'off');
+                    el.setAttribute('autocapitalize', 'off');
+                    el.setAttribute('spellcheck', 'false');
                     el.setAttribute('data-lpignore', 'true');
+                    el.setAttribute('name', 'no_autofill_field');
                 });
             }, 50);
         </script>
@@ -974,10 +977,7 @@ if not is_authenticated():
         ''', unsafe_allow_html=True)
         
         u_val = st.text_input("Usuario", value="", placeholder="ej. raul.espinoza", key="login_u_field")
-        
-        st.markdown('<div class="no-autofill-mask">', unsafe_allow_html=True)
-        p_val = st.text_input("Código de Acceso", value="", type="default", key="login_p_field")
-        st.markdown('</div>', unsafe_allow_html=True)
+        p_val = st.text_input("Código de Acceso", value="", type="password", key="login_p_field")
         
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_clean"):
