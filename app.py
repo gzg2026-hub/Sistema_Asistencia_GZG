@@ -1248,41 +1248,19 @@ if not df_trab_opciones.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
-# Inicialización de estado de filtros activos
-if 'active_cargos' not in st.session_state or not st.session_state['active_cargos']:
-    st.session_state['active_cargos'] = opciones_cargos
-if 'active_worker' not in st.session_state:
-    st.session_state['active_worker'] = "TODO EL PERSONAL"
-if 'active_f_ini' not in st.session_state:
-    st.session_state['active_f_ini'] = date(2026, 8, 1)
-if 'active_f_fin' not in st.session_state:
-    st.session_state['active_f_fin'] = date(2026, 8, 11)
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
+trabajador_seleccionado = st.sidebar.selectbox("Filtrar por Trabajador", opciones_trabajadores, key="sidebar_worker_select", label_visibility="collapsed")
 
-# Formulario de consulta con botón FILTRAR
-with st.sidebar.form(key="consulta_filter_form"):
-    curr_idx = 0
-    if st.session_state['active_worker'] in opciones_trabajadores:
-        curr_idx = opciones_trabajadores.index(st.session_state['active_worker'])
-    
-    st.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
-    trabajador_input = st.selectbox("Filtrar por Trabajador", opciones_trabajadores, index=curr_idx, label_visibility="collapsed")
+st.sidebar.markdown("---")
+st.sidebar.subheader("📅 Consulta por Rango de Fechas")
+col_d1, col_d2 = st.sidebar.columns(2)
+with col_d1:
+    fecha_inicio_sel = st.date_input("Fecha Inicio", value=date(2026, 8, 1), key="sidebar_f_ini")
+with col_d2:
+    fecha_fin_sel = st.date_input("Fecha Fin", value=date(2026, 8, 11), key="sidebar_f_fin")
 
-    st.markdown("---")
-    st.subheader("📅 Consulta por Rango de Fechas")
-    col_d1, col_d2 = st.columns(2)
-    with col_d1:
-        fecha_inicio_input = st.date_input("Fecha Inicio", value=st.session_state['active_f_ini'])
-    with col_d2:
-        fecha_fin_input = st.date_input("Fecha Fin", value=st.session_state['active_f_fin'])
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    btn_filtrar = st.form_submit_button("🔍 FILTRAR", use_container_width=True)
-
-if btn_filtrar:
-    st.session_state['active_cargos'] = cargos_seleccionados
-    st.session_state['active_worker'] = trabajador_input
-    st.session_state['active_f_ini'] = fecha_inicio_input
-    st.session_state['active_f_fin'] = fecha_fin_input
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
+if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
     st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
     st.toast("🔍 Filtros aplicados correctamente", icon="🎯")
     st.rerun()
@@ -1381,17 +1359,14 @@ if btn_procesar:
         st.warning("Selecciona o carga un archivo de transacciones antes de procesar.")
 
 # CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS
-f_ini_str = st.session_state['active_f_ini'].strftime("%Y-%m-%d")
-f_fin_str = st.session_state['active_f_fin'].strftime("%Y-%m-%d")
+f_ini_str = fecha_inicio_sel.strftime("%Y-%m-%d")
+f_fin_str = fecha_fin_sel.strftime("%Y-%m-%d")
 
 df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db(f_ini_str, f_fin_str)
 
-active_worker = st.session_state['active_worker']
-active_cargos = st.session_state['active_cargos']
-
 # APLICAR FILTRO POR TRABAJADOR O MÚLTIPLES CARGOS CONFIRMADOS
-if active_worker in worker_options_map and worker_options_map[active_worker] != "TODOS":
-    selected_dni = worker_options_map[active_worker]
+if trabajador_seleccionado in worker_options_map and worker_options_map[trabajador_seleccionado] != "TODOS":
+    selected_dni = worker_options_map[trabajador_seleccionado]
     if not df_trab_db.empty and 'DNI' in df_trab_db.columns:
         df_trab_db = df_trab_db[df_trab_db['DNI'].astype(str).str.strip() == selected_dni]
     if not df_asis_db.empty and 'DNI' in df_asis_db.columns:
@@ -1405,15 +1380,15 @@ if active_worker in worker_options_map and worker_options_map[active_worker] != 
         if col_dni:
             df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip() == selected_dni]
 
-elif isinstance(active_cargos, list) and len(active_cargos) == 0:
+elif isinstance(cargos_seleccionados, list) and len(cargos_seleccionados) == 0:
     df_trab_db = df_trab_db.iloc[0:0]
     df_asis_db = df_asis_db.iloc[0:0]
     df_inc_db = df_inc_db.iloc[0:0]
     df_he_db = df_he_db.iloc[0:0]
     df_marc_db = df_marc_db.iloc[0:0]
 
-elif active_cargos:
-    cargos_set = set(active_cargos)
+elif cargos_seleccionados:
+    cargos_set = set(cargos_seleccionados)
     if not df_trab_db.empty and 'CARGO' in df_trab_db.columns:
         df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
     if not df_asis_db.empty and 'CARGO' in df_asis_db.columns:
