@@ -118,6 +118,35 @@ st.markdown("""
         pointer-events: none !important;
     }
 
+    /* OCULTAR DEFINITIVAMENTE DE RAÍZ 'Press Enter to apply' Y 'Press Enter to submit form' */
+    div[data-testid="stInputInstructions"],
+    small[data-testid="stInputInstructions"],
+    span[data-testid="stInputInstructions"],
+    [data-testid="stInputInstructions"],
+    div[data-baseweb="input"] > *:not(input):not(button):not(svg):not(path),
+    div[data-baseweb="base-input"] > *:not(input):not(button):not(svg):not(path),
+    div[data-baseweb="input"] span,
+    div[data-baseweb="input"] p,
+    div[data-baseweb="input"] small,
+    div[data-baseweb="base-input"] div,
+    div[data-baseweb="base-input"] span,
+    div[data-baseweb="base-input"] small,
+    div[data-baseweb="base-input"] p {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
+        font-size: 0px !important;
+        line-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        pointer-events: none !important;
+    }
+
     /* OCULTAR LAS INSTRUCCIONES DE 'Press Enter to submit form' / 'Press Enter to apply' EN TODOS LOS CAMPOS */
     div[data-testid="stInputInstructions"],
     small[data-testid="stInputInstructions"],
