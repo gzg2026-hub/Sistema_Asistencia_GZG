@@ -434,19 +434,25 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* Inputs, Selectbox, Combobox, Date Inputs en Sidebar (UN SOLO BORDE LIMPIO) */
+    /* Inputs, Selectbox, Combobox en Sidebar (ILUMINACIÓN DORADA PERMANENTE) */
     section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"],
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
         background-color: #11131c !important;
-        border: 1px solid #222638 !important;
+        border: 1.5px solid #dfa86a !important;
         border-radius: 8px !important;
-        box-shadow: none !important;
+        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45), inset 0 0 4px rgba(223, 168, 106, 0.15) !important;
+        transition: all 0.3s ease !important;
     }
 
+    section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"]:hover,
     section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"]:focus-within {
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"]:focus-within,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within {
         border-color: #f59e0b !important;
-        box-shadow: 0 0 8px rgba(245, 158, 11, 0.35) !important;
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), inset 0 0 6px rgba(245, 158, 11, 0.25) !important;
     }
 
     section[data-testid="stSidebar"] input[type="text"], 
@@ -1085,8 +1091,8 @@ components.html("""
 </script>
 """, height=0, width=0)
 
-DEFAULT_ASISTENCIA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico")
-os.makedirs(DEFAULT_ASISTENCIA_DIR, exist_ok=True)
+DEFAULT_ASISTENCIA_DIR = r"C:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\descargas_biometrico"
+os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico"), exist_ok=True)
 BASE_EXCEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsm")
 
 # Cargar la lista completa de trabajadores desde la BD SQLite
@@ -1120,8 +1126,14 @@ search_dir = asistencia_folder
 if os.path.exists(asistencia_folder):
     available_files = [f for f in os.listdir(asistencia_folder) if f.endswith(('.xlsx', '.xlsm', '.csv'))]
 
+# Fallback inteligente al directorio local del proyecto (ej. en la nube)
 if not available_files:
-    # Fallback al directorio raíz del proyecto
+    local_bio = os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico")
+    if os.path.exists(local_bio):
+        search_dir = local_bio
+        available_files = [f for f in os.listdir(local_bio) if f.endswith(('.xlsx', '.xlsm', '.csv'))]
+
+if not available_files:
     search_dir = "."
     available_files = [f for f in os.listdir(".") if f.startswith("Transacciones_") and f.endswith(('.xlsx', '.xlsm', '.csv'))]
 
