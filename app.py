@@ -460,7 +460,8 @@ st.markdown("""
     }
 
     /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) */
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div {
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -476,13 +477,6 @@ st.markdown("""
         width: 100% !important;
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
-    }
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div * {
-        border: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        outline: none !important;
     }
 
     /* 3. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
@@ -518,8 +512,8 @@ st.markdown("""
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div:hover,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div:focus-within,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div:hover,
     section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"]:hover,
     section[data-testid="stSidebar"] div[data-testid="stTextInput"] div[data-baseweb="input"]:hover {
         border-color: #f59e0b !important;
@@ -1123,7 +1117,7 @@ if not is_authenticated():
         u_s = str(st.session_state.get("login_user_field", "") or u_val or "").strip()
         p_s = str(st.session_state.get("login_pass_field", "") or p_val or "").strip()
 
-        if btn_login or (u_s and p_s):
+        if btn_login:
             if u_s and p_s:
                 if login_user(u_s, p_s):
                     for k in list(st.session_state.keys()):
@@ -1223,8 +1217,9 @@ if current_user:
     def cb_logout():
         logout_user()
         for k in list(st.session_state.keys()):
-            if k not in ['authenticated', 'user']:
-                del st.session_state[k]
+            del st.session_state[k]
+        st.session_state['authenticated'] = False
+        st.session_state['user'] = None
 
     st.sidebar.button("🔴 CERRAR SESIÓN", use_container_width=True, key="btn_logout_user", on_click=cb_logout)
 
