@@ -455,22 +455,59 @@ st.markdown("""
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), inset 0 0 6px rgba(245, 158, 11, 0.25) !important;
     }
 
-    /* Tags elegantes para Selección Múltiple de Cargos en Sidebar */
-    section[data-testid="stSidebar"] div[data-baseweb="tag"] {
-        background-color: #1e2235 !important;
-        border: 1px solid #dfa86a !important;
-        border-radius: 6px !important;
-        margin: 2px !important;
+    /* Estilos Popover Selector de Cargos con Casillas */
+    div[data-testid="stPopover"] {
+        width: 100% !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
     }
-    section[data-testid="stSidebar"] div[data-baseweb="tag"] span {
+    div[data-testid="stPopover"] > button {
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        border-radius: 8px !important;
+        background-color: #11131c !important;
+        border: 1.5px solid #dfa86a !important;
+        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        padding: 0 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+    }
+    div[data-testid="stPopover"] > button:hover {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
+    }
+    div[data-testid="stPopover"] > button p,
+    div[data-testid="stPopover"] > button span {
+        font-size: 0.92rem !important;
+        font-weight: 800 !important;
         color: #ffffff !important;
-        font-weight: 700 !important;
-        font-size: 0.82rem !important;
+        text-transform: uppercase !important;
+        margin: 0 !important;
+        text-align: center !important;
+        flex: 1 !important;
     }
-    section[data-testid="stSidebar"] div[data-baseweb="tag"] svg,
-    section[data-testid="stSidebar"] div[data-baseweb="tag"] button {
-        fill: #f59e0b !important;
-        color: #f59e0b !important;
+    div[data-testid="stPopover"] > button svg {
+        fill: #dfa86a !important;
+        color: #dfa86a !important;
+    }
+    div[data-testid="stPopoverBody"],
+    div[data-testid="stPopoverContent"] {
+        background-color: #11131c !important;
+        background: #11131c !important;
+        border: 1.5px solid #c58b4e !important;
+        border-radius: 10px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95) !important;
+        padding: 12px !important;
+    }
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label p,
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label p {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        font-size: 0.90rem !important;
     }
 
     section[data-testid="stSidebar"] input[type="text"], 
@@ -1039,6 +1076,8 @@ if not is_authenticated():
         if btn_login or (u_s and p_s):
             if u_s and p_s:
                 if login_user(u_s, p_s):
+                    st.session_state['cargos_ver'] = 0
+                    st.session_state['cargos_def_val'] = True
                     login_holder.empty()
                     st.rerun()
                 else:
@@ -1144,19 +1183,64 @@ if not df_trab_master_db.empty and 'CARGO' in df_trab_master_db.columns:
     cargos_clean = sorted([str(c).strip() for c in cargos_raw if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']])
     opciones_cargos = cargos_clean
 
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
-cargos_seleccionados = st.sidebar.multiselect(
-    "Filtrar por Cargo(s)",
-    options=opciones_cargos,
-    default=[],
-    placeholder="Todos los cargos (o elija varios)",
-    label_visibility="collapsed"
-)
+if 'cargos_ver' not in st.session_state:
+    st.session_state['cargos_ver'] = 0
+    st.session_state['cargos_def_val'] = True
+    for c in opciones_cargos:
+        st.session_state[f"chk_{c}_0"] = True
 
-# Filtrar trabajadores según los cargos seleccionados (si está vacío, considera todos)
+c_ver = st.session_state['cargos_ver']
+def_val = st.session_state['cargos_def_val']
+
+# Evaluar pre-render de los cargos seleccionados
+selected_cargos_pre = [c for c in opciones_cargos if st.session_state.get(f"chk_{c}_{c_ver}", def_val)]
+
+if len(selected_cargos_pre) == len(opciones_cargos):
+    titulo_cargos = "TODOS LOS CARGOS"
+elif len(selected_cargos_pre) == 0:
+    titulo_cargos = "NINGÚN CARGO SELECCIONADO"
+elif len(selected_cargos_pre) <= 2:
+    titulo_cargos = ", ".join(selected_cargos_pre)
+else:
+    titulo_cargos = f"{len(selected_cargos_pre)} Cargos seleccionados"
+
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
+
+with st.sidebar.popover(titulo_cargos, use_container_width=True):
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+        if st.button("✅ Todos", use_container_width=True, key=f"btn_all_{c_ver}"):
+            st.session_state['cargos_ver'] = c_ver + 1
+            st.session_state['cargos_def_val'] = True
+            for c in opciones_cargos:
+                st.session_state[f"chk_{c}_{c_ver+1}"] = True
+            st.rerun()
+    with col_t2:
+        if st.button("🧹 Desmarcar", use_container_width=True, key=f"btn_none_{c_ver}"):
+            st.session_state['cargos_ver'] = c_ver + 1
+            st.session_state['cargos_def_val'] = False
+            for c in opciones_cargos:
+                st.session_state[f"chk_{c}_{c_ver+1}"] = False
+            st.rerun()
+
+    st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
+    
+    for cargo_item in opciones_cargos:
+        k = f"chk_{cargo_item}_{c_ver}"
+        if k not in st.session_state:
+            st.session_state[k] = def_val
+        st.checkbox(cargo_item, value=st.session_state[k], key=k)
+
+# Lista final de cargos confirmados
+cargos_seleccionados = [c for c in opciones_cargos if st.session_state.get(f"chk_{c}_{c_ver}", def_val)]
+
+# Filtrar trabajadores según los cargos seleccionados
 df_trab_opciones = df_trab_master_db.copy()
-if cargos_seleccionados and not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
-    df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().isin(cargos_seleccionados)]
+if not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
+    if len(cargos_seleccionados) == 0:
+        df_trab_opciones = df_trab_opciones.iloc[0:0]
+    else:
+        df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().isin(cargos_seleccionados)]
 
 opciones_trabajadores = ["TODO EL PERSONAL"]
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
