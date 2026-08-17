@@ -948,11 +948,12 @@ if not is_authenticated():
             }
         </style>
         <script>
-            // Bloquear activamente el autocompletado y menú flotante de contraseñas de Chrome
+            // Bloquear activamente el autocompletado y el generador de contraseñas de Chrome
             setInterval(function() {
                 var inputs = document.querySelectorAll('input');
                 inputs.forEach(function(inp) {
-                    inp.setAttribute('autocomplete', 'new-password');
+                    inp.setAttribute('autocomplete', 'one-time-code');
+                    inp.setAttribute('aria-autocomplete', 'none');
                     inp.setAttribute('data-lpignore', 'true');
                     inp.setAttribute('data-form-type', 'other');
                     inp.setAttribute('role', 'presentation');
