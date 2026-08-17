@@ -1681,22 +1681,22 @@ with tab_dash:
             else:
                 st.info("Sin registros de Horas Extra para mostrar por área.")
 
-        # FILA 4: RANKINGS TOP 10 EJECUTIVOS
+        # FILA 4: RANKINGS TOP 5 EJECUTIVOS
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="section-title">🏆 Rankings Ejecutivos - Top 10 Incidencias, Tardanzas y Horas Extra</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🏆 Rankings Ejecutivos - Top 5 Incidencias, Tardanzas y Horas Extra</div>', unsafe_allow_html=True)
 
         col_top1, col_top2, col_top3 = st.columns(3)
 
         with col_top1:
             st.markdown('''
             <div class="top10-container">
-                <div class="top10-title-yellow">⚠️ TOP 10 TARDANZAS</div>
+                <div class="top10-title-yellow">⚠️ TOP 5 TARDANZAS</div>
             ''', unsafe_allow_html=True)
             if 'TARDANZA (MIN)' in df_asis_db.columns:
                 df_tard_rank = df_asis_db.copy()
                 df_tard_rank['MINUTOS'] = to_numeric_minutes(df_tard_rank['TARDANZA (MIN)'])
                 df_tard_sum = df_tard_rank.groupby(['DNI', 'APELLIDOS', 'NOMBRES'])['MINUTOS'].sum().reset_index()
-                df_tard_sum = df_tard_sum[df_tard_sum['MINUTOS'] > 0].sort_values(by='MINUTOS', ascending=False).head(10)
+                df_tard_sum = df_tard_sum[df_tard_sum['MINUTOS'] > 0].sort_values(by='MINUTOS', ascending=False).head(5)
                 
                 if not df_tard_sum.empty:
                     rows_html = ""
@@ -1720,14 +1720,14 @@ with tab_dash:
         with col_top2:
             st.markdown('''
             <div class="top10-container">
-                <div class="top10-title-blue">⏱️ TOP 10 HORAS EXTRA</div>
+                <div class="top10-title-blue">⏱️ TOP 5 HORAS EXTRA</div>
             ''', unsafe_allow_html=True)
             if not df_he_db.empty:
                 col_he_target = 'DURACIÓN' if 'DURACIÓN' in df_he_db.columns else 'DURACIÓN (HH:MM)'
                 df_he_rank = df_he_db.copy()
                 df_he_rank['MINUTOS'] = to_numeric_minutes(df_he_rank[col_he_target])
                 df_he_sum = df_he_rank.groupby(['DNI', 'APELLIDOS', 'NOMBRES'])['MINUTOS'].sum().reset_index()
-                df_he_sum = df_he_sum[df_he_sum['MINUTOS'] > 0].sort_values(by='MINUTOS', ascending=False).head(10)
+                df_he_sum = df_he_sum[df_he_sum['MINUTOS'] > 0].sort_values(by='MINUTOS', ascending=False).head(5)
                 
                 if not df_he_sum.empty:
                     rows_html = ""
@@ -1751,11 +1751,11 @@ with tab_dash:
         with col_top3:
             st.markdown('''
             <div class="top10-container">
-                <div class="top10-title-red">🚨 TOP 10 INCIDENCIAS</div>
+                <div class="top10-title-red">🚨 TOP 5 INCIDENCIAS</div>
             ''', unsafe_allow_html=True)
             if not df_inc_db.empty:
                 df_inc_rank = df_inc_db.groupby(['DNI', 'APELLIDOS', 'NOMBRES']).size().reset_index(name='CANTIDAD')
-                df_inc_rank = df_inc_rank.sort_values(by='CANTIDAD', ascending=False).head(10)
+                df_inc_rank = df_inc_rank.sort_values(by='CANTIDAD', ascending=False).head(5)
                 
                 if not df_inc_rank.empty:
                     rows_html = ""
