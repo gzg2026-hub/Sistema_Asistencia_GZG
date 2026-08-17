@@ -1242,6 +1242,21 @@ if not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
     else:
         df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().isin(cargos_seleccionados)]
 
+opciones_trabajadores = ["TODO EL PERSONAL"]
+worker_options_map = {"TODO EL PERSONAL": "TODOS"}
+
+if not df_trab_opciones.empty:
+    for _, r in df_trab_opciones.iterrows():
+        dni = str(r.get('DNI', '')).strip()
+        ape = str(r.get('APELLIDOS', '')).strip()
+        nom = str(r.get('NOMBRES', '')).strip()
+        if dni and (ape or nom):
+            disp = f"{dni} - {ape} {nom}".strip()
+            worker_options_map[disp] = dni
+            opciones_trabajadores.append(disp)
+
+opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
+
 # Inicialización de estado de filtros activos
 if 'active_cargos' not in st.session_state or not st.session_state['active_cargos']:
     st.session_state['active_cargos'] = opciones_cargos
