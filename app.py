@@ -1242,23 +1242,44 @@ if not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
     else:
         df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().isin(cargos_seleccionados)]
 
-opciones_trabajadores = ["TODO EL PERSONAL"]
-worker_options_map = {"TODO EL PERSONAL": "TODOS"}
+# Inicialización de estado de filtros activos
+if 'active_cargos' not in st.session_state or not st.session_state['active_cargos']:
+    st.session_state['active_cargos'] = opciones_cargos
+if 'active_worker' not in st.session_state:
+    st.session_state['active_worker'] = "TODO EL PERSONAL"
+if 'active_f_ini' not in st.session_state:
+    st.session_state['active_f_ini'] = date(2026, 8, 1)
+if 'active_f_fin' not in st.session_state:
+    st.session_state['active_f_fin'] = date(2026, 8, 11)
 
-if not df_trab_opciones.empty:
-    for _, r in df_trab_opciones.iterrows():
-        dni = str(r.get('DNI', '')).strip()
-        ape = str(r.get('APELLIDOS', '')).strip()
-        nom = str(r.get('NOMBRES', '')).strip()
-        if dni and (ape or nom):
-            disp = f"{dni} - {ape} {nom}".strip()
-            worker_options_map[disp] = dni
-            opciones_trabajadores.append(disp)
+# Formulario de consulta con botón FILTRAR
+with st.sidebar.form(key="consulta_filter_form"):
+    curr_idx = 0
+    if st.session_state['active_worker'] in opciones_trabajadores:
+        curr_idx = opciones_trabajadores.index(st.session_state['active_worker'])
+    
+    st.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
+    trabajador_input = st.selectbox("Filtrar por Trabajador", opciones_trabajadores, index=curr_idx, label_visibility="collapsed")
 
-opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
+    st.markdown("---")
+    st.subheader("📅 Consulta por Rango de Fechas")
+    col_d1, col_d2 = st.columns(2)
+    with col_d1:
+        fecha_inicio_input = st.date_input("Fecha Inicio", value=st.session_state['active_f_ini'])
+    with col_d2:
+        fecha_fin_input = st.date_input("Fecha Fin", value=st.session_state['active_f_fin'])
 
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
-trabajador_seleccionado = st.sidebar.selectbox("Filtrar por Trabajador", opciones_trabajadores, label_visibility="collapsed")
+    st.markdown("<br>", unsafe_allow_html=True)
+    btn_filtrar = st.form_submit_button("🔍 FILTRAR", use_container_width=True)
+
+if btn_filtrar:
+    st.session_state['active_cargos'] = cargos_seleccionados
+    st.session_state['active_worker'] = trabajador_input
+    st.session_state['active_f_ini'] = fecha_inicio_input
+    st.session_state['active_f_fin'] = fecha_fin_input
+    st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
+    st.toast("🔍 Filtros aplicados correctamente", icon="🎯")
+    st.rerun()
 
 # 2. CARGA DE TRANSACCIONES HIKVISION
 st.sidebar.markdown("---")
@@ -1353,12 +1374,18 @@ if btn_procesar:
     else:
         st.warning("Selecciona o carga un archivo de transacciones antes de procesar.")
 
-# CARGAR DATOS COMPLETOS DE LA BASE DE DATOS
-df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db()
+# CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS
+f_ini_str = st.session_state['active_f_ini'].strftime("%Y-%m-%d")
+f_fin_str = st.session_state['active_f_fin'].strftime("%Y-%m-%d")
 
-# APLICAR FILTRO POR TRABAJADOR O MÚLTIPLES CARGOS
-if trabajador_seleccionado in worker_options_map and worker_options_map[trabajador_seleccionado] != "TODOS":
-    selected_dni = worker_options_map[trabajador_seleccionado]
+df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db(f_ini_str, f_fin_str)
+
+active_worker = st.session_state['active_worker']
+active_cargos = st.session_state['active_cargos']
+
+# APLICAR FILTRO POR TRABAJADOR O MÚLTIPLES CARGOS CONFIRMADOS
+if active_worker in worker_options_map and worker_options_map[active_worker] != "TODOS":
+    selected_dni = worker_options_map[active_worker]
     if not df_trab_db.empty and 'DNI' in df_trab_db.columns:
         df_trab_db = df_trab_db[df_trab_db['DNI'].astype(str).str.strip() == selected_dni]
     if not df_asis_db.empty and 'DNI' in df_asis_db.columns:
@@ -1372,8 +1399,8 @@ if trabajador_seleccionado in worker_options_map and worker_options_map[trabajad
         if col_dni:
             df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip() == selected_dni]
 
-elif cargos_seleccionados:
-    cargos_set = set(cargos_seleccionados)
+elif active_cargos:
+    cargos_set = set(active_cargos)
     if not df_trab_db.empty and 'CARGO' in df_trab_db.columns:
         df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
     if not df_asis_db.empty and 'CARGO' in df_asis_db.columns:
@@ -1416,13 +1443,13 @@ with c_act2:
         st.download_button(
             label="📊 DESCARGAR EXCEL BASE v1.0 (.xlsx)",
             data=excel_bytes,
-            file_name="Sistema_Asistencia_GZG_Export.xlsx",
+            file_name=f"Sistema_Asistencia_GZG_{f_ini_str}_a_{f_fin_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
         )
 
 with c_act3:
-    st.info(f"📁 Registros en BD: **{len(df_trab_db)} Personal**, **{len(df_marc_db)} Marcaciones**, **{len(df_asis_db)} Registros Asistencia**")
+    st.info(f"📁 Filtro ({f_ini_str} al {f_fin_str}): **{len(df_trab_db)} Personal**, **{len(df_marc_db)} Marcaciones**, **{len(df_asis_db)} Registros Asistencia**")
 
 st.markdown("---")
 
