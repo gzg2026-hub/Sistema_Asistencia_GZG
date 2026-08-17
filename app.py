@@ -488,10 +488,18 @@ st.markdown("""
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] {
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"],
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] div {
         width: 100% !important;
-        padding: 0 12px !important;
+        margin: 0 !important;
         background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        padding: 0 12px !important;
     }
     section[data-testid="stSidebar"] [data-testid="stSelectbox"] *,
     section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:hover,
