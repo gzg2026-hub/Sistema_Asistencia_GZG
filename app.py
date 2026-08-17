@@ -1340,20 +1340,26 @@ opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajad
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
-curr_w_idx = 0
-if st.session_state.get('pending_worker_val') in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['pending_worker_val'])
-elif st.session_state.get('applied_worker') in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['applied_worker'])
+if 'pending_worker_val' not in st.session_state or st.session_state['pending_worker_val'] not in opciones_trabajadores:
+    st.session_state['pending_worker_val'] = st.session_state.get('applied_worker', 'TODO EL PERSONAL')
+    if st.session_state['pending_worker_val'] not in opciones_trabajadores:
+        st.session_state['pending_worker_val'] = "TODO EL PERSONAL"
 
-trabajador_seleccionado = st.sidebar.selectbox(
-    "Filtrar por Trabajador",
-    opciones_trabajadores,
-    index=curr_w_idx,
-    key="sidebar_worker_select",
-    label_visibility="collapsed"
-)
-st.session_state['pending_worker_val'] = trabajador_seleccionado
+titulo_trabajador = st.session_state['pending_worker_val']
+
+def cb_on_worker_change():
+    st.session_state['pending_worker_val'] = st.session_state.get('sb_pop_worker_inner', 'TODO EL PERSONAL')
+
+with st.sidebar.popover(titulo_trabajador, use_container_width=True):
+    curr_w_idx = opciones_trabajadores.index(titulo_trabajador) if titulo_trabajador in opciones_trabajadores else 0
+    trabajador_seleccionado = st.selectbox(
+        "Buscar o Seleccionar Trabajador:",
+        opciones_trabajadores,
+        index=curr_w_idx,
+        key="sb_pop_worker_inner",
+        on_change=cb_on_worker_change
+    )
+    st.session_state['pending_worker_val'] = trabajador_seleccionado
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📅 Consulta por Rango de Fechas")
