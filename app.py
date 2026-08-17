@@ -479,7 +479,8 @@ st.markdown("""
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
-        padding: 0 10px !important;
+        padding: 0 !important;
+        overflow: hidden !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
@@ -487,8 +488,19 @@ st.markdown("""
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
     }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div[data-baseweb="select"] {
+        width: 100% !important;
+        padding: 0 12px !important;
+        background: transparent !important;
+    }
     section[data-testid="stSidebar"] [data-testid="stSelectbox"] *,
-    section[data-testid="stSidebar"] .stSelectbox * {
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:hover,
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:focus,
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *:active,
+    section[data-testid="stSidebar"] .stSelectbox *,
+    section[data-testid="stSidebar"] .stSelectbox *:hover,
+    section[data-testid="stSidebar"] .stSelectbox *:focus,
+    section[data-testid="stSidebar"] .stSelectbox *:active {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
