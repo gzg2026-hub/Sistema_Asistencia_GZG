@@ -434,16 +434,38 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* Inputs, Selectbox, Combobox, Date Inputs en Sidebar */
-    section[data-testid="stSidebar"] input, 
-    section[data-testid="stSidebar"] div[role="combobox"] {
-        color: #ffffff !important;
+    /* Inputs, Selectbox, Combobox, Date Inputs en Sidebar (UN SOLO BORDE LIMPIO) */
+    section[data-testid="stSidebar"] div[data-baseweb="input"],
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
         background-color: #11131c !important;
         border: 1px solid #222638 !important;
         border-radius: 8px !important;
+        box-shadow: none !important;
+    }
+
+    section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"]:focus-within {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 8px rgba(245, 158, 11, 0.35) !important;
+    }
+
+    section[data-testid="stSidebar"] input, 
+    section[data-testid="stSidebar"] div[role="combobox"] {
+        color: #ffffff !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
         font-size: 0.90rem !important;
         font-weight: 700 !important;
         text-align: center !important;
+    }
+
+    section[data-testid="stSidebar"] input:focus {
+        border: none !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
 
     /* IGUALAR TAMAÑO Y PESO DE FUENTE EXACTOS EN CAJÓN DE TRABAJADOR Y CAJÓN DE CARGOS */
@@ -578,7 +600,6 @@ st.markdown("""
         color: #f59e0b !important;
     }
 
-    section[data-testid="stSidebar"] input:focus, 
     section[data-testid="stSidebar"] div[role="combobox"]:focus {
         border-color: #f59e0b !important;
         box-shadow: 0 0 10px rgba(245, 158, 11, 0.4) !important;
@@ -1163,8 +1184,8 @@ if len(selected_cargos_keys) == 0:
 else:
     pending_cargos = selected_cargos_keys
 
-if not pending_cargos:
-    texto_boton = "TODOS LOS CARGOS (Sin filtro)"
+if not pending_cargos or len(pending_cargos) == len(opciones_cargos):
+    texto_boton = "TODO EL PERSONAL"
 elif pending_cargos == ["__NINGUNO__"]:
     texto_boton = "NINGÚN CARGO SELECCIONADO"
 elif len(pending_cargos) <= 2:
