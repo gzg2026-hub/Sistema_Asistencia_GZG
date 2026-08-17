@@ -890,6 +890,10 @@ def auto_seed_database_if_empty():
     except Exception as e:
         print(f"Error auto-seeding: {e}")
 
+# Inicializar base de datos y usuarios maestros al iniciar la aplicación
+init_auth()
+auto_seed_database_if_empty()
+
 # ---------------------------------------------------------
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
@@ -907,17 +911,48 @@ if not is_authenticated():
                 margin: 0 auto !important;
                 padding-top: 3.5rem !important;
             }
+            /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
+            [data-testid="stInputInstructions"],
             div[data-testid="stInputInstructions"],
             small[data-testid="stInputInstructions"],
             span[data-testid="stInputInstructions"],
-            [data-testid="stInputInstructions"] {
+            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+            div[data-testid="stTextInput"] small,
+            div[data-baseweb="input"] > div:not(:first-child),
+            div[data-baseweb="input"] small,
+            div[data-baseweb="base-input"] + div {
                 display: none !important;
                 visibility: hidden !important;
-                height: 0 !important;
-                width: 0 !important;
                 opacity: 0 !important;
+                color: transparent !important;
+                -webkit-text-fill-color: transparent !important;
+                font-size: 0px !important;
+                line-height: 0 !important;
+                height: 0px !important;
+                width: 0px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                position: absolute !important;
+                top: -9999px !important;
+                left: -9999px !important;
+                pointer-events: none !important;
             }
         </style>
+        <script>
+            const purgeLoginHints = () => {
+                try {
+                    document.querySelectorAll('div[data-testid="stInputInstructions"], small[data-testid="stInputInstructions"]').forEach(el => {
+                        el.style.display = 'none';
+                        el.style.visibility = 'hidden';
+                        el.style.opacity = '0';
+                    });
+                    document.querySelectorAll('input').forEach(inp => {
+                        inp.setAttribute('autocomplete', 'new-password');
+                    });
+                } catch(e){}
+            };
+            setInterval(purgeLoginHints, 50);
+        </script>
         """, unsafe_allow_html=True)
         
         logo_b64 = get_logo_base64()
@@ -951,8 +986,6 @@ if not is_authenticated():
             else:
                 st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
-
-auto_seed_database_if_empty()
 current_user = get_current_user()
 
 logo_b64 = get_logo_base64()
