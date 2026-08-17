@@ -1228,17 +1228,17 @@ with st.sidebar.popover(titulo_cargos, use_container_width=True):
     for cargo_item in opciones_cargos:
         st.checkbox(cargo_item, key=f"cargo_chk_{cargo_item}")
 
-# Inicialización de estado de filtros activos (Solo se actualizan al presionar FILTRAR)
-if 'active_cargos' not in st.session_state or st.session_state['active_cargos'] is None:
-    st.session_state['active_cargos'] = list(opciones_cargos)
-if 'active_worker' not in st.session_state:
-    st.session_state['active_worker'] = "TODO EL PERSONAL"
-if 'active_f_ini' not in st.session_state:
-    st.session_state['active_f_ini'] = date(2026, 8, 1)
-if 'active_f_fin' not in st.session_state:
-    st.session_state['active_f_fin'] = date(2026, 8, 11)
+# Inicialización de filtros aplicados (SOLO se actualizan tras presionar [🔍 FILTRAR])
+if 'applied_cargos' not in st.session_state or st.session_state['applied_cargos'] is None:
+    st.session_state['applied_cargos'] = list(opciones_cargos)
+if 'applied_worker' not in st.session_state:
+    st.session_state['applied_worker'] = "TODO EL PERSONAL"
+if 'applied_f_ini' not in st.session_state:
+    st.session_state['applied_f_ini'] = date(2026, 8, 1)
+if 'applied_f_fin' not in st.session_state:
+    st.session_state['applied_f_fin'] = date(2026, 8, 11)
 
-# Lista de cargos que están actualmente marcados en la interfaz (pendientes de aplicar con FILTRAR)
+# Lista de cargos que están actualmente marcados en la interfaz
 cargos_marcados_ui = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
 
 # Filtrar trabajadores disponibles en el selector según los cargos seleccionados en la UI
@@ -1247,7 +1247,8 @@ if not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
     if len(cargos_marcados_ui) == 0:
         df_trab_opciones = df_trab_opciones.iloc[0:0]
     else:
-        df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().isin(cargos_marcados_ui)]
+        cargos_ui_upper = {str(c).strip().upper() for c in cargos_marcados_ui}
+        df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().str.upper().isin(cargos_ui_upper)]
 
 opciones_trabajadores = ["TODO EL PERSONAL"]
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
@@ -1269,8 +1270,8 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; ma
 curr_w_idx = 0
 if st.session_state.get('pending_worker_val') in opciones_trabajadores:
     curr_w_idx = opciones_trabajadores.index(st.session_state['pending_worker_val'])
-elif st.session_state['active_worker'] in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['active_worker'])
+elif st.session_state['applied_worker'] in opciones_trabajadores:
+    curr_w_idx = opciones_trabajadores.index(st.session_state['applied_worker'])
 
 trabajador_seleccionado = st.sidebar.selectbox("Filtrar por Trabajador", opciones_trabajadores, index=curr_w_idx, key="sidebar_worker_select", label_visibility="collapsed")
 st.session_state['pending_worker_val'] = trabajador_seleccionado
@@ -1279,17 +1280,21 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("📅 Consulta por Rango de Fechas")
 col_d1, col_d2 = st.sidebar.columns(2)
 with col_d1:
-    fecha_inicio_sel = st.date_input("Fecha Inicio", value=st.session_state.get('pending_f_ini', st.session_state['active_f_ini']), key="sidebar_f_ini")
+    fecha_inicio_sel = st.date_input("Fecha Inicio", value=st.session_state.get('pending_f_ini', st.session_state['applied_f_ini']), key="sidebar_f_ini")
     st.session_state['pending_f_ini'] = fecha_inicio_sel
 with col_d2:
-    fecha_fin_sel = st.date_input("Fecha Fin", value=st.session_state.get('pending_f_fin', st.session_state['active_f_fin']), key="sidebar_f_fin")
+    fecha_fin_sel = st.date_input("Fecha Fin", value=st.session_state.get('pending_f_fin', st.session_state['applied_f_fin']), key="sidebar_f_fin")
     st.session_state['pending_f_fin'] = fecha_fin_sel
 
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
-    obtener_datos_db.clear()
+    st.session_state['applied_cargos'] = list(cargos_marcados_ui)
+    st.session_state['applied_worker'] = trabajador_seleccionado
+    st.session_state['applied_f_ini'] = fecha_inicio_sel
+    st.session_state['applied_f_fin'] = fecha_fin_sel
     st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
-    st.toast("🔍 Filtros y KPIs actualizados", icon="🎯")
+    obtener_datos_db.clear()
+    st.toast("🎯 Filtros y KPIs actualizados", icon="🔍")
     st.rerun()
 
 # 2. CARGA DE TRANSACCIONES HIKVISION
@@ -1385,14 +1390,14 @@ if btn_procesar:
     else:
         st.warning("Selecciona o carga un archivo de transacciones antes de procesar.")
 
-# CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS
-f_ini_str = fecha_inicio_sel.strftime("%Y-%m-%d")
-f_fin_str = fecha_fin_sel.strftime("%Y-%m-%d")
+# CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS APLICADO
+f_ini_str = st.session_state['applied_f_ini'].strftime("%Y-%m-%d")
+f_fin_str = st.session_state['applied_f_fin'].strftime("%Y-%m-%d")
 
 df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db(f_ini_str, f_fin_str)
 
-confirmed_worker = trabajador_seleccionado
-confirmed_cargos = cargos_marcados_ui
+confirmed_worker = st.session_state['applied_worker']
+confirmed_cargos = st.session_state['applied_cargos']
 cargos_norm_set = {str(c).strip().upper() for c in confirmed_cargos if str(c).strip()}
 
 # APLICAR FILTRO POR TRABAJADOR O MÚLTIPLES CARGOS CONFIRMADOS
