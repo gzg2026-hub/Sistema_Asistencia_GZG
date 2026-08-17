@@ -943,7 +943,11 @@ if not is_authenticated():
                 position: absolute !important;
                 top: -9999px !important;
                 left: -9999px !important;
-                pointer-events: none !important;
+            /* ENMASCARAR CONTRASEÑA CON PUNTOS NEGROS SIN ACTIVAR EL GESTOR DE GOOGLE */
+            div[data-testid="stTextInput"]:nth-of-type(2) input,
+            input[aria-label="Contraseña"] {
+                -webkit-text-security: disk !important;
+                text-security: disk !important;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -967,7 +971,7 @@ if not is_authenticated():
 
             with st.form("gzg_login_form", clear_on_submit=False):
                 u_val = st.text_input("Usuario", value="", key="login_user_field")
-                p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
+                p_val = st.text_input("Contraseña", value="", key="login_pass_field")
                 st.markdown("<br>", unsafe_allow_html=True)
                 btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
 
