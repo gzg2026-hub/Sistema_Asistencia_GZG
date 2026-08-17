@@ -438,7 +438,9 @@ st.markdown("""
        FORMATO DE CAJÓN UNIFICADO CON ILUMINACIÓN DORADA PERMANENTE
        (Idéntico para Cargos, Trabajador, Fechas y Text Inputs en Sidebar)
        ========================================================================= */
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"],
+    section[data-testid="stSidebar"] div[data-baseweb="select"],
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
@@ -447,9 +449,10 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button {
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:first-child,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -458,18 +461,25 @@ st.markdown("""
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
+        padding: 0 12px !important;
         display: flex !important;
         align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
         transition: all 0.3s ease !important;
+        box-sizing: border-box !important;
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
     section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover {
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:first-child:hover,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:first-child:focus-within,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child:hover,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child:focus-within,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus {
         border-color: #f59e0b !important;
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
@@ -508,19 +518,23 @@ st.markdown("""
         font-size: 0.90rem !important;
         font-weight: 700 !important;
         text-align: center !important;
+        width: 100% !important;
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="select"] span,
     section[data-testid="stSidebar"] div[data-baseweb="select"] p,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] div,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button span,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button p {
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button p,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button span,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] button p {
         color: #ffffff !important;
         font-weight: 700 !important;
         font-size: 0.90rem !important;
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="select"] svg,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button svg {
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] svg {
         fill: #dfa86a !important;
         color: #dfa86a !important;
     }
