@@ -1534,8 +1534,21 @@ with col_d2:
     fecha_fin_sel = st.date_input("Fecha Fin", value=st.session_state.get('pending_f_fin', st.session_state['applied_f_fin']), key="sidebar_f_fin")
     st.session_state['pending_f_fin'] = fecha_fin_sel
 
-# PRESETS RÁPIDOS DE FECHA DE 1 CLIC (UBICADOS DEBAJO DE LAS FECHAS)
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; margin-top:8px; font-size:0.85rem; font-weight:700; color:#cbd5e1;'>⚡ Presets Rápidos</p>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='margin-top:6px; margin-bottom:10px;'></div>", unsafe_allow_html=True)
+if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
+    st.session_state['applied_cargos'] = list(cargos_marcados_ui)
+    st.session_state['applied_worker'] = trabajador_seleccionado
+    st.session_state['applied_f_ini'] = fecha_inicio_sel
+    st.session_state['applied_f_fin'] = fecha_fin_sel
+    st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
+    obtener_datos_db.clear()
+    st.toast("🎯 Filtros y KPIs actualizados", icon="🔍")
+    st.rerun()
+
+st.sidebar.markdown("<hr style='margin:14px 0 10px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
+
+# PRESETS RÁPIDOS DE FECHA DE 1 CLIC (UBICADOS DEBAJO DEL BOTÓN FILTRAR)
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; font-size:0.85rem; font-weight:700; color:#cbd5e1;'>⚡ Presets Rápidos</p>", unsafe_allow_html=True)
 
 def apply_preset_date(f_start, f_end):
     st.session_state['pending_f_ini'] = f_start
@@ -1578,17 +1591,6 @@ with col_p4:
 if st.sidebar.button("📊 Este Mes", use_container_width=True, key="btn_preset_month"):
     m_s = date(curr_now.date().year, curr_now.date().month, 1)
     apply_preset_date(m_s, curr_now.date())
-
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
-    st.session_state['applied_cargos'] = list(cargos_marcados_ui)
-    st.session_state['applied_worker'] = trabajador_seleccionado
-    st.session_state['applied_f_ini'] = fecha_inicio_sel
-    st.session_state['applied_f_fin'] = fecha_fin_sel
-    st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
-    obtener_datos_db.clear()
-    st.toast("🎯 Filtros y KPIs actualizados", icon="🔍")
-    st.rerun()
 
 
 
