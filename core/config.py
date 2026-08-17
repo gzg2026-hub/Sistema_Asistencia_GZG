@@ -7,7 +7,7 @@ class AttendanceConfig:
         hora_fin_dia: time = time(19, 0),
         hora_inicio_noche: time = time(19, 0),
         hora_fin_noche: time = time(7, 0),
-        tolerancia_entrada_min: int = 10,
+        tolerancia_entrada_min: int = 15,
         tolerancia_salida_min: int = 10,
         max_exceso_jornada_min: int = 60,
         horas_minimas: float = 12.0,

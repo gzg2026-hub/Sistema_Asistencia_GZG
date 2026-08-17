@@ -43,15 +43,15 @@ def detectar_horario(hora_entrada: time, config: AttendanceConfig) -> str:
 
 def calcular_tardanza(horario: str, hora_entrada: time, config: AttendanceConfig) -> int:
     """
-    Tardanza se calcula en minutos pasados los 10 minutos de tolerancia.
-    Ejemplo: Entrada programada 07:00, límite tolerancia 07:10. Entrada 07:15 -> 5 min tardanza.
+    Tardanza se calcula en minutos pasados los 15 minutos de tolerancia.
+    Ejemplo: Entrada programada 07:00, límite tolerancia 07:15. Entrada 07:20 -> 5 min tardanza.
     """
     if hora_entrada is None:
         return 0
     
     hora_prog = time(7, 0) if horario == "DIA" else time(19, 0)
     prog_sec = time_to_seconds(hora_prog)
-    limite_tolerancia_sec = prog_sec + (config.tolerancia_entrada_min * 60) # + 600s
+    limite_tolerancia_sec = prog_sec + (config.tolerancia_entrada_min * 60) # + 900s
     ent_sec = time_to_seconds(hora_entrada)
     
     if ent_sec <= limite_tolerancia_sec:
