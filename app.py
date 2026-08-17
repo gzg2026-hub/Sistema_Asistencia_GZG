@@ -1147,6 +1147,10 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
+def cb_set_cargos(state_val: bool):
+    for c in opciones_cargos:
+        st.session_state[f"chk_c_{c}"] = state_val
+
 # 1. SELECTOR MULTIPLE DE CARGO (CON BOTONES 'TODOS' Y 'DESMARCAR')
 for c in opciones_cargos:
     if f"chk_c_{c}" not in st.session_state:
@@ -1173,24 +1177,14 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; fo
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        if st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos"):
-            for c in opciones_cargos:
-                st.session_state[f"chk_c_{c}"] = True
-            st.rerun()
+        st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos", on_click=cb_set_cargos, args=(True,))
     with col_all2:
-        if st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos"):
-            for c in opciones_cargos:
-                st.session_state[f"chk_c_{c}"] = False
-            st.rerun()
+        st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos", on_click=cb_set_cargos, args=(False,))
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(
-            cargo_item,
-            value=st.session_state.get(f"chk_c_{cargo_item}", True),
-            key=f"chk_c_{cargo_item}"
-        )
+        st.checkbox(cargo_item, key=f"chk_c_{cargo_item}")
 
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
