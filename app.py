@@ -1024,6 +1024,24 @@ def _inject_dashboard_css():
         text-align: center !important;
         font-size: 1.15rem;
     }
+    /* BOTÓN PROMINENTE DE EXPORTACIÓN EJECUTIVA */
+    div[data-testid="stDownloadButton"] button {
+        background: linear-gradient(135deg, #15803d, #22c55e) !important;
+        color: #ffffff !important;
+        font-weight: 800 !important;
+        font-size: 0.95rem !important;
+        border: 1px solid #4ade80 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 15px rgba(34, 197, 94, 0.35) !important;
+        height: 46px !important;
+        transition: all 0.2s ease !important;
+    }
+    div[data-testid="stDownloadButton"] button:hover {
+        background: linear-gradient(135deg, #166534, #15803d) !important;
+        border-color: #dfa86a !important;
+        box-shadow: 0 0 15px rgba(223, 168, 106, 0.6) !important;
+        color: #ffffff !important;
+    }
     /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) LIMITADO AL ANCHO COMPACTO DE LA BARRA LATERAL (320px) */
     div[data-baseweb="popover"] {
         width: 320px !important;
@@ -1487,6 +1505,53 @@ if trabajador_seleccionado not in opciones_trabajadores:
     trabajador_seleccionado = 'TODO EL PERSONAL'
 
 st.sidebar.markdown("---")
+
+# PRESETS RÁPIDOS DE FECHA DE 1 CLIC
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; font-size:0.95rem; font-weight:700; color:#ffffff;'>⚡ Presets Rápidos de Fecha</p>", unsafe_allow_html=True)
+
+def apply_preset_date(f_start, f_end):
+    st.session_state['pending_f_ini'] = f_start
+    st.session_state['pending_f_fin'] = f_end
+    st.session_state['applied_f_ini'] = f_start
+    st.session_state['applied_f_fin'] = f_end
+    st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
+    obtener_datos_db.clear()
+    st.toast(f"📅 Rango cargado: {f_start.strftime('%d/%m')} al {f_end.strftime('%d/%m')}", icon="⚡")
+    st.rerun()
+
+col_p1, col_p2, col_p3 = st.sidebar.columns(3)
+with col_p1:
+    if st.button("📅 Hoy", use_container_width=True, key="btn_preset_today"):
+        apply_preset_date(curr_now.date(), curr_now.date())
+with col_p2:
+    if st.button("⏪ Ayer", use_container_width=True, key="btn_preset_yesterday"):
+        yest = curr_now.date() - timedelta(days=1)
+        apply_preset_date(yest, yest)
+with col_p3:
+    if st.button("📊 Semana", use_container_width=True, key="btn_preset_week"):
+        mon = curr_now.date() - timedelta(days=curr_now.date().weekday())
+        apply_preset_date(mon, curr_now.date())
+
+col_p4, col_p5 = st.sidebar.columns(2)
+with col_p4:
+    if st.button("🗓️ Quincena", use_container_width=True, key="btn_preset_fortnight"):
+        c_d = curr_now.date()
+        if c_d.day <= 15:
+            q_s = date(c_d.year, c_d.month, 1)
+            q_e = date(c_d.year, c_d.month, 15)
+        else:
+            q_s = date(c_d.year, c_d.month, 16)
+            if c_d.month == 12:
+                q_e = date(c_d.year, 12, 31)
+            else:
+                q_e = date(c_d.year, c_d.month + 1, 1) - timedelta(days=1)
+        apply_preset_date(q_s, q_e)
+with col_p5:
+    if st.button("📆 Este Mes", use_container_width=True, key="btn_preset_month"):
+        m_s = date(curr_now.date().year, curr_now.date().month, 1)
+        apply_preset_date(m_s, curr_now.date())
+
+st.sidebar.markdown("<br>", unsafe_allow_html=True)
 st.sidebar.subheader("📅 Consulta por Rango de Fechas")
 col_d1, col_d2 = st.sidebar.columns(2)
 with col_d1:
@@ -1577,7 +1642,7 @@ if current_user and current_user.get('area_asignada', 'TODAS') != 'TODAS' and cu
         if col_a:
             df_inc_db = df_inc_db[df_inc_db[col_a].astype(str).str.strip() == user_area]
 
-col_dl, col_inf = st.columns([1.5, 2.5])
+col_dl, col_inf = st.columns([1.8, 2.2])
 
 with col_dl:
     if not df_asis_db.empty:
@@ -1585,7 +1650,7 @@ with col_dl:
             df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db, BASE_EXCEL
         )
         st.download_button(
-            label="📊 DESCARGAR EXCEL BASE v1.0 (.xlsx)",
+            label="📊 EXPORTAR REPORTE EJECUTIVO v1.0 (.xlsx)",
             data=excel_bytes,
             file_name=f"Sistema_Asistencia_GZG_{f_ini_str}_a_{f_fin_str}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1778,33 +1843,174 @@ with tab_dash:
             )
             st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True})
 
+        # LOGICA Y CALCULO DE MEDICION DE ESTADO DE HORAS EXTRA (APROBADAS / PENDIENTES / RECHAZADAS)
+        he_total_solicitadas_min = 0
+        he_aprobadas_min = 0
+        he_pendientes_min = 0
+        he_rechazadas_min = 0
+
+        cnt_he_total = 0
+        cnt_he_aprobadas = 0
+        cnt_he_pendientes = 0
+        cnt_he_rechazadas = 0
+
+        if not df_he_db.empty:
+            col_dur = 'DURACIÓN' if 'DURACIÓN' in df_he_db.columns else ('DURACIÓN (HH:MM)' if 'DURACIÓN (HH:MM)' in df_he_db.columns else None)
+            col_est = 'ESTADO' if 'ESTADO' in df_he_db.columns else ('ESTADO_SOLICITUD' if 'ESTADO_SOLICITUD' in df_he_db.columns else None)
+
+            cnt_he_total = len(df_he_db)
+            if col_dur:
+                he_total_solicitadas_min = int(to_numeric_minutes(df_he_db[col_dur]).sum())
+
+            if col_est and col_dur:
+                df_he_aprob = df_he_db[df_he_db[col_est].astype(str).str.upper().str.strip() == 'APROBADO']
+                df_he_pend = df_he_db[df_he_db[col_est].astype(str).str.upper().str.strip().isin(['PENDIENTE', 'NUEVO', 'SOLICITADO'])]
+                df_he_rech = df_he_db[df_he_db[col_est].astype(str).str.upper().str.strip() == 'RECHAZADO']
+
+                cnt_he_aprobadas = len(df_he_aprob)
+                cnt_he_pendientes = len(df_he_pend)
+                cnt_he_rechazadas = len(df_he_rech)
+
+                he_aprobadas_min = int(to_numeric_minutes(df_he_aprob[col_dur]).sum())
+                he_pendientes_min = int(to_numeric_minutes(df_he_pend[col_dur]).sum())
+                he_rechazadas_min = int(to_numeric_minutes(df_he_rech[col_dur]).sum())
+            else:
+                he_aprobadas_min = he_total_solicitadas_min
+                cnt_he_aprobadas = cnt_he_total
+        else:
+            he_aprobadas_min = he_programadas_min
+
+        he_tot_fmt = format_hhmm(he_total_solicitadas_min if he_total_solicitadas_min > 0 else he_programadas_min)
+        he_aprob_fmt = format_hhmm(he_aprobadas_min)
+        he_pend_fmt = format_hhmm(he_pendientes_min)
+        he_rech_fmt = format_hhmm(he_rechazadas_min)
+
+        # SECCIÓN DE KPIS: ESTADO Y MEDICIÓN DE APROBACIÓN DE HORAS EXTRA
+        st.markdown(f'''
+        <div style="color: #ffffff; font-size: 1.1rem; font-weight: 800; margin-top: 15px; margin-bottom: 8px; font-family: \'Outfit\', sans-serif;">
+            ⚡ Estado de Aprobación de Horas Extra (H.E.)
+        </div>
+        <div class="kpi-grid-container" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;">
+            <div class="kpi-cajon-single" style="border: 1px solid #3b82f6;">
+                <div class="kpi-icon-badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M11 15h2v2h-2zm0-8h2v5h-2zm1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8z"/></svg>
+                </div>
+                <div class="kpi-text-block">
+                    <div class="kpi-cajon-single-title">TOTAL H.E. GENERADAS</div>
+                    <div class="kpi-cajon-single-number">{he_tot_fmt}</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">{cnt_he_total} Solicitudes generadas</div>
+                </div>
+            </div>
+            <div class="kpi-cajon-single" style="border: 1px solid #22c55e;">
+                <div class="kpi-icon-badge" style="background: rgba(34, 197, 94, 0.15); color: #22c55e;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                </div>
+                <div class="kpi-text-block">
+                    <div class="kpi-cajon-single-title" style="color: #22c55e;">H.E. APROBADAS</div>
+                    <div class="kpi-cajon-single-number" style="color: #22c55e;">{he_aprob_fmt}</div>
+                    <div style="font-size: 0.78rem; color: #22c55e; font-weight: 600;">{cnt_he_aprobadas} Aprobadas ({round((cnt_he_aprobadas/cnt_he_total*100.0) if cnt_he_total>0 else 100.0, 1)}%)</div>
+                </div>
+            </div>
+            <div class="kpi-cajon-single" style="border: 1px solid #f59e0b;">
+                <div class="kpi-icon-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                </div>
+                <div class="kpi-text-block">
+                    <div class="kpi-cajon-single-title" style="color: #f59e0b;">H.E. PENDIENTES</div>
+                    <div class="kpi-cajon-single-number" style="color: #f59e0b;">{he_pend_fmt}</div>
+                    <div style="font-size: 0.78rem; color: #f59e0b; font-weight: 600;">{cnt_he_pendientes} Por revisar ({round((cnt_he_pendientes/cnt_he_total*100.0) if cnt_he_total>0 else 0.0, 1)}%)</div>
+                </div>
+            </div>
+            <div class="kpi-cajon-single" style="border: 1px solid #ef4444;">
+                <div class="kpi-icon-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
+                </div>
+                <div class="kpi-text-block">
+                    <div class="kpi-cajon-single-title" style="color: #ef4444;">H.E. RECHAZADAS</div>
+                    <div class="kpi-cajon-single-number" style="color: #ef4444;">{he_rech_fmt}</div>
+                    <div style="font-size: 0.78rem; color: #ef4444; font-weight: 600;">{cnt_he_rechazadas} Denegadas ({round((cnt_he_rechazadas/cnt_he_total*100.0) if cnt_he_total>0 else 0.0, 1)}%)</div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # FILA 2: DONUT CHART Y TOP 5 CARGOS CON MÁS INCIDENCIAS (BARRAS HORIZONTALES)
+        c_chart1, c_chart2 = st.columns([1, 1.2])
+        
+        with c_chart1:
+            st.markdown('<div class="section-title">📊 Distribución de Estados de Asistencia</div>', unsafe_allow_html=True)
+            estado_counts = df_asis_db['ESTADO ASISTENCIA'].value_counts().reset_index()
+            estado_counts.columns = ['Estado', 'Cantidad']
+            total_reg = int(estado_counts['Cantidad'].sum())
+            
+            legend_labels = []
+            colors_list = []
+            for _, r in estado_counts.iterrows():
+                est = str(r['Estado'])
+                cnt = int(r['Cantidad'])
+                pct = (cnt / total_reg * 100.0) if total_reg > 0 else 0.0
+                lbl = f"{est}<br><b>{cnt:,}</b> ({pct:.1f}%)"
+                legend_labels.append(lbl)
+                colors_list.append(COLOR_MAP_ESTADOS.get(est, '#3b82f6'))
+
+            fig_donut_est = go.Figure(data=[go.Pie(
+                labels=legend_labels,
+                values=estado_counts['Cantidad'],
+                hole=0.55,
+                marker=dict(colors=colors_list, line=dict(color='#0e1017', width=2)),
+                textinfo='percent',
+                texttemplate='%{percent:.1%}',
+                textfont=dict(color='#ffffff', size=14, family='Segoe UI, sans-serif'),
+                sort=False,
+                direction='clockwise'
+            )])
+
+            fig_donut_est.update_layout(
+                paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
+                font=dict(color='#ffffff', size=14, family='Segoe UI, sans-serif'),
+                showlegend=True,
+                legend=dict(orientation="h", y=-0.25, x=0.5, xanchor="center", bgcolor="#090a0f", font=dict(color='#ffffff', size=14, family='Segoe UI, sans-serif')),
+                annotations=[dict(text="<b style='letter-spacing: 2px;'>TOTAL</b>", x=0.5, y=0.56, font=dict(color='#94a3b8', size=11, family='Segoe UI, sans-serif'), showarrow=False),
+                             dict(text=f"<b style='font-size: 26px; color: #ffffff;'>{total_reg:,}</b>", x=0.5, y=0.44, font=dict(color='#ffffff', size=26, family='Segoe UI, sans-serif'), showarrow=False)],
+                margin=dict(t=20, b=90, l=20, r=20), height=460
+            )
+            st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True})
+
         with c_chart2:
-            st.markdown('<div class="section-title">📊 Registros de Asistencia por Cargo</div>', unsafe_allow_html=True)
-            if 'CARGO' in df_asis_db.columns:
-                cargo_counts = df_asis_db.groupby(['CARGO', 'ESTADO ASISTENCIA']).size().reset_index(name='Cantidad')
+            st.markdown('<div class="section-title">📊 Top 5 Cargos con Mayor Cantidad de Incidencias y Tardanzas</div>', unsafe_allow_html=True)
+            if 'CARGO' in df_asis_db.columns and 'ESTADO ASISTENCIA' in df_asis_db.columns:
+                df_inc_tard = df_asis_db[df_asis_db['ESTADO ASISTENCIA'].isin([
+                    'TARDANZA', 'SALIDA ANTICIPADA', 'ASISTIO CON INCIDENCIAS',
+                    'TARDANZA + SALIDA ANTICIPADA', 'FALTA', 'SALIDA PENDIENTE', 'ENTRADA PENDIENTE'
+                ])]
+                
+                if not df_inc_tard.empty:
+                    cargo_inc_counts = df_inc_tard.groupby('CARGO').size().reset_index(name='Total_Incidencias')
+                    cargo_inc_counts = cargo_inc_counts.sort_values(by='Total_Incidencias', ascending=True).tail(5)
+                else:
+                    cargo_inc_counts = pd.DataFrame({'CARGO': ['Sin Incidencias'], 'Total_Incidencias': [0]})
 
-                fig_bar = px.bar(
-                    cargo_counts, x='CARGO', y='Cantidad', color='ESTADO ASISTENCIA',
-                    color_discrete_map=COLOR_MAP_ESTADOS, barmode='group', text='Cantidad', height=460
+                fig_top5 = px.bar(
+                    cargo_inc_counts, y='CARGO', x='Total_Incidencias', orientation='h',
+                    text='Total_Incidencias', color='Total_Incidencias',
+                    color_continuous_scale=['#dfa86a', '#ef4444'], height=460
                 )
-                fig_bar.update_traces(
+                fig_top5.update_traces(
                     textposition='outside',
-                    textfont=dict(color='#ffffff', size=12, family='Segoe UI, sans-serif'),
-                    hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{y}<extra></extra>"
+                    textfont=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
+                    hovertemplate="<b>%{y}</b><br>Incidencias/Tardanzas: %{x}<extra></extra>"
                 )
-
-                max_val = int(cargo_counts['Cantidad'].max()) if not cargo_counts.empty else 10
-                y_max = int(max_val * 1.25) + 1
-
-                fig_bar.update_layout(
+                fig_top5.update_layout(
                     paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
+                    coloraxis_showscale=False,
                     font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
-                    xaxis=dict(title=dict(text='Cargo', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12), showgrid=False),
-                    yaxis=dict(title=dict(text='Cantidad de Registros', font=dict(color='#ffffff', size=14)), range=[0, y_max], tickfont=dict(color='#ffffff', size=12), showgrid=True, gridcolor='#1c1e29'),
-                    legend=dict(orientation="h", y=-0.28, x=0.5, xanchor="center", bgcolor="#090a0f", font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif')),
-                    margin=dict(t=30, b=90, l=10, r=10)
+                    xaxis=dict(title=dict(text='Cantidad de Incidencias / Tardanzas', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12), showgrid=True, gridcolor='#1c1e29'),
+                    yaxis=dict(title=dict(text='Cargo', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12), showgrid=False),
+                    margin=dict(t=30, b=50, l=10, r=30)
                 )
-                st.plotly_chart(fig_bar, use_container_width=True, config={'responsive': True})
+                st.plotly_chart(fig_top5, use_container_width=True, config={'responsive': True})
 
         # FILA 3: TENDENCIA DIARIA DE ASISTENCIA Y DISTRIBUCIÓN DE HORAS EXTRA POR ÁREA
         st.markdown("<br>", unsafe_allow_html=True)
@@ -1860,6 +2066,64 @@ with tab_dash:
                 st.plotly_chart(fig_he_bar, use_container_width=True, config={'responsive': True})
             else:
                 st.info("Sin registros de Horas Extra para mostrar por área.")
+
+        # FILA 4: MAPA DE CALOR (HEATMAP) DE TARDANZAS E INCIDENCIAS POR DÍA Y HORARIO
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('<div class="section-title">🔥 Mapa de Calor (Heatmap): Distribución de Tardanzas e Incidencias por Día y Horario de Ingreso</div>', unsafe_allow_html=True)
+        
+        if 'FECHA' in df_asis_db.columns:
+            df_heat = df_asis_db.copy()
+            df_heat['FECHA_DT'] = pd.to_datetime(df_heat['FECHA'])
+            
+            dias_es = {0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 4: 'Viernes', 5: 'Sábado', 6: 'Domingo'}
+            df_heat['DIA_NOMBRE'] = df_heat['FECHA_DT'].dt.weekday.map(dias_es)
+            
+            def get_hour_bucket(row):
+                ent = str(row.get('ENTRADA', '')).strip()
+                if ent and ent not in ['--', 'N/A', 'None', 'nan', '']:
+                    try:
+                        h = int(ent.split(':')[0])
+                        return f"{h:02d}:00 hs"
+                    except:
+                        pass
+                return "08:00 hs"
+
+            df_heat['HORA_BUCKET'] = df_heat.apply(get_hour_bucket, axis=1)
+            
+            df_heat_filtered = df_heat[df_heat['ESTADO ASISTENCIA'].isin([
+                'TARDANZA', 'SALIDA ANTICIPADA', 'ASISTIO CON INCIDENCIAS',
+                'TARDANZA + SALIDA ANTICIPADA', 'FALTA', 'SALIDA PENDIENTE', 'ENTRADA PENDIENTE'
+            ])]
+            
+            if not df_heat_filtered.empty:
+                pivot_heat = df_heat_filtered.pivot_table(
+                    index='DIA_NOMBRE', columns='HORA_BUCKET', values='ESTADO ASISTENCIA', aggfunc='count', fill_value=0
+                )
+                
+                dias_orden = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+                pivot_heat = pivot_heat.reindex([d for d in dias_orden if d in pivot_heat.index])
+
+                fig_heatmap = go.Figure(data=go.Heatmap(
+                    z=pivot_heat.values,
+                    x=pivot_heat.columns,
+                    y=pivot_heat.index,
+                    colorscale=[[0, '#0d0f17'], [0.3, '#1e2538'], [0.7, '#f59e0b'], [1.0, '#ef4444']],
+                    text=pivot_heat.values,
+                    texttemplate="%{text}",
+                    textfont=dict(color="#ffffff", size=13, family="Segoe UI, sans-serif"),
+                    colorbar=dict(title="Incidencias", tickfont=dict(color='#ffffff'))
+                ))
+
+                fig_heatmap.update_layout(
+                    paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
+                    font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
+                    xaxis=dict(title=dict(text='Horario de Ingreso / Turno', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12)),
+                    yaxis=dict(title=dict(text='Día de la Semana', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12)),
+                    margin=dict(t=20, b=40, l=10, r=10), height=380
+                )
+                st.plotly_chart(fig_heatmap, use_container_width=True, config={'responsive': True})
+            else:
+                st.info("ℹ️ No se registran incidencias o tardanzas en el periodo seleccionado para generar el mapa de calor.")
 
         # FILA 4: RANKINGS TOP 5 EJECUTIVOS
         st.markdown("<br>", unsafe_allow_html=True)
