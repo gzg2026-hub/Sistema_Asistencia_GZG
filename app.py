@@ -69,136 +69,92 @@ def to_numeric_minutes(series) -> pd.Series:
             
     return num_s.fillna(0.0)
 
-# Custom CSS: Theme Negro Absoluto, Bronze Elegante GZG, Texto GZG Coincidente con el Logo sin Sombra Blanca
+# Custom CSS: Theme Negro Absoluto, Bronze Elegante GZG, Ocultar Botones Derechos Superior
 st.markdown("""
 <style>
-    /* FONDO DE PALETA EJECUTIVA UNIFICADO (#090a0f) */
-    header[data-testid="stHeader"],
-    div[data-testid="stHeader"],
-    .stAppHeader,
-    .stHeader {
-        background-color: transparent !important;
-        background: transparent !important;
-    }
-
     /* Theme Base Oscuro (#090a0f) */
-    .stApp {
+    .stApp, [data-testid="stMain"] {
         background-color: #090a0f !important;
-        background: #090a0f !important;
         color: #ffffff;
         font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
-    
-    /* EXPANSIÓN FLUIDA Y ESPACIO SUPERIOR LIBRE EN MAIN */
-    [data-testid="stMain"] {
-        background-color: #090a0f !important;
-        background: #090a0f !important;
     }
 
     [data-testid="stMainBlockContainer"] {
         max-width: 100% !important;
-        padding-top: 4.5rem !important; /* Espacio limpio para despejar la barra superior y evitar cortes */
+        padding-top: 2.5rem !important;
         padding-left: 1.5rem !important;
         padding-right: 1.5rem !important;
         padding-bottom: 2rem !important;
         width: 100% !important;
     }
 
-    /* OCULTAR ÚNICAMENTE EL MENÚ DE 3 PUNTOS, BOTÓN DEPLOY Y FOOTER DE LA ESQUINA SUPERIOR DERECHA */
+    /* OCULTAR COMPLETAMENTE MENÚ DERECHO, SHARE, STAR, EDIT, GITHUB Y FOOTER DE LA ESQUINA SUPERIOR DERECHA */
     #MainMenu,
-    div[data-testid="stMainMenu"],
-    .stDeployButton,
-    div[data-testid="stStatusWidget"],
     footer,
+    .stDeployButton,
+    .stAppToolbar,
+    div[data-testid="stMainMenu"],
+    div[data-testid="stStatusWidget"],
     div[data-testid="stFooter"],
-    button[data-testid="stBaseButton-headerNoPadding"],
-    [data-testid="stHeader"] button[title="View app in Streamlit Community Cloud"] {
+    div[data-testid="stToolbar"],
+    div[data-testid="stHeaderActionElements"],
+    [data-testid="stHeader"] a,
+    [data-testid="stHeader"] div:not([data-testid="stSidebarCollapsedControl"]) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         pointer-events: none !important;
     }
 
-    /* OCULTAR DEFINITIVAMENTE DE RAÍZ 'Press Enter to apply' Y 'Press Enter to submit form' */
+    /* OCULTAR INSTRUCCIONES SECUNDARIAS DE INPUTS DE FORMA DEFINITIVA */
     [data-testid="stInputInstructions"],
     div[data-testid="stInputInstructions"],
     small[data-testid="stInputInstructions"],
-    span[data-testid="stInputInstructions"],
-    div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
-    div[data-testid="stTextInput"] div[data-testid="stInputInstructions"] {
+    span[data-testid="stInputInstructions"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
         color: transparent !important;
         -webkit-text-fill-color: transparent !important;
         font-size: 0px !important;
-        line-height: 0 !important;
         height: 0px !important;
         width: 0px !important;
-        margin: 0 !important;
-        padding: 0 !important;
         position: absolute !important;
         top: -9999px !important;
         left: -9999px !important;
         pointer-events: none !important;
     }
 
-    /* BARRA CABECERA STREAMLIT TRANSPARENTE */
-    header[data-testid="stHeader"],
-    div[data-testid="stHeader"],
-    .stAppHeader {
+    /* BARRA CABECERA TRANSPARENTE */
+    header[data-testid="stHeader"], div[data-testid="stHeader"], .stAppHeader {
         background: transparent !important;
-        background-color: transparent !important;
         z-index: 99999 !important;
     }
 
-    /* ESTADO NORMAL / ESTÁTICO (SIN HOVER) - SOBRIO Y ELEGANTE CON TARJETA OSCURA Y BORDE DORADO */
+    /* BOTÓN TOGGLE SIDEBAR */
     div[data-testid="stSidebarCollapsedControl"],
-    [data-testid="stSidebarCollapsedControl"],
-    div[data-testid="collapsedControl"],
-    header[data-testid="stHeader"] button,
-    div[data-testid="stHeader"] button,
-    button[data-testid="stBaseButton-header"],
-    button[data-testid="stHeaderCollapseButton"],
-    button[data-testid="stSidebarExpandButton"],
     button[data-testid="stSidebarCollapseButton"],
-    section[data-testid="stSidebar"] button[data-testid="stSidebarCollapseButton"],
-    [data-testid="stSidebarHeader"] button,
-    button[aria-label*="Expand"],
-    button[aria-label*="expand"],
-    button[aria-label*="Sidebar"],
-    button[aria-label*="sidebar"] {
+    button[data-testid="stSidebarExpandButton"] {
         background-color: #11131c !important;
-        background: #11131c !important;
         border: 1.5px solid #c58b4e !important;
         border-radius: 12px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8) !important;
         width: 44px !important;
         height: 44px !important;
-        min-width: 44px !important;
-        min-height: 44px !important;
-        max-width: 44px !important;
-        max-height: 44px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        cursor: pointer !important;
-        pointer-events: auto !important;
-        opacity: 1 !important;
-        visibility: visible !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        transition: all 0.25s ease !important;
-    }
-
-    /* POSICIONAMIENTO DEL CONTENEDOR EN ESTADO COLAPSADO (ESQUINA SUPERIOR IZQUIERDA) */
-    div[data-testid="stSidebarCollapsedControl"],
-    [data-testid="stSidebarCollapsedControl"],
-    div[data-testid="collapsedControl"] {
         position: fixed !important;
         top: 14px !important;
         left: 14px !important;
         z-index: 999999 !important;
+    }
+
+    div[data-testid="stSidebarCollapsedControl"]:hover,
+    button[data-testid="stSidebarCollapseButton"]:hover,
+    button[data-testid="stSidebarExpandButton"]:hover {
+        background-color: #1c1e29 !important;
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 18px rgba(245, 158, 11, 0.85) !important;
     }
 
     /* ICONO INTERNO EN ESTADO ESTÁTICO - AMBAS FLECHAS EXACTAMENTE EN 24px */
