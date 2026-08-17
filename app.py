@@ -438,9 +438,7 @@ st.markdown("""
        FORMATO DE CAJÓN UNIFICADO CON ILUMINACIÓN DORADA PERMANENTE
        (Idéntico para Cargos, Trabajador, Fechas y Text Inputs en Sidebar)
        ========================================================================= */
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"],
-    section[data-testid="stSidebar"] div[data-baseweb="select"],
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div {
+    section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
@@ -449,8 +447,8 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:first-child,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
         background-color: #11131c !important;
@@ -472,10 +470,10 @@ st.markdown("""
 
     section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
     section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:first-child:hover,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:first-child:focus-within,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child:hover,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:first-child:focus-within,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
