@@ -361,6 +361,7 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
+@st.cache_data(ttl=60, show_spinner=False)
 def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, db_path: str = DB_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Obtiene DataFrames acumulados desde la base de datos:

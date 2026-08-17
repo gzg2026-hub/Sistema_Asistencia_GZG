@@ -912,8 +912,6 @@ def auto_seed_database_if_empty():
     except Exception as e:
         print(f"Error auto-seeding: {e}")
 
-auto_seed_database_if_empty()
-
 # ---------------------------------------------------------
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
@@ -965,6 +963,7 @@ if not is_authenticated():
                 st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 
+auto_seed_database_if_empty()
 current_user = get_current_user()
 
 logo_b64 = get_logo_base64()
