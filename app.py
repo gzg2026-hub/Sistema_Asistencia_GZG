@@ -976,11 +976,14 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
         
-        u_val = st.text_input("Usuario", value="", placeholder="ej. raul.espinoza", key="login_u_field")
-        p_val = st.text_input("Código de Acceso", value="", type="password", key="login_p_field")
+        u_val = st.text_input("Usuario", value="", placeholder="ej. raul.espinoza", key="login_u_field_v2")
+        
+        st.markdown('<div class="no-autofill-mask">', unsafe_allow_html=True)
+        p_val = st.text_input("Código de Acceso", value="", type="default", key="login_p_field_v2")
+        st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_clean"):
+        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_v2"):
             if u_val and p_val:
                 if login_user(u_val.strip(), p_val.strip()):
                     login_holder.empty()
@@ -989,16 +992,6 @@ if not is_authenticated():
                     st.error("❌ Usuario o código de acceso incorrectos.")
             else:
                 st.warning("⚠️ Ingrese su usuario y código de acceso.")
-                
-        with st.expander("ℹ️ Ver Usuarios Autorizados"):
-            st.markdown("""
-            - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
-            - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
-            - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
-            - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
-            - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
-            - 💼 **Administración RRHH**: `admin` / `gzg2026*`
-            """)
     st.stop()
 
 current_user = get_current_user()
