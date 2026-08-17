@@ -455,6 +455,24 @@ st.markdown("""
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), inset 0 0 6px rgba(245, 158, 11, 0.25) !important;
     }
 
+    /* Tags elegantes para Selección Múltiple de Cargos en Sidebar */
+    section[data-testid="stSidebar"] div[data-baseweb="tag"] {
+        background-color: #1e2235 !important;
+        border: 1px solid #dfa86a !important;
+        border-radius: 6px !important;
+        margin: 2px !important;
+    }
+    section[data-testid="stSidebar"] div[data-baseweb="tag"] span {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.82rem !important;
+    }
+    section[data-testid="stSidebar"] div[data-baseweb="tag"] svg,
+    section[data-testid="stSidebar"] div[data-baseweb="tag"] button {
+        fill: #f59e0b !important;
+        color: #f59e0b !important;
+    }
+
     section[data-testid="stSidebar"] input[type="text"], 
     section[data-testid="stSidebar"] input[type="date"], 
     section[data-testid="stSidebar"] div[role="combobox"] {
@@ -1116,23 +1134,29 @@ if current_user:
         st.toast("👋 Sesión cerrada correctamente")
         st.rerun()
 
-# 1. SELECTOR DE PERSONAL (FILTRO POR CARGO Y TRABAJADOR)
+# 1. SELECTOR DE PERSONAL (FILTRO POR MÚLTIPLES CARGOS Y TRABAJADOR)
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-opciones_cargos = ["TODOS LOS CARGOS"]
+opciones_cargos = []
 if not df_trab_master_db.empty and 'CARGO' in df_trab_master_db.columns:
     cargos_raw = df_trab_master_db['CARGO'].dropna().unique()
     cargos_clean = sorted([str(c).strip() for c in cargos_raw if str(c).strip() and str(c).lower() not in ['none', 'n/a', 'nan', '']])
-    opciones_cargos += cargos_clean
+    opciones_cargos = cargos_clean
 
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo</p>", unsafe_allow_html=True)
-cargo_seleccionado = st.sidebar.selectbox("Filtrar por Cargo", opciones_cargos, label_visibility="collapsed")
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
+cargos_seleccionados = st.sidebar.multiselect(
+    "Filtrar por Cargo(s)",
+    options=opciones_cargos,
+    default=[],
+    placeholder="Todos los cargos (o elija varios)",
+    label_visibility="collapsed"
+)
 
-# Filtrar trabajadores según el cargo seleccionado
+# Filtrar trabajadores según los cargos seleccionados (si está vacío, considera todos)
 df_trab_opciones = df_trab_master_db.copy()
-if cargo_seleccionado != "TODOS LOS CARGOS" and not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
-    df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+if cargos_seleccionados and not df_trab_opciones.empty and 'CARGO' in df_trab_opciones.columns:
+    df_trab_opciones = df_trab_opciones[df_trab_opciones['CARGO'].astype(str).str.strip().isin(cargos_seleccionados)]
 
 opciones_trabajadores = ["TODO EL PERSONAL"]
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
@@ -1248,7 +1272,7 @@ if btn_procesar:
 # CARGAR DATOS COMPLETOS DE LA BASE DE DATOS
 df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db()
 
-# APLICAR FILTRO POR TRABAJADOR O CARGO
+# APLICAR FILTRO POR TRABAJADOR O MÚLTIPLES CARGOS
 if trabajador_seleccionado in worker_options_map and worker_options_map[trabajador_seleccionado] != "TODOS":
     selected_dni = worker_options_map[trabajador_seleccionado]
     if not df_trab_db.empty and 'DNI' in df_trab_db.columns:
@@ -1264,15 +1288,16 @@ if trabajador_seleccionado in worker_options_map and worker_options_map[trabajad
         if col_dni:
             df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip() == selected_dni]
 
-elif cargo_seleccionado != "TODOS LOS CARGOS":
+elif cargos_seleccionados:
+    cargos_set = set(cargos_seleccionados)
     if not df_trab_db.empty and 'CARGO' in df_trab_db.columns:
-        df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+        df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
     if not df_asis_db.empty and 'CARGO' in df_asis_db.columns:
-        df_asis_db = df_asis_db[df_asis_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+        df_asis_db = df_asis_db[df_asis_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
     if not df_inc_db.empty and 'CARGO' in df_inc_db.columns:
-        df_inc_db = df_inc_db[df_inc_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+        df_inc_db = df_inc_db[df_inc_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
     if not df_he_db.empty and 'CARGO' in df_he_db.columns:
-        df_he_db = df_he_db[df_he_db['CARGO'].astype(str).str.strip() == cargo_seleccionado]
+        df_he_db = df_he_db[df_he_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
     if not df_marc_db.empty and not df_trab_db.empty:
         valid_dnis = set(df_trab_db['DNI'].astype(str).str.strip())
         col_dni = 'ID' if 'ID' in df_marc_db.columns else ('DNI' if 'DNI' in df_marc_db.columns else None)
