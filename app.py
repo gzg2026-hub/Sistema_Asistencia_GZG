@@ -469,24 +469,8 @@ st.markdown("""
     }
 
     /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox Tradicional Desplegable) - Exactamente Idéntico */
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] {
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
-        background: transparent !important;
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"],
+    section[data-testid="stSidebar"] .stSelectbox {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -503,12 +487,14 @@ st.markdown("""
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
     }
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div * {
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] div,
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] span,
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"],
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] * {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
-        color: #ffffff !important;
-        font-weight: 700 !important;
+        box-shadow: none !important;
     }
 
     /* 3. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
