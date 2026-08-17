@@ -1213,43 +1213,29 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# 1. SELECTOR MULTIPLE DE CARGO (SINCRONIZACIÓN ATÓMICA SIN DESFASE NI LAG)
-if 'cargos_seleccionados' not in st.session_state or not isinstance(st.session_state['cargos_seleccionados'], set):
-    st.session_state['cargos_seleccionados'] = set(opciones_cargos)
-    for c in opciones_cargos:
-        st.session_state[f"cargo_chk_{c}"] = True
-
+# 1. SELECTOR MULTIPLE DE CARGO (TODOS Y DESMARCAR 100% OPERATIVOS E INSTANTÁNEOS)
 def cb_marcar_todos_sync():
-    st.session_state['cargos_seleccionados'] = set(opciones_cargos)
     for c in opciones_cargos:
         st.session_state[f"cargo_chk_{c}"] = True
 
 def cb_desmarcar_todos_sync():
-    st.session_state['cargos_seleccionados'] = set()
     for c in opciones_cargos:
         st.session_state[f"cargo_chk_{c}"] = False
 
-def cb_toggle_cargo_sync(cargo_name):
-    val = st.session_state.get(f"cargo_chk_{cargo_name}", False)
-    if val:
-        st.session_state['cargos_seleccionados'].add(cargo_name)
-    else:
-        st.session_state['cargos_seleccionados'].discard(cargo_name)
-
 for c in opciones_cargos:
     if f"cargo_chk_{c}" not in st.session_state:
-        st.session_state[f"cargo_chk_{c}"] = (c in st.session_state['cargos_seleccionados'])
+        st.session_state[f"cargo_chk_{c}"] = True
 
-current_cargos_set = st.session_state['cargos_seleccionados']
+selected_cargos_pre = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
 
-if len(current_cargos_set) == len(opciones_cargos):
+if len(selected_cargos_pre) == len(opciones_cargos):
     texto_boton = "TODOS LOS CARGOS"
-elif len(current_cargos_set) == 0:
+elif len(selected_cargos_pre) == 0:
     texto_boton = "NINGÚN CARGO SELECCIONADO"
-elif len(current_cargos_set) <= 2:
-    texto_boton = ", ".join(sorted(list(current_cargos_set)))
+elif len(selected_cargos_pre) <= 2:
+    texto_boton = ", ".join(selected_cargos_pre)
 else:
-    texto_boton = f"{len(current_cargos_set)} Cargos seleccionados"
+    texto_boton = f"{len(selected_cargos_pre)} Cargos seleccionados"
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
 
@@ -1263,18 +1249,14 @@ with st.sidebar.popover(texto_boton, use_container_width=True):
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(
-            cargo_item,
-            key=f"cargo_chk_{cargo_item}",
-            on_change=cb_toggle_cargo_sync,
-            args=(cargo_item,)
-        )
+        st.checkbox(cargo_item, key=f"cargo_chk_{cargo_item}")
 
-# CARGOS ACTIVOS EN TIEMPO REAL
-if len(st.session_state['cargos_seleccionados']) == 0:
+# RE-EVALUAR TRAS RENDERIZADO DE LOS CHECKBOXES
+selected_cargos_post = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
+if len(selected_cargos_post) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
-    pending_cargos = sorted(list(st.session_state['cargos_seleccionados']))
+    pending_cargos = selected_cargos_post
 
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
