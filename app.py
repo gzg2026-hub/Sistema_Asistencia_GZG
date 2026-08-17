@@ -459,16 +459,20 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Selector Universal de Máxima Especificidad */
-    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div,
-    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"],
-    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
-    .stApp section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
+    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Unico Cajón Dorado Limpio */
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"],
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"],
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -484,6 +488,13 @@ st.markdown("""
         width: 100% !important;
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
+    }
+
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div div {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     /* 3. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
