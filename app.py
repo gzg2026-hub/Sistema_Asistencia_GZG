@@ -1219,10 +1219,14 @@ if current_user:
         <div style="font-size:0.8rem; color:#ffffff;">Área: <b>{current_user['area_asignada']}</b></div>
     </div>
     ''', unsafe_allow_html=True)
-    if st.sidebar.button("🔴 CERRAR SESIÓN", use_container_width=True):
+
+    def cb_logout():
         logout_user()
-        st.toast("👋 Sesión cerrada correctamente")
-        st.rerun()
+        for k in list(st.session_state.keys()):
+            if k not in ['authenticated', 'user']:
+                del st.session_state[k]
+
+    st.sidebar.button("🔴 CERRAR SESIÓN", use_container_width=True, key="btn_logout_user", on_click=cb_logout)
 
 # 1. SELECTOR DE PERSONAL (FILTRO POR MÚLTIPLES CARGOS Y TRABAJADOR)
 st.sidebar.markdown("---")
