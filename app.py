@@ -1043,12 +1043,12 @@ def _inject_dashboard_css():
         color: #ffffff !important;
     }
     /* BOTONES COMPACTOS DE PRESETS RÁPIDOS DE FECHA EN LA BARRA LATERAL */
-    button[key^="btn_preset_"] {
-        font-size: 0.75rem !important;
+    div[data-testid="stSidebar"] button[key^="btn_preset_"] {
+        font-size: 0.82rem !important;
         font-weight: 700 !important;
-        padding: 0.2rem 0.3rem !important;
-        height: 32px !important;
-        min-height: 32px !important;
+        padding: 0.3rem 0.4rem !important;
+        height: 36px !important;
+        min-height: 36px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -1057,7 +1057,7 @@ def _inject_dashboard_css():
         border: 1px solid #222638 !important;
         color: #cbd5e1 !important;
     }
-    button[key^="btn_preset_"]:hover {
+    div[data-testid="stSidebar"] button[key^="btn_preset_"]:hover {
         border-color: #dfa86a !important;
         color: #dfa86a !important;
         background-color: #1a1e2e !important;
@@ -1547,7 +1547,7 @@ def apply_preset_date(f_start, f_end):
     st.toast(f"📅 Rango cargado: {f_start.strftime('%d/%m')} al {f_end.strftime('%d/%m')}", icon="⚡")
     st.rerun()
 
-col_p1, col_p2, col_p3 = st.sidebar.columns(3)
+col_p1, col_p2 = st.sidebar.columns(2)
 with col_p1:
     if st.button("📅 Hoy", use_container_width=True, key="btn_preset_today"):
         apply_preset_date(curr_now.date(), curr_now.date())
@@ -1555,12 +1555,12 @@ with col_p2:
     if st.button("⏪ Ayer", use_container_width=True, key="btn_preset_yesterday"):
         yest = curr_now.date() - timedelta(days=1)
         apply_preset_date(yest, yest)
+
+col_p3, col_p4 = st.sidebar.columns(2)
 with col_p3:
-    if st.button("📆 Semana", use_container_width=True, key="btn_preset_week"):
+    if st.button("📆 Esta Semana", use_container_width=True, key="btn_preset_week"):
         mon = curr_now.date() - timedelta(days=curr_now.date().weekday())
         apply_preset_date(mon, curr_now.date())
-
-col_p4, col_p5 = st.sidebar.columns(2)
 with col_p4:
     if st.button("🗓️ Quincena", use_container_width=True, key="btn_preset_fortnight"):
         c_d = curr_now.date()
@@ -1574,10 +1574,10 @@ with col_p4:
             else:
                 q_e = date(c_d.year, c_d.month + 1, 1) - timedelta(days=1)
         apply_preset_date(q_s, q_e)
-with col_p5:
-    if st.button("📊 Este Mes", use_container_width=True, key="btn_preset_month"):
-        m_s = date(curr_now.date().year, curr_now.date().month, 1)
-        apply_preset_date(m_s, curr_now.date())
+
+if st.sidebar.button("📊 Este Mes", use_container_width=True, key="btn_preset_month"):
+    m_s = date(curr_now.date().year, curr_now.date().month, 1)
+    apply_preset_date(m_s, curr_now.date())
 
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
