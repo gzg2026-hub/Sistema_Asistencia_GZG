@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import os
 import base64
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from core.config import AttendanceConfig
 from core.attendance_engine import procesar_asistencia_df
 from data.data_loader import cargar_datos_excel
