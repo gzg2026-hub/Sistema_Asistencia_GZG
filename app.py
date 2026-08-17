@@ -1713,16 +1713,39 @@ with tab_dash:
             st.markdown('<div class="section-title">📈 Registros de Asistencia por Cargo</div>', unsafe_allow_html=True)
             if 'CARGO' in df_asis_db.columns:
                 cargo_counts = df_asis_db.groupby(['CARGO', 'ESTADO ASISTENCIA']).size().reset_index(name='Cantidad')
+                cargo_totals = df_asis_db.groupby('CARGO').size().reset_index(name='Total')
+
                 fig_bar = px.bar(
                     cargo_counts, x='CARGO', y='Cantidad', color='ESTADO ASISTENCIA',
                     color_discrete_map=COLOR_MAP_ESTADOS, barmode='stack', text='Cantidad', height=460
                 )
-                fig_bar.update_traces(textposition='outside', textfont=dict(color='#ffffff', size=13, weight='bold'))
+                fig_bar.update_traces(
+                    textposition='inside',
+                    insidetextanchor='middle',
+                    textfont=dict(color='#ffffff', size=12, family='Segoe UI, sans-serif'),
+                    hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{y}<extra></extra>"
+                )
+
+                # AÑADIR TOTAL GENERAL EN LA PARTE SUPERIOR DE CADA BARRA DE FORMA ELEGANTE
+                fig_bar.add_trace(go.Scatter(
+                    x=cargo_totals['CARGO'],
+                    y=cargo_totals['Total'],
+                    text=cargo_totals['Total'].apply(lambda v: f"<b>{v}</b>"),
+                    mode='text',
+                    textposition='top center',
+                    textfont=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
+                    showlegend=False,
+                    hoverinfo='skip'
+                ))
+
+                max_total = int(cargo_totals['Total'].max()) if not cargo_totals.empty else 10
+                y_max = int(max_total * 1.15) + 1
+
                 fig_bar.update_layout(
                     paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
                     font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
                     xaxis=dict(title=dict(text='Cargo', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12), showgrid=False),
-                    yaxis=dict(title=dict(text='Cantidad de Registros', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12), showgrid=True, gridcolor='#1c1e29'),
+                    yaxis=dict(title=dict(text='Cantidad de Registros', font=dict(color='#ffffff', size=14)), range=[0, y_max], tickfont=dict(color='#ffffff', size=12), showgrid=True, gridcolor='#1c1e29'),
                     legend=dict(orientation="h", y=-0.28, x=0.5, xanchor="center", bgcolor="#090a0f", font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif')),
                     margin=dict(t=30, b=90, l=10, r=10)
                 )
