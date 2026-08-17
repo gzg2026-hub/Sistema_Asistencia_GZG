@@ -535,7 +535,8 @@ st.markdown("""
     }
 
     /* ESTILO PARA EL MENÚ DESPLEGABLE CON CHECKMARKS */
-    div[data-testid="stPopoverBody"] {
+    div[data-testid="stPopoverBody"],
+    div[data-testid="stPopoverContent"] {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #c58b4e !important;
@@ -544,10 +545,23 @@ st.markdown("""
         padding: 12px !important;
     }
 
-    div[data-testid="stPopoverBody"] span {
+    div[data-testid="stPopoverBody"] span,
+    div[data-testid="stPopoverContent"] span {
         color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 0.95rem !important;
+        font-size: 0.90rem !important;
+    }
+
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label span[role="checkbox"],
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label span[role="checkbox"] {
+        border: 1.5px solid #dfa86a !important;
+        border-radius: 4px !important;
+    }
+
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label span[role="checkbox"][aria-checked="true"],
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label span[role="checkbox"][aria-checked="true"] {
+        background-color: #f59e0b !important;
+        border-color: #f59e0b !important;
     }
 
     div[data-baseweb="tag"] svg,
@@ -1098,6 +1112,10 @@ curr_now = datetime.now(peru_tz)
 date_display = curr_now.strftime("%d/%m/%Y")
 time_display = curr_now.strftime("%I:%M:%S %p").lower()
 
+if 'last_data_update' not in st.session_state:
+    st.session_state['last_data_update'] = time_display
+last_update_display = st.session_state['last_data_update']
+
 st.markdown(f'''
 <div class="main-header-cajon">
     <div class="header-left">
@@ -1122,7 +1140,7 @@ st.markdown(f'''
         </div>
         <div class="widget-box-equal">
             <div class="widget-label">ÚLTIMA ACTUALIZACIÓN</div>
-            <div class="widget-val">{time_display}</div>
+            <div class="widget-val" id="gzg-last-update">{last_update_display}</div>
         </div>
     </div>
 </div>
@@ -1144,7 +1162,7 @@ components.html("""
             }
         } catch(e){}
     };
-    setInterval(updateHeaderClock, 1000);
+    setInterval(updateHeaderClock, 200);
     updateHeaderClock();
 </script>
 """, height=0, width=0)
@@ -1196,6 +1214,12 @@ if current_user:
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
+
+# INICIALIZACIÓN DE CASILLAS DE CARGOS ACTIVAS POR DEFECTO
+if 'chk_cargos_initialized' not in st.session_state:
+    st.session_state['chk_cargos_initialized'] = True
+    for c in opciones_cargos:
+        st.session_state[f"chk_c_{c}"] = True
 
 def cb_set_cargos(state_val: bool):
     for c in opciones_cargos:
@@ -1291,6 +1315,7 @@ if btn_filtrar:
     st.session_state['active_worker'] = trabajador_input
     st.session_state['active_f_ini'] = fecha_inicio_input
     st.session_state['active_f_fin'] = fecha_fin_input
+    st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
     st.toast("🔍 Filtros aplicados correctamente", icon="🎯")
     st.rerun()
 
@@ -1373,6 +1398,7 @@ if btn_procesar:
                 df_t_db, df_m_db, df_a_db, df_h_db, df_i_db = obtener_datos_db()
                 guardar_excel_base(df_t_db, df_m_db, df_a_db, df_h_db, df_i_db, BASE_EXCEL)
                 
+                st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
                 st.toast("✅ Proceso exitoso: Marcaciones calculadas y guardadas en la BD y Excel base v1.0", icon="🎉")
                 st.success("Proceso exitoso: Asistencia actualizada correctamente en la Base de Datos.")
             else:
