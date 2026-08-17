@@ -1779,36 +1779,22 @@ with tab_dash:
             st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True})
 
         with c_chart2:
-            st.markdown('<div class="section-title">📈 Registros de Asistencia por Cargo</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">📊 Registros de Asistencia por Cargo</div>', unsafe_allow_html=True)
             if 'CARGO' in df_asis_db.columns:
                 cargo_counts = df_asis_db.groupby(['CARGO', 'ESTADO ASISTENCIA']).size().reset_index(name='Cantidad')
-                cargo_totals = df_asis_db.groupby('CARGO').size().reset_index(name='Total')
 
                 fig_bar = px.bar(
                     cargo_counts, x='CARGO', y='Cantidad', color='ESTADO ASISTENCIA',
-                    color_discrete_map=COLOR_MAP_ESTADOS, barmode='stack', text='Cantidad', height=460
+                    color_discrete_map=COLOR_MAP_ESTADOS, barmode='group', text='Cantidad', height=460
                 )
                 fig_bar.update_traces(
-                    textposition='inside',
-                    insidetextanchor='middle',
+                    textposition='outside',
                     textfont=dict(color='#ffffff', size=12, family='Segoe UI, sans-serif'),
                     hovertemplate="<b>%{x}</b><br>%{fullData.name}: %{y}<extra></extra>"
                 )
 
-                # AÑADIR TOTAL GENERAL EN LA PARTE SUPERIOR DE CADA BARRA DE FORMA ELEGANTE
-                fig_bar.add_trace(go.Scatter(
-                    x=cargo_totals['CARGO'],
-                    y=cargo_totals['Total'],
-                    text=cargo_totals['Total'].apply(lambda v: f"<b>{v}</b>"),
-                    mode='text',
-                    textposition='top center',
-                    textfont=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
-                    showlegend=False,
-                    hoverinfo='skip'
-                ))
-
-                max_total = int(cargo_totals['Total'].max()) if not cargo_totals.empty else 10
-                y_max = int(max_total * 1.15) + 1
+                max_val = int(cargo_counts['Cantidad'].max()) if not cargo_counts.empty else 10
+                y_max = int(max_val * 1.25) + 1
 
                 fig_bar.update_layout(
                     paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
