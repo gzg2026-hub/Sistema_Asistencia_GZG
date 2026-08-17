@@ -1095,135 +1095,133 @@ init_app_boot_once()
 # ---------------------------------------------------------
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
+login_placeholder = st.empty()
+
 if not is_authenticated():
-    # CSS MÍNIMO SOLO PARA LOGIN
-    st.markdown("""
-    <style>
-        *, *::before, *::after {
-            transition: none !important;
-            animation: none !important;
-            -webkit-transition: none !important;
-            -webkit-animation: none !important;
-        }
-        .stApp,[data-testid="stMain"]{background:#090a0f!important;}
-        section[data-testid="stSidebar"],
-        div[data-testid="stSidebarCollapsedControl"],
-        header[data-testid="stHeader"],div[data-testid="stDecoration"],
-        div[data-testid="stStatusWidget"],div[data-testid="stToolbar"],
-        iframe,#MainMenu,footer,.stDeployButton{display:none!important;}
-        /* CENTRADO Y ANCHO FIJO PARA LOGIN SIN MUTAR stMainBlockContainer */
-        .gzg-login-wrapper {
-            max-width: 460px !important;
-            width: 100% !important;
-            margin: 0 auto !important;
-            padding-top: 1rem !important;
-        }
-        /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' */
-        [data-testid="stInputInstructions"],
-        [data-testid="InputInstructions"],
-        .stInputInstructions,
-        div[data-testid="stForm"] small,
-        div[data-testid="stTextInput"] small,
-        div[data-baseweb="input"] small {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            height: 0px !important;
-            width: 0px !important;
-            overflow: hidden !important;
-            font-size: 0px !important;
-            line-height: 0 !important;
-        }
-        div[data-testid="stForm"]{
-            background:#0d0f17;border:1px solid #1c1e29;
-            border-radius:12px;padding:24px;
-            box-shadow:0 10px 30px rgba(0,0,0,0.6);
-        }
-        div[data-testid="stFormSubmitButton"] button{
-            background:linear-gradient(135deg,#c58b4e,#dfa86a)!important;
-            color:#fff!important;font-weight:800!important;
-            border:none!important;border-radius:8px!important;
-            height:46px!important;font-size:1rem!important;
-        }
-        div[data-testid="stTextInput"] label{color:#94a3b8!important;font-size:.9rem!important;margin-bottom:4px!important;}
+    with login_placeholder.container():
+        # CSS MÍNIMO SOLO PARA LOGIN
+        st.markdown("""
+        <style>
+            *, *::before, *::after {
+                transition: none !important;
+                animation: none !important;
+                -webkit-transition: none !important;
+                -webkit-animation: none !important;
+            }
+            .stApp,[data-testid="stMain"]{background:#090a0f!important;}
+            section[data-testid="stSidebar"],
+            div[data-testid="stSidebarCollapsedControl"],
+            header[data-testid="stHeader"],div[data-testid="stDecoration"],
+            div[data-testid="stStatusWidget"],div[data-testid="stToolbar"],
+            iframe,#MainMenu,footer,.stDeployButton{display:none!important;}
+            
+            /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' */
+            [data-testid="stInputInstructions"],
+            [data-testid="InputInstructions"],
+            .stInputInstructions,
+            div[data-testid="stForm"] small,
+            div[data-testid="stTextInput"] small,
+            div[data-baseweb="input"] small {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                height: 0px !important;
+                width: 0px !important;
+                overflow: hidden !important;
+                font-size: 0px !important;
+                line-height: 0 !important;
+            }
+            div[data-testid="stForm"]{
+                background:#0d0f17;border:1px solid #1c1e29;
+                border-radius:12px;padding:24px;
+                box-shadow:0 10px 30px rgba(0,0,0,0.6);
+            }
+            div[data-testid="stFormSubmitButton"] button{
+                background:linear-gradient(135deg,#c58b4e,#dfa86a)!important;
+                color:#fff!important;font-weight:800!important;
+                border:none!important;border-radius:8px!important;
+                height:46px!important;font-size:1rem!important;
+            }
+            div[data-testid="stTextInput"] label{color:#94a3b8!important;font-size:.9rem!important;margin-bottom:4px!important;}
+            
+            /* UN SOLO CAJÓN LIMPIO Y UNIFICADO PARA ENTRADAS DE TEXTO EN LOGIN */
+            div[data-testid="stTextInput"] > div[data-baseweb="input"] {
+                background-color: #11131c !important;
+                background: #11131c !important;
+                border: 1.5px solid #2a2d3e !important;
+                border-radius: 8px !important;
+                box-shadow: none !important;
+                outline: none !important;
+                padding: 0 4px !important;
+                transition: all 0.2s ease !important;
+            }
+            div[data-testid="stTextInput"] > div[data-baseweb="input"]:focus-within,
+            div[data-testid="stTextInput"] > div[data-baseweb="input"]:hover {
+                border-color: #dfa86a !important;
+                box-shadow: 0 0 12px rgba(223, 168, 106, 0.5) !important;
+            }
+            div[data-testid="stTextInput"] input {
+                background: transparent !important;
+                background-color: transparent !important;
+                color: #ffffff !important;
+                border: none !important;
+                border-width: 0px !important;
+                outline: none !important;
+                box-shadow: none !important;
+            }
+            div[data-testid="stTextInput"] input:focus {
+                background: transparent !important;
+                border: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        logo_b64 = get_logo_base64()
         
-        /* UN SOLO CAJÓN LIMPIO Y UNIFICADO PARA ENTRADAS DE TEXTO EN LOGIN */
-        div[data-testid="stTextInput"] > div[data-baseweb="input"] {
-            background-color: #11131c !important;
-            background: #11131c !important;
-            border: 1.5px solid #2a2d3e !important;
-            border-radius: 8px !important;
-            box-shadow: none !important;
-            outline: none !important;
-            padding: 0 4px !important;
-            transition: all 0.2s ease !important;
-        }
-        div[data-testid="stTextInput"] > div[data-baseweb="input"]:focus-within,
-        div[data-testid="stTextInput"] > div[data-baseweb="input"]:hover {
-            border-color: #dfa86a !important;
-            box-shadow: 0 0 12px rgba(223, 168, 106, 0.5) !important;
-        }
-        div[data-testid="stTextInput"] input {
-            background: transparent !important;
-            background-color: transparent !important;
-            color: #ffffff !important;
-            border: none !important;
-            border-width: 0px !important;
-            outline: none !important;
-            box-shadow: none !important;
-        }
-        div[data-testid="stTextInput"] input:focus {
-            background: transparent !important;
-            border: none !important;
-            outline: none !important;
-            box-shadow: none !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+        col_l1, col_login_box, col_l3 = st.columns([1.6, 1.0, 1.6])
+        with col_login_box:
+            st.markdown(f'''
+            <div style="text-align: center; padding-bottom: 20px; width: 100%;">
+                {f'<img src="data:image/png;base64,{logo_b64}" style="height:85px; margin-bottom:10px;"><br>' if logo_b64 else ''}
+                <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.2px; font-size:1.4rem; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+                <p style="color:#94a3b8; font-size:0.88rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            st.markdown('''
+            <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 14px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 18px; width: 100%;">
+                <h3 style="color:#ffffff; margin:0; font-size:1.1rem; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
+            </div>
+            ''', unsafe_allow_html=True)
 
-    logo_b64 = get_logo_base64()
-    
-    col_l1, col_login_box, col_l3 = st.columns([1.5, 1.2, 1.5])
-    with col_login_box:
-        st.markdown(f'''
-        <div style="text-align: center; padding-bottom: 20px; width: 100%;">
-            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
-            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown('''
-        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px; width: 100%;">
-            <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
-        </div>
-        ''', unsafe_allow_html=True)
+            # Formulario de login con soporte Enter key
+            with st.form("gzg_login_form", clear_on_submit=False, enter_to_submit=True):
+                u_val = st.text_input("Usuario", value="", key="login_u_k",
+                                      placeholder="Ingrese su usuario...")
+                p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k",
+                                      placeholder="Ingrese su contraseña...",
+                                      autocomplete="current-password")
+                st.markdown("<br>", unsafe_allow_html=True)
+                btn_login = st.form_submit_button(
+                    "🚀 INGRESAR AL SISTEMA",
+                    use_container_width=True,
+                    type="primary"
+                )
 
-        # Formulario de login con soporte Enter key
-        with st.form("gzg_login_form", clear_on_submit=False, enter_to_submit=True):
-            u_val = st.text_input("Usuario", value="", key="login_u_k",
-                                  placeholder="Ingrese su usuario...")
-            p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k",
-                                  placeholder="Ingrese su contraseña...",
-                                  autocomplete="current-password")
-            st.markdown("<br>", unsafe_allow_html=True)
-            btn_login = st.form_submit_button(
-                "🚀 INGRESAR AL SISTEMA",
-                use_container_width=True,
-                type="primary"
-            )
-
-        if btn_login:
-            u_s = u_val.strip() if u_val else ""
-            p_s = p_val.strip() if p_val else ""
-            if u_s and p_s:
-                if login_user(u_s, p_s):
-                    st.session_state['authenticated'] = True
-                    st.rerun()
+            if btn_login:
+                u_s = u_val.strip() if u_val else ""
+                p_s = p_val.strip() if p_val else ""
+                if u_s and p_s:
+                    if login_user(u_s, p_s):
+                        st.session_state['authenticated'] = True
+                        login_placeholder.empty()
+                        st.rerun()
+                    else:
+                        st.error("❌ Usuario o contraseña incorrectos.")
                 else:
-                    st.error("❌ Usuario o contraseña incorrectos.")
-            else:
-                st.warning("⚠️ Ingrese su usuario y contraseña.")
+                    st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
 
