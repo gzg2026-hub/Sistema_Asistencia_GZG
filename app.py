@@ -1085,14 +1085,18 @@ if not is_authenticated():
                     if login_user(u_s, p_s):
                         login_holder.empty()
                         st.rerun()
-                    elif btn_login:
+                    else:
                         st.error("❌ Usuario o contraseña incorrectos.")
-                elif btn_login:
+                else:
                     st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
 
 logo_b64 = get_logo_base64()
+peru_tz = timezone(timedelta(hours=-5))
+curr_now = datetime.now(peru_tz)
+date_display = curr_now.strftime("%d/%m/%Y")
+time_display = curr_now.strftime("%I:%M:%S %p").lower()
 
 st.markdown(f'''
 <div class="main-header-cajon">
@@ -1107,8 +1111,43 @@ st.markdown(f'''
             <div class="main-title-text">CENTRO DE CONTROL DE ASISTENCIA v1.0</div>
         </div>
     </div>
+    <div class="header-widgets">
+        <div class="widget-box-equal">
+            <div class="widget-label">FECHA</div>
+            <div class="widget-val" id="gzg-live-date">{date_display}</div>
+        </div>
+        <div class="widget-box-equal">
+            <div class="widget-label">HORA ACTUAL</div>
+            <div class="widget-val" id="gzg-live-clock">{time_display}</div>
+        </div>
+        <div class="widget-box-equal">
+            <div class="widget-label">ÚLTIMA ACTUALIZACIÓN</div>
+            <div class="widget-val">{time_display}</div>
+        </div>
+    </div>
 </div>
 ''', unsafe_allow_html=True)
+
+components.html("""
+<script>
+    const updateHeaderClock = () => {
+        try {
+            const pDoc = window.parent.document;
+            const elClock = pDoc.getElementById('gzg-live-clock');
+            const elDate = pDoc.getElementById('gzg-live-date');
+            if (elClock || elDate) {
+                const now = new Date();
+                const optionsTime = { timeZone: 'America/Lima', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+                const optionsDate = { timeZone: 'America/Lima', day: '2-digit', month: '2-digit', year: 'numeric' };
+                if (elClock) elClock.textContent = now.toLocaleTimeString('en-US', optionsTime).toLowerCase();
+                if (elDate) elDate.textContent = now.toLocaleDateString('es-PE', optionsDate);
+            }
+        } catch(e){}
+    };
+    setInterval(updateHeaderClock, 1000);
+    updateHeaderClock();
+</script>
+""", height=0, width=0)
 
 DEFAULT_ASISTENCIA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico")
 os.makedirs(DEFAULT_ASISTENCIA_DIR, exist_ok=True)
