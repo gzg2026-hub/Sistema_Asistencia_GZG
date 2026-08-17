@@ -459,9 +459,16 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) */
+    /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Selector Universal de Máxima Especificidad */
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"],
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    .stApp section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"],
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div {
+    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] [data-baseweb="select"] > div {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -512,6 +519,8 @@ st.markdown("""
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
     section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] > div:hover,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div:hover,
     section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
     section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div:hover,
     section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"]:hover,
