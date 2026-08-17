@@ -1024,11 +1024,11 @@ def _inject_dashboard_css():
         text-align: center !important;
         font-size: 1.15rem;
     }
-    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) ALINEADO PERFECTAMENTE */
+    /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) ALINEADO EXACTAMENTE CON LOS CAJONES SUPERIORES */
     div[data-baseweb="popover"] {
-        left: auto !important;
-        right: 0 !important;
+        width: 100% !important;
         max-width: 100% !important;
+        box-sizing: border-box !important;
     }
     [data-testid="stPopoverBody"],
     [data-testid="stPopoverContent"],
@@ -1044,15 +1044,15 @@ def _inject_dashboard_css():
         max-width: 100% !important;
         box-sizing: border-box !important;
     }
-    /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) - FUENTE MÁS PEQUEÑA (0.76rem) */
+    /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) - FUENTE MÁS PEQUEÑA (0.76rem) Y TEXTO ALINEADO A LA IZQUIERDA */
     [data-testid="stPopoverBody"] button,
     [data-testid="stPopoverContent"] button {
         white-space: nowrap !important;
         font-size: 0.76rem !important;
         font-weight: 600 !important;
-        padding: 0.3rem 0.5rem !important;
+        padding: 0.35rem 0.6rem !important;
         height: auto !important;
-        min-height: 32px !important;
+        min-height: 34px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: flex-start !important;
@@ -1063,6 +1063,7 @@ def _inject_dashboard_css():
         border-radius: 6px !important;
         margin-bottom: 3px !important;
         width: 100% !important;
+        box-sizing: border-box !important;
     }
     [data-testid="stPopoverBody"] button:hover,
     [data-testid="stPopoverContent"] button:hover {
@@ -1071,7 +1072,11 @@ def _inject_dashboard_css():
         color: #dfa86a !important;
     }
     [data-testid="stPopoverBody"] button *,
-    [data-testid="stPopoverContent"] button * {
+    [data-testid="stPopoverContent"] button *,
+    [data-testid="stPopoverBody"] button p,
+    [data-testid="stPopoverContent"] button p,
+    [data-testid="stPopoverBody"] button div,
+    [data-testid="stPopoverContent"] button div {
         color: #ffffff !important;
         font-size: 0.76rem !important;
         font-weight: 600 !important;
@@ -1079,6 +1084,10 @@ def _inject_dashboard_css():
         margin: 0 !important;
         padding: 0 !important;
         text-align: left !important;
+        justify-content: flex-start !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
     }
     [data-testid="stPopoverBody"] button:hover *,
     [data-testid="stPopoverContent"] button:hover * {
