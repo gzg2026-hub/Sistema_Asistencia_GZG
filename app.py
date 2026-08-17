@@ -1068,7 +1068,12 @@ init_app_boot_once()
 if not is_authenticated():
     # CSS MÍNIMO SOLO PARA LOGIN
     st.markdown("""
-    <style>
+        *, *::before, *::after {
+            transition: none !important;
+            animation: none !important;
+            -webkit-transition: none !important;
+            -webkit-animation: none !important;
+        }
         .stApp,[data-testid="stMain"]{background:#090a0f!important;}
         section[data-testid="stSidebar"],
         div[data-testid="stSidebarCollapsedControl"],

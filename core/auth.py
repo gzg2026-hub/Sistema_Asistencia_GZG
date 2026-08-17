@@ -38,7 +38,8 @@ def login_user(username: str, password: str) -> bool:
     return False
 
 def logout_user():
-    """Cierra la sesión del usuario actual."""
+    """Cierra la sesión del usuario actual y limpia el estado de sesión."""
+    st.session_state.clear()
     st.session_state['authenticated'] = False
     st.session_state['user'] = None
 
