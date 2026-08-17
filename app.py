@@ -943,6 +943,26 @@ if not is_authenticated():
                 margin: 0 auto !important;
                 padding-top: 3.5rem !important;
             }
+            /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
+            div[data-testid="stInputInstructions"],
+            small[data-testid="stInputInstructions"],
+            span[data-testid="stInputInstructions"],
+            [data-testid="stInputInstructions"],
+            div[data-baseweb="input"] + div,
+            div[data-baseweb="base-input"] + div,
+            div[data-testid="stTextInput"] small,
+            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+            div[data-baseweb="input"] span,
+            div[data-baseweb="input"] small {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+                height: 0 !important;
+                width: 0 !important;
+                font-size: 0 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
         </style>
         """, unsafe_allow_html=True)
         
