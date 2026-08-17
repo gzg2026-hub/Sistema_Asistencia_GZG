@@ -862,6 +862,23 @@ st.markdown("""
         text-align: center !important;
         font-size: 1.15rem;
     }
+    /* BOTONES DENTRO DE POPOVER SELECTOR DE CARGO */
+    [data-testid="stPopoverBody"] button {
+        white-space: nowrap !important;
+        font-size: 0.85rem !important;
+        padding: 0.2rem 0.4rem !important;
+        height: 2.4rem !important;
+        min-height: 2.4rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    [data-testid="stPopoverBody"] button p {
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
