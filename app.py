@@ -1910,8 +1910,8 @@ with tab_dash:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # FILA 2: DONUT CHART Y TOP 5 CARGOS CON MÁS INCIDENCIAS (BARRAS HORIZONTALES)
-        c_chart1, c_chart2 = st.columns([1, 1.2])
+        # FILA 2: DONUT CHART Y TENDENCIA DIARIA DE TARDANZAS E INCIDENCIAS
+        c_chart1, c_chart2 = st.columns([1.1, 1.4])
         
         with c_chart1:
             st.markdown('<div class="section-title">📊 Distribución de Estados de Asistencia</div>', unsafe_allow_html=True)
@@ -1953,6 +1953,32 @@ with tab_dash:
             st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True}, key="dash_chart_donut_est")
 
         with c_chart2:
+            st.markdown('<div class="section-title">📈 Tendencia Diaria de Tardanzas e Incidencias</div>', unsafe_allow_html=True)
+            if 'FECHA' in df_asis_db.columns:
+                df_trend = df_asis_db.groupby('FECHA').agg(
+                    Tardanzas=('TARDANZA (MIN)', lambda x: (to_numeric_minutes(x) > 0).sum()),
+                    Incidencias=('ESTADO ASISTENCIA', lambda x: (x == 'ASISTIO CON INCIDENCIAS').sum())
+                ).reset_index()
+
+                fig_line = go.Figure()
+                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Tardanzas'], name='Tardanzas', mode='lines+markers', line=dict(color='#f59e0b', width=2.5)))
+                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Incidencias'], name='Incidencias', mode='lines+markers', line=dict(color='#ef4444', width=2.5)))
+
+                fig_line.update_layout(
+                    paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
+                    font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
+                    xaxis=dict(title='Fecha', showgrid=False, tickfont=dict(color='#ffffff')),
+                    yaxis=dict(title='Cantidad de Registros', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
+                    legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center", bgcolor="#090a0f"),
+                    margin=dict(t=20, b=60, l=10, r=10), height=460
+                )
+                st.plotly_chart(fig_line, use_container_width=True, config={'responsive': True}, key="dash_chart_trend_daily")
+
+        # FILA 3: TOP 5 CARGOS CON MÁS INCIDENCIAS Y SOLICITUDES DE HORAS EXTRA POR ÁREA
+        st.markdown("<br>", unsafe_allow_html=True)
+        c_tr1, c_tr2 = st.columns([1.2, 1.1])
+
+        with c_tr1:
             st.markdown('<div class="section-title">📊 Top 5 Cargos con Mayor Cantidad de Incidencias y Tardanzas</div>', unsafe_allow_html=True)
             if 'CARGO' in df_asis_db.columns and 'ESTADO ASISTENCIA' in df_asis_db.columns:
                 df_inc_tard = df_asis_db[df_asis_db['ESTADO ASISTENCIA'].isin([
@@ -1969,7 +1995,7 @@ with tab_dash:
                 fig_top5 = px.bar(
                     cargo_inc_counts, y='CARGO', x='Total_Incidencias', orientation='h',
                     text='Total_Incidencias', color='Total_Incidencias',
-                    color_continuous_scale=['#dfa86a', '#ef4444'], height=460
+                    color_continuous_scale=['#dfa86a', '#ef4444'], height=380
                 )
                 fig_top5.update_traces(
                     textposition='outside',
@@ -1985,34 +2011,6 @@ with tab_dash:
                     margin=dict(t=30, b=50, l=10, r=30)
                 )
                 st.plotly_chart(fig_top5, use_container_width=True, config={'responsive': True}, key="dash_chart_top5_cargos")
-
-        # FILA 3: TENDENCIA DIARIA DE ASISTENCIA Y SOLICITUDES DE HORAS EXTRA POR ÁREA
-        st.markdown("<br>", unsafe_allow_html=True)
-        c_tr1, c_tr2 = st.columns([1.4, 1.1])
-
-        with c_tr1:
-            st.markdown('<div class="section-title">📈 Tendencia Diaria de Asistencias, Tardanzas e Incidencias</div>', unsafe_allow_html=True)
-            if 'FECHA' in df_asis_db.columns:
-                df_trend = df_asis_db.groupby('FECHA').agg(
-                    Asistencias=('ESTADO ASISTENCIA', lambda x: (x != 'FALTA').sum()),
-                    Tardanzas=('TARDANZA (MIN)', lambda x: (to_numeric_minutes(x) > 0).sum()),
-                    Incidencias=('ESTADO ASISTENCIA', lambda x: (x == 'ASISTIO CON INCIDENCIAS').sum())
-                ).reset_index()
-
-                fig_line = go.Figure()
-                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Asistencias'], name='Asistencias', mode='lines+markers', line=dict(color='#22c55e', width=3)))
-                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Tardanzas'], name='Tardanzas', mode='lines+markers', line=dict(color='#f59e0b', width=2.5)))
-                fig_line.add_trace(go.Scatter(x=df_trend['FECHA'], y=df_trend['Incidencias'], name='Incidencias', mode='lines+markers', line=dict(color='#ef4444', width=2.5)))
-
-                fig_line.update_layout(
-                    paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
-                    font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
-                    xaxis=dict(title='Fecha', showgrid=False, tickfont=dict(color='#ffffff')),
-                    yaxis=dict(title='Cantidad de Personal', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
-                    legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center", bgcolor="#090a0f"),
-                    margin=dict(t=20, b=60, l=10, r=10), height=380
-                )
-                st.plotly_chart(fig_line, use_container_width=True, config={'responsive': True}, key="dash_chart_trend_daily")
 
         with c_tr2:
             st.markdown('<div class="section-title">🎯 Solicitudes de Horas Extra por Área y Estado</div>', unsafe_allow_html=True)
