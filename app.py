@@ -1251,9 +1251,15 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; fo
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos", on_click=cb_set_cargos, args=(True,))
+        if st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos"):
+            for c in opciones_cargos:
+                st.session_state[f"chk_c_{c}"] = True
+            st.rerun()
     with col_all2:
-        st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos", on_click=cb_set_cargos, args=(False,))
+        if st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos"):
+            for c in opciones_cargos:
+                st.session_state[f"chk_c_{c}"] = False
+            st.rerun()
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
