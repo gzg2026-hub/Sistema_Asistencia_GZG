@@ -1323,8 +1323,7 @@ st.markdown("---")
 # NAVEGACIÓN PRINCIPAL POR SECCIONES Y PESTAÑAS (ST.TABS)
 opciones_pestanas = [
     "📊 Dashboard Analítico",
-    "✅ Bandeja de Aprobaciones (HE / Incidencias)",
-    "📋 Kardex y Tablas Detalladas"
+    "✅ Bandeja de Aprobaciones (HE / Incidencias)"
 ]
 if current_user and current_user.get('rol') == 'ADMINISTRACION':
     opciones_pestanas.append("👥 Gestión de Usuarios")
@@ -1332,8 +1331,7 @@ if current_user and current_user.get('rol') == 'ADMINISTRACION':
 pestanas_objs = st.tabs(opciones_pestanas)
 tab_dash = pestanas_objs[0]
 tab_bandeja = pestanas_objs[1]
-tab_kardex = pestanas_objs[2]
-tab_usuarios = pestanas_objs[3] if len(pestanas_objs) > 3 else None
+tab_usuarios = pestanas_objs[2] if len(pestanas_objs) > 2 else None
 
 # PESTAÑA 1: DASHBOARD ANALÍTICO
 with tab_dash:
@@ -1795,25 +1793,7 @@ with tab_bandeja:
         else:
             st.info("Sin incidencias registradas para mostrar.")
 
-# PESTAÑA 3: KARDEX Y TABLAS DETALLADAS
-with tab_kardex:
-    st.subheader("📋 Kardex Consolidado y Tablas Detalladas")
-    t_k1, t_k2, t_k3, t_k4 = st.tabs(["03_ASISTENCIA", "04_HORAS_EXTRA", "05_INCIDENCIAS", "MARCACIONES_RAW"])
-    
-    with t_k1:
-        st.markdown("#### 📋 Kardex de Asistencia")
-        st.dataframe(df_asis_db, use_container_width=True, hide_index=True)
-    with t_k2:
-        st.markdown("#### ⏱️ Reporte de Horas Extra")
-        st.dataframe(df_he_db, use_container_width=True, hide_index=True)
-    with t_k3:
-        st.markdown("#### 🚨 Registro de Incidencias")
-        st.dataframe(df_inc_db, use_container_width=True, hide_index=True)
-    with t_k4:
-        st.markdown("#### 📑 Marcaciones Raw Biométricas")
-        st.dataframe(df_marc_db, use_container_width=True, hide_index=True)
-
-# PESTAÑA 4: GESTIÓN DE USUARIOS (SOLO ADMIN)
+# PESTAÑA 3: GESTIÓN DE USUARIOS (SOLO ADMIN)
 if tab_usuarios:
     with tab_usuarios:
         st.subheader("👥 Gestión de Usuarios y Roles de Acceso (RBAC)")
