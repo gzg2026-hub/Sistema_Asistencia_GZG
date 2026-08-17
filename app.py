@@ -1444,7 +1444,9 @@ if current_user and current_user.get('area_asignada', 'TODAS') != 'TODAS' and cu
         if col_a:
             df_inc_db = df_inc_db[df_inc_db[col_a].astype(str).str.strip() == user_area]
 
-with c_act2:
+col_dl, col_inf = st.columns([1.5, 2.5])
+
+with col_dl:
     if not df_asis_db.empty:
         excel_bytes = exportar_asistencia_excel(
             df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db, BASE_EXCEL
@@ -1457,7 +1459,7 @@ with c_act2:
             use_container_width=True
         )
 
-with c_act3:
+with col_inf:
     st.info(f"📁 Filtro ({f_ini_str} al {f_fin_str}): **{len(df_trab_db)} Personal**, **{len(df_marc_db)} Marcaciones**, **{len(df_asis_db)} Registros Asistencia**")
 
 st.markdown("---")
