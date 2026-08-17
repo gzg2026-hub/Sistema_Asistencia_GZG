@@ -469,10 +469,8 @@ st.markdown("""
     }
 
     /* 2. CAJÓN SELECTOR DE TRABAJADOR (Selectbox) - Exactamente Idéntico a Cargos */
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] [data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div {
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"],
+    section[data-testid="stSidebar"] .stSelectbox {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -481,13 +479,25 @@ st.markdown("""
         height: 42px !important;
         min-height: 42px !important;
         max-height: 42px !important;
-        padding: 0 12px !important;
+        padding: 0 10px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
         width: 100% !important;
         box-sizing: border-box !important;
         transition: all 0.3s ease !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] *,
+    section[data-testid="stSidebar"] .stSelectbox * {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"]:hover,
+    section[data-testid="stSidebar"] .stSelectbox:hover {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
 
     /* 3. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
