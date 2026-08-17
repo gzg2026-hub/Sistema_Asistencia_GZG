@@ -361,6 +361,17 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
+@st.cache_data(ttl=120, show_spinner=False)
+def obtener_trabajadores_db(db_path: str = DB_PATH) -> pd.DataFrame:
+    """Obtiene el DataFrame de trabajadores de la base de datos de forma ultra-rápida."""
+    conn = get_connection(db_path)
+    try:
+        return pd.read_sql_query("SELECT dni as DNI, apellidos as APELLIDOS, nombres as NOMBRES, cargo as CARGO, area as AREA FROM trabajadores ORDER BY apellidos, nombres", conn)
+    except Exception:
+        return pd.DataFrame()
+    finally:
+        conn.close()
+
 @st.cache_data(ttl=300, show_spinner=False)
 def obtener_cargos_unicos_db(db_path: str = DB_PATH) -> list:
     """Obtiene la lista única de cargos de trabajadores en milisegundos."""

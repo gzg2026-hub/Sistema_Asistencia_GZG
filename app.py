@@ -11,7 +11,7 @@ from data.data_loader import cargar_datos_excel
 from data.exporter import exportar_asistencia_excel, guardar_excel_base
 from data.database import (
     init_db, guardar_trabajadores, guardar_marcaciones_raw,
-    guardar_asistencia_y_reportes, obtener_datos_db, obtener_cargos_unicos_db,
+    guardar_asistencia_y_reportes, obtener_datos_db, obtener_cargos_unicos_db, obtener_trabajadores_db,
     obtener_todos_usuarios, crear_usuario, eliminar_usuario,
     actualizar_estado_he, actualizar_estado_incidencia
 )
@@ -1083,6 +1083,7 @@ with st.sidebar.popover(texto_boton, use_container_width=True):
         st.checkbox(cargo_item, key=f"chk_c_{cargo_item}")
 
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
+df_trab_master_db = obtener_trabajadores_db()
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
 opciones_trabajadores = ["TODO EL PERSONAL"]
 
