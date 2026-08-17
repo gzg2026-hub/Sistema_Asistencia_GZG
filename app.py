@@ -959,14 +959,16 @@ if not is_authenticated():
             setInterval(function() {
                 var inps = document.querySelectorAll('input');
                 inps.forEach(function(el) {
-                    el.setAttribute('autocomplete', 'off');
+                    var r = Math.random().toString(36).substring(7);
+                    el.setAttribute('autocomplete', 'no-autofill-' + r);
                     el.setAttribute('autocorrect', 'off');
                     el.setAttribute('autocapitalize', 'off');
                     el.setAttribute('spellcheck', 'false');
                     el.setAttribute('aria-autocomplete', 'none');
                     el.setAttribute('data-lpignore', 'true');
                     el.setAttribute('data-form-type', 'other');
-                    el.setAttribute('role', 'search');
+                    el.setAttribute('role', 'presentation');
+                    el.setAttribute('name', 'field_' + r);
                 });
             }, 30);
         </script>
@@ -987,22 +989,35 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
         
-        u_val = st.text_input("Usuario", value="", placeholder="ej. raul.espinoza", key="login_u_field_v2")
+        usuarios_dict = {
+            "💼 Administración RRHH (admin)": "admin",
+            "👑 Gerente General (raul.espinoza)": "raul.espinoza",
+            "🏬 Gerente de Planta (jhon.alva)": "jhon.alva",
+            "🏛️ Superintendente Mina (carlos.mendoza)": "carlos.mendoza",
+            "👷 Jefe Operaciones (manuel.benitez)": "manuel.benitez",
+            "👷 Supervisor (javier.delariva)": "javier.delariva"
+        }
         
+        usr_label = st.selectbox("Seleccionar Usuario Autorizado", list(usuarios_dict.keys()), key="select_user_login_v3")
+        u_val = usuarios_dict[usr_label]
+        
+        if 'rand_pin_key' not in st.session_state:
+            st.session_state['rand_pin_key'] = f"pin_{random.randint(100000, 999999)}"
+            
         st.markdown('<div class="no-autofill-mask">', unsafe_allow_html=True)
-        p_val = st.text_input("Código de Acceso", value="", type="default", key="login_p_field_v2")
+        p_val = st.text_input("Código de Acceso", value="", type="default", key=st.session_state['rand_pin_key'])
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_v2"):
+        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_v3"):
             if u_val and p_val:
                 if login_user(u_val.strip(), p_val.strip()):
                     login_holder.empty()
                     st.rerun()
                 else:
-                    st.error("❌ Usuario o código de acceso incorrectos.")
+                    st.error("❌ Código de acceso incorrecto para el usuario seleccionado.")
             else:
-                st.warning("⚠️ Ingrese su usuario y código de acceso.")
+                st.warning("⚠️ Ingrese su código de acceso.")
     st.stop()
 
 current_user = get_current_user()
