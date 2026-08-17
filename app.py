@@ -1865,6 +1865,9 @@ with tab_dash:
 
         # SECCIÓN DE KPIS: NÚMERO DE SOLICITUDES DE HORAS EXTRA (H.E.) Y ESTADO DE APROBACIÓN
         st.markdown(f'''
+        <div style="color: #ffffff; font-size: 1.1rem; font-weight: 800; margin-top: 15px; margin-bottom: 8px; font-family: \'Outfit\', sans-serif;">
+            ⚡ Medición de Solicitudes de Horas Extra (H.E.) por Estado
+        </div>
         <div class="kpi-grid-container">
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
