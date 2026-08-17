@@ -1126,13 +1126,6 @@ if not is_authenticated():
         .stInputInstructions {
             display: none !important;
         }
-
-        /* ENMASCARAR CONTRASEÑA CON PUNTOS NEGROS SIN ACTIVAR EL GESTOR DE GOOGLE */
-        div[data-testid="stTextInput"]:nth-of-type(2) input,
-        input[aria-label="Contraseña"] {
-            -webkit-text-security: disk !important;
-            text-security: disk !important;
-        }
     </style>
     """, unsafe_allow_html=True)
 
