@@ -468,37 +468,61 @@ st.markdown("""
         box-shadow: none !important;
     }
 
-    /* IGUALAR TAMAÑO Y PESO DE FUENTE EXACTOS EN CAJÓN DE TRABAJADOR Y CAJÓN DE CARGOS */
-    section[data-testid="stSidebar"] div[data-baseweb="select"],
-    section[data-testid="stSidebar"] div[data-baseweb="select"] *,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] div,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] p,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] input,
-    section[data-testid="stSidebar"] div[role="combobox"],
-    div[data-testid="stPopover"] > button,
-    div[data-testid="stPopover"] > button *,
-    div[data-testid="stPopover"] > button p,
-    div[data-testid="stPopover"] > button span,
-    div[data-testid="stPopover"] > button div {
-        font-size: 0.90rem !important;
-        font-weight: 700 !important;
-        color: #ffffff !important;
-        text-align: center !important;
-        justify-content: center !important;
-        align-items: center !important;
-        line-height: 1.2 !important;
-    }
-
-    /* IGUALAR ALTURA Y ESTILO DE BORDES DE AMBOS BOTONES CAJÓN EN EL SIDEBAR */
+    /* IGUALAR ALTURA, BORDES Y ESTRUCTURA DE AMBOS CAJONES (CARGOS Y TRABAJADOR) */
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
     div[data-testid="stPopover"] > button {
-        height: 40px !important;
-        min-height: 40px !important;
-        max-height: 40px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
         border-radius: 8px !important;
         background-color: #11131c !important;
         border: 1px solid #222638 !important;
+        padding: 0 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* IGUALAR TAMAÑO DE FUENTE, PESO Y ESTILO EXACTO DE TEXTO DENTRO DE AMBOS CAJONES */
+    section[data-testid="stSidebar"] div[data-baseweb="select"] div[role="combobox"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] p,
+    div[data-testid="stPopover"] > button p,
+    div[data-testid="stPopover"] > button span {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        color: #ffffff !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        text-align: center !important;
+        flex: 1 !important;
+    }
+
+    /* ALINEAR ÍCONO DE FLECHA DESPLEGABLE EN EL EXTREMO DERECHO EXACTAMENTE IGUAL */
+    div[data-testid="stPopover"] > button svg,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] svg {
+        width: 18px !important;
+        height: 18px !important;
+        fill: #cbd5e1 !important;
+        color: #cbd5e1 !important;
+        margin-left: auto !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* HOVER Y FOCO CON BORDE DORADO ELEGANTE GZG EN AMBOS CAJONES */
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within,
+    div[data-testid="stPopover"] > button:hover,
+    div[data-testid="stPopover"] > button:focus {
+        border-color: #f59e0b !important;
+        box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
     }
 
     /* ESTILOS DE SELECTOR DE CARGO LIMPIO (SIN BLOQUE NEGRO NI ETIQUETAS APILADAS) */
@@ -508,23 +532,6 @@ st.markdown("""
         border: none !important;
         padding: 0 !important;
         margin-top: 2px !important;
-    }
-
-    div[data-testid="stPopover"] > button:hover,
-    div[data-testid="stPopover"] > button:focus {
-        border-color: #f59e0b !important;
-        box-shadow: 0 0 10px rgba(245, 158, 11, 0.3) !important;
-        color: #ffffff !important;
-    }
-
-    div[data-testid="stPopover"] > button p {
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        font-size: 0.90rem !important;
-        margin: 0 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
     }
 
     /* ESTILO PARA EL MENÚ DESPLEGABLE CON CHECKMARKS */
