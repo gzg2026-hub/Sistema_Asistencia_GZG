@@ -920,10 +920,13 @@ auto_seed_database_if_empty()
 # ---------------------------------------------------------
 # VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
 # ---------------------------------------------------------
+# ---------------------------------------------------------
+# VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
+# ---------------------------------------------------------
 if not is_authenticated():
     st.markdown("""
     <style>
-        /* Ocultar barra lateral en pantalla de login */
+        /* Ocultar barra lateral por completo en pantalla de login */
         section[data-testid="stSidebar"],
         div[data-testid="stSidebarCollapsedControl"] {
             display: none !important;
@@ -931,84 +934,65 @@ if not is_authenticated():
             width: 0 !important;
         }
         [data-testid="stMainBlockContainer"] {
-            padding-top: 2rem !important;
+            max-width: 520px !important;
+            margin: 0 auto !important;
+            padding-top: 2.5rem !important;
         }
-        /* Bloquear completamente ventanas emergentes de 'Clear caches' de Streamlit */
-        div[data-testid="stDialog"],
-        div[role="dialog"],
-        div[aria-modal="true"],
-        .stDialog {
+        /* Bloquear modals emergentes de Streamlit */
+        div[data-testid="stDialog"], div[role="dialog"], .stDialog {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
-            pointer-events: none !important;
         }
-        /* Enmascaramiento visual de contraseña evitando que Chrome active 'Sugerir Contraseña' */
-        .pass-masked-input input {
+        /* Enmascaramiento de puntos negros evitando sugerencias de contraseñas de Chrome */
+        .clave-mask input {
             -webkit-text-security: disc !important;
             text-security: disc !important;
             -moz-text-security: disc !important;
         }
     </style>
-    <script>
-        // Desactivar atajo 'C' de Streamlit que abre la ventana 'Clear caches'
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'c' || e.key === 'C') {
-                var tag = document.activeElement ? document.activeElement.tagName : '';
-                if (tag !== 'INPUT' && tag !== 'TEXTAREA') {
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    e.preventDefault();
-                }
-            }
-        }, true);
-    </script>
     """, unsafe_allow_html=True)
     
     logo_b64 = get_logo_base64()
     st.markdown(f'''
-    <div style="text-align: center; padding: 25px 0 10px 0;">
-        {f'<img src="data:image/png;base64,{logo_b64}" style="height:95px; margin-bottom: 10px;"><br>' if logo_b64 else ''}
+    <div style="text-align: center; padding: 10px 0 15px 0;">
+        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 8px;"><br>' if logo_b64 else ''}
         <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-        <p style="color:#94a3b8; font-size:1.05rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
     </div>
     ''', unsafe_allow_html=True)
     
-    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
-    with col_l2:
-        st.markdown('''
-        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔐 Iniciar Sesión</h3>
-            <p style="color:#94a3b8; font-size:0.9rem; text-align:center; margin-bottom:20px;">Ingresa tu usuario y contraseña autorizados</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        with st.form("form_login_oficial_gzg", clear_on_submit=False):
-            u_input = st.text_input("👤 Usuario", value="", placeholder="ej. raul.espinoza", key="log_user_inp")
+    st.markdown('''
+    <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px 25px 5px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔐 Acceso Autorizado</h3>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    u_input = st.text_input("Usuario Acceso", value="", placeholder="ej. raul.espinoza", key="login_usr_clean")
+    
+    st.markdown('<div class="clave-mask">', unsafe_allow_html=True)
+    p_input = st.text_input("Clave Acceso", value="", type="default", key="login_pwd_clean")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg"):
+        if u_input and p_input:
+            if login_user(u_input.strip(), p_input.strip()):
+                st.rerun()
+            else:
+                st.error("❌ Usuario o clave incorrectos. Verifica tus datos.")
+        else:
+            st.warning("⚠️ Ingrese usuario y clave para ingresar.")
             
-            st.markdown('<div class="pass-masked-input">', unsafe_allow_html=True)
-            p_input = st.text_input("🔒 Contraseña", value="", type="default", key="log_pass_inp")
-            st.markdown('</div>', unsafe_allow_html=True)
-            
-            st.markdown("<br>", unsafe_allow_html=True)
-            btn_submit_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
-            
-            if btn_submit_login:
-                if u_input and p_input and login_user(u_input, p_input):
-                    st.toast("✅ Sesión iniciada correctamente", icon="🔓")
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos. Por favor verifica tus datos.")
-                    
-        with st.expander("ℹ️ Ver Usuarios Autorizados del Sistema"):
-            st.markdown("""
-            - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
-            - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
-            - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
-            - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
-            - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
-            - 💼 **Administración RRHH**: `admin` / `gzg2026*`
-            """)
+    with st.expander("ℹ️ Ver Usuarios Autorizados del Sistema"):
+        st.markdown("""
+        - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
+        - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
+        - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
+        - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
+        - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
+        - 💼 **Administración RRHH**: `admin` / `gzg2026*`
+        """)
     st.stop()
 
 current_user = get_current_user()
