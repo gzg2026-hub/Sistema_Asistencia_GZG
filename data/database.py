@@ -375,10 +375,25 @@ def format_hhmm_series(series: pd.Series, is_hours_float: bool = False) -> pd.Se
     mins = (tot_min % 60).astype(str).str.zfill(2)
     return hours + ":" + mins
 
+def sincronizar_excel_madre_a_db(excel_path: str = None, db_path: str = DB_PATH):
+    """Sincroniza automáticamente la lista de trabajadores desde la hoja 01_TRABAJADORES del Excel madre a SQLite."""
+    if not excel_path:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        excel_path = os.path.join(base_dir, "Sistema_Asistencia_GZG_v1.0.xlsm")
+    
+    if os.path.exists(excel_path):
+        try:
+            df_trab = pd.read_excel(excel_path, sheet_name="01_TRABAJADORES")
+            if not df_trab.empty and 'DNI' in df_trab.columns:
+                guardar_trabajadores(df_trab, db_path)
+        except Exception:
+            pass
+
 @st.cache_data(ttl=300, show_spinner=False)
 def obtener_trabajadores_master(db_path: str = DB_PATH) -> pd.DataFrame:
     """Obtiene la lista master de trabajadores rápidamente para selectores de cargos y personal."""
     init_db(db_path)
+    sincronizar_excel_madre_a_db(db_path=db_path)
     conn = get_connection(db_path)
     df = pd.read_sql_query("SELECT dni as DNI, apellidos as APELLIDOS, nombres as NOMBRES, cargo as CARGO, area as AREA FROM trabajadores ORDER BY apellidos, nombres", conn)
     conn.close()
