@@ -1020,14 +1020,17 @@ if not is_authenticated():
             </script>
             """, height=0, width=0)
 
-            if btn_login:
-                if u_val and p_val:
-                    if login_user(u_val.strip(), p_val.strip()):
+            u_s = str(st.session_state.get("login_user_field", "") or u_val or "").strip()
+            p_s = str(st.session_state.get("login_pass_field", "") or p_val or "").strip()
+
+            if btn_login or (u_s and p_s):
+                if u_s and p_s:
+                    if login_user(u_s, p_s):
                         login_holder.empty()
                         st.rerun()
-                    else:
+                    elif btn_login:
                         st.error("❌ Usuario o contraseña incorrectos.")
-                else:
+                elif btn_login:
                     st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
