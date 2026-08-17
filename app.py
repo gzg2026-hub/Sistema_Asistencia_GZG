@@ -1093,7 +1093,8 @@ if not is_authenticated():
             if btn_login or (u_s and p_s):
                 if u_s and p_s:
                     if login_user(u_s, p_s):
-                        st.session_state['fresh_login_cargos'] = True
+                        st.session_state['c_gen'] = 0
+                        st.session_state['c_val_def'] = True
                         login_holder.empty()
                         st.rerun()
                     else:
@@ -1212,20 +1213,31 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# 1. SELECTOR MULTIPLE DE CARGO (CON BOTONES 'TODOS' Y 'DESMARCAR')
-def cb_set_cargos(state_val: bool):
+# 1. SELECTOR MULTIPLE DE CARGO (SIN DESFASE, SIN LAG, MARCADO POR DEFAULT Y RESPUESTA INSTANTÁNEA)
+if 'c_gen' not in st.session_state:
+    st.session_state['c_gen'] = 0
+    st.session_state['c_val_def'] = True
     for c in opciones_cargos:
-        st.session_state[f"chk_c_{c}"] = state_val
+        st.session_state[f"c_{c}_0"] = True
 
-if st.session_state.get('fresh_login_cargos', False):
-    cb_set_cargos(True)
-    st.session_state['fresh_login_cargos'] = False
+c_gen = st.session_state['c_gen']
+c_val_def = st.session_state.get('c_val_def', True)
 
-for c in opciones_cargos:
-    if f"chk_c_{c}" not in st.session_state:
-        st.session_state[f"chk_c_{c}"] = True
+def cb_desmarcar_cargos_act():
+    next_gen = st.session_state.get('c_gen', 0) + 1
+    st.session_state['c_gen'] = next_gen
+    st.session_state['c_val_def'] = False
+    for c in opciones_cargos:
+        st.session_state[f"c_{c}_{next_gen}"] = False
 
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_c_{c}", True)]
+def cb_marcar_todos_cargos_act():
+    next_gen = st.session_state.get('c_gen', 0) + 1
+    st.session_state['c_gen'] = next_gen
+    st.session_state['c_val_def'] = True
+    for c in opciones_cargos:
+        st.session_state[f"c_{c}_{next_gen}"] = True
+
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"c_{c}_{c_gen}", c_val_def)]
 
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
@@ -1246,17 +1258,20 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; fo
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos", on_click=cb_set_cargos, args=(True,))
+        st.button("✅ Todos", use_container_width=True, key="btn_cargo_todos_instant", on_click=cb_marcar_todos_cargos_act)
     with col_all2:
-        st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos", on_click=cb_set_cargos, args=(False,))
+        st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargo_desmarcar_instant", on_click=cb_desmarcar_cargos_act)
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"chk_c_{cargo_item}")
+        k = f"c_{cargo_item}_{c_gen}"
+        if k not in st.session_state:
+            st.session_state[k] = c_val_def
+        st.checkbox(cargo_item, key=k)
 
 # RE-EVALUAR CARGOS TRAS LA RENDERIZACIÓN DE LOS CHECKBOXES
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_c_{c}", True)]
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"c_{c}_{c_gen}", c_val_def)]
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
