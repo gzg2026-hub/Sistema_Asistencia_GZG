@@ -1079,6 +1079,7 @@ if not is_authenticated():
             max-width:460px!important;margin:0 auto!important;padding-top:2.5rem!important;
         }
         [data-testid="stInputInstructions"]{display:none!important;}
+        small[data-testid="stInputInstructions"]{display:none!important;}
         div[data-testid="stForm"]{
             background:#0d0f17;border:1px solid #1c1e29;
             border-radius:12px;padding:24px;
@@ -1320,22 +1321,39 @@ if not df_trab_opciones.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
+# Callbacks para trabajador (popover con opcion unica)
+def cb_select_worker_option(dni_val):
+    st.session_state['pending_worker_val'] = dni_val
+
+worker_actual = st.session_state.get('pending_worker_val', st.session_state.get('applied_worker', 'TODO EL PERSONAL'))
+if worker_actual not in opciones_trabajadores:
+    worker_actual = 'TODO EL PERSONAL'
+
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
-curr_w_idx = 0
-if st.session_state.get('pending_worker_val') in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['pending_worker_val'])
-elif st.session_state.get('applied_worker') in opciones_trabajadores:
-    curr_w_idx = opciones_trabajadores.index(st.session_state['applied_worker'])
+# Popover idéntico al de cargos
+if worker_actual == 'TODO EL PERSONAL':
+    titulo_trabajador = "TODO EL PERSONAL"
+else:
+    # mostrar solo apellidos+nombres sin el DNI para titulo corto
+    partes = worker_actual.split(' - ', 1)
+    titulo_trabajador = partes[1] if len(partes) > 1 else worker_actual
+    if len(titulo_trabajador) > 28:
+        titulo_trabajador = titulo_trabajador[:26] + "..."
 
-trabajador_seleccionado = st.sidebar.selectbox(
-    "Filtrar por Trabajador",
-    opciones_trabajadores,
-    index=curr_w_idx,
-    key="sidebar_worker_select",
-    label_visibility="collapsed"
-)
-st.session_state['pending_worker_val'] = trabajador_seleccionado
+with st.sidebar.popover(titulo_trabajador, use_container_width=True):
+    st.button("👥 Todo el Personal", use_container_width=True, key="btn_worker_todos",
+              on_click=lambda: st.session_state.update({'pending_worker_val': 'TODO EL PERSONAL'}))
+    st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
+    for opcion_w in opciones_trabajadores[1:]:  # saltar 'TODO EL PERSONAL'
+        is_sel = (opcion_w == worker_actual)
+        btn_label = ("✅ " if is_sel else "   ") + opcion_w
+        if st.button(btn_label, use_container_width=True, key=f"btn_w_{opcion_w}"):
+            st.session_state['pending_worker_val'] = opcion_w
+
+trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
+if trabajador_seleccionado not in opciones_trabajadores:
+    trabajador_seleccionado = 'TODO EL PERSONAL'
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("📅 Consulta por Rango de Fechas")
