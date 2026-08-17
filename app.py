@@ -989,35 +989,22 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
         
-        usuarios_dict = {
-            "💼 Administración RRHH (admin)": "admin",
-            "👑 Gerente General (raul.espinoza)": "raul.espinoza",
-            "🏬 Gerente de Planta (jhon.alva)": "jhon.alva",
-            "🏛️ Superintendente Mina (carlos.mendoza)": "carlos.mendoza",
-            "👷 Jefe Operaciones (manuel.benitez)": "manuel.benitez",
-            "👷 Supervisor (javier.delariva)": "javier.delariva"
-        }
+        u_val = st.text_input("Usuario Acceso", value="", placeholder="ej. admin", key="usr_input_login_clean")
         
-        usr_label = st.selectbox("Seleccionar Usuario Autorizado", list(usuarios_dict.keys()), key="select_user_login_v3")
-        u_val = usuarios_dict[usr_label]
-        
-        if 'rand_pin_key' not in st.session_state:
-            st.session_state['rand_pin_key'] = f"pin_{random.randint(100000, 999999)}"
-            
         st.markdown('<div class="no-autofill-mask">', unsafe_allow_html=True)
-        p_val = st.text_input("Código de Acceso", value="", type="default", key=st.session_state['rand_pin_key'])
+        p_val = st.text_input("Código de Acceso", value="", type="default", key="pwd_input_login_clean")
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_v3"):
+        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_clean_v4"):
             if u_val and p_val:
                 if login_user(u_val.strip(), p_val.strip()):
                     login_holder.empty()
                     st.rerun()
                 else:
-                    st.error("❌ Código de acceso incorrecto para el usuario seleccionado.")
+                    st.error("❌ Usuario o código de acceso incorrectos.")
             else:
-                st.warning("⚠️ Ingrese su código de acceso.")
+                st.warning("⚠️ Ingrese su usuario y código de acceso.")
     st.stop()
 
 current_user = get_current_user()
