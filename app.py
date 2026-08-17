@@ -1287,12 +1287,9 @@ with col_d2:
 
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
-    st.session_state['active_cargos'] = list(cargos_marcados_ui)
-    st.session_state['active_worker'] = trabajador_seleccionado
-    st.session_state['active_f_ini'] = fecha_inicio_sel
-    st.session_state['active_f_fin'] = fecha_fin_sel
+    obtener_datos_db.clear()
     st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
-    st.toast("🔍 Filtros y KPIs actualizados correctamente", icon="🎯")
+    st.toast("🔍 Filtros y KPIs actualizados", icon="🎯")
     st.rerun()
 
 # 2. CARGA DE TRANSACCIONES HIKVISION
@@ -1388,18 +1385,19 @@ if btn_procesar:
     else:
         st.warning("Selecciona o carga un archivo de transacciones antes de procesar.")
 
-# CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS ACTIVO TRAS PRESIONAR FILTRAR
-f_ini_str = st.session_state['active_f_ini'].strftime("%Y-%m-%d")
-f_fin_str = st.session_state['active_f_fin'].strftime("%Y-%m-%d")
+# CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS
+f_ini_str = fecha_inicio_sel.strftime("%Y-%m-%d")
+f_fin_str = fecha_fin_sel.strftime("%Y-%m-%d")
 
 df_trab_db, df_marc_db, df_asis_db, df_he_db, df_inc_db = obtener_datos_db(f_ini_str, f_fin_str)
 
-confirmed_worker = st.session_state['active_worker']
-confirmed_cargos = st.session_state['active_cargos']
+confirmed_worker = trabajador_seleccionado
+confirmed_cargos = cargos_marcados_ui
+cargos_norm_set = {str(c).strip().upper() for c in confirmed_cargos if str(c).strip()}
 
 # APLICAR FILTRO POR TRABAJADOR O MÚLTIPLES CARGOS CONFIRMADOS
 if confirmed_worker in worker_options_map and worker_options_map[confirmed_worker] != "TODOS":
-    selected_dni = worker_options_map[confirmed_worker]
+    selected_dni = str(worker_options_map[confirmed_worker]).strip()
     if not df_trab_db.empty and 'DNI' in df_trab_db.columns:
         df_trab_db = df_trab_db[df_trab_db['DNI'].astype(str).str.strip() == selected_dni]
     if not df_asis_db.empty and 'DNI' in df_asis_db.columns:
@@ -1413,23 +1411,22 @@ if confirmed_worker in worker_options_map and worker_options_map[confirmed_worke
         if col_dni:
             df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip() == selected_dni]
 
-elif isinstance(confirmed_cargos, list) and len(confirmed_cargos) == 0:
+elif len(cargos_norm_set) == 0:
     df_trab_db = df_trab_db.iloc[0:0]
     df_asis_db = df_asis_db.iloc[0:0]
     df_inc_db = df_inc_db.iloc[0:0]
     df_he_db = df_he_db.iloc[0:0]
     df_marc_db = df_marc_db.iloc[0:0]
 
-elif confirmed_cargos:
-    cargos_set = set(confirmed_cargos)
+elif len(cargos_norm_set) < len(opciones_cargos):
     if not df_trab_db.empty and 'CARGO' in df_trab_db.columns:
-        df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
+        df_trab_db = df_trab_db[df_trab_db['CARGO'].astype(str).str.strip().str.upper().isin(cargos_norm_set)]
     if not df_asis_db.empty and 'CARGO' in df_asis_db.columns:
-        df_asis_db = df_asis_db[df_asis_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
+        df_asis_db = df_asis_db[df_asis_db['CARGO'].astype(str).str.strip().str.upper().isin(cargos_norm_set)]
     if not df_inc_db.empty and 'CARGO' in df_inc_db.columns:
-        df_inc_db = df_inc_db[df_inc_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
+        df_inc_db = df_inc_db[df_inc_db['CARGO'].astype(str).str.strip().str.upper().isin(cargos_norm_set)]
     if not df_he_db.empty and 'CARGO' in df_he_db.columns:
-        df_he_db = df_he_db[df_he_db['CARGO'].astype(str).str.strip().isin(cargos_set)]
+        df_he_db = df_he_db[df_he_db['CARGO'].astype(str).str.strip().str.upper().isin(cargos_norm_set)]
     if not df_marc_db.empty and not df_trab_db.empty:
         valid_dnis = set(df_trab_db['DNI'].astype(str).str.strip())
         col_dni = 'ID' if 'ID' in df_marc_db.columns else ('DNI' if 'DNI' in df_marc_db.columns else None)
