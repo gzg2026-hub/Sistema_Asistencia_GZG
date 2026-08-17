@@ -50,26 +50,23 @@ def format_hhmm(minutes) -> str:
     return f"{hrs:02d}:{mins:02d}"
 
 def to_numeric_minutes(series) -> pd.Series:
-    """Convierte de forma ultra-segura cualquier Serie (HH:MM, int, float, str, NaN) a minutos flotantes."""
+    """Convierte de forma ultra-segura y vectorizada cualquier Serie (HH:MM, int, float, str, NaN) a minutos flotantes."""
     if series is None or (isinstance(series, pd.Series) and series.empty):
         return pd.Series(dtype=float)
-    def parse_item(val):
-        if pd.isna(val) or val is None or val == "":
-            return 0.0
-        val_str = str(val).strip()
-        if ":" in val_str:
-            parts = val_str.split(":")
-            try:
-                return float(int(parts[0]) * 60 + int(parts[1]))
-            except Exception:
-                return 0.0
-        try:
-            return float(val)
-        except Exception:
-            return 0.0
-    if isinstance(series, pd.Series):
-        return series.apply(parse_item)
-    return pd.Series([parse_item(s) for s in series])
+    
+    s = pd.Series(series) if not isinstance(series, pd.Series) else series.copy()
+    num_s = pd.to_numeric(s, errors='coerce')
+    
+    mask_nan = num_s.isna() & s.notna()
+    if mask_nan.any():
+        str_s = s[mask_nan].astype(str).str.strip()
+        split_df = str_s.str.split(':', expand=True)
+        if split_df.shape[1] >= 2:
+            h = pd.to_numeric(split_df[0], errors='coerce').fillna(0)
+            m = pd.to_numeric(split_df[1], errors='coerce').fillna(0)
+            num_s[mask_nan] = h * 60.0 + m
+            
+    return num_s.fillna(0.0)
 
 # Custom CSS: Theme Negro Absoluto, Bronze Elegante GZG, Texto GZG Coincidente con el Logo sin Sombra Blanca
 st.markdown("""

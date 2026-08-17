@@ -361,6 +361,20 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
+def format_hhmm_series(series: pd.Series, is_hours_float: bool = False) -> pd.Series:
+    """Convierte una Serie a formato HH:MM de forma vectorizada en milisegundos."""
+    if series.empty:
+        return series
+    num_s = pd.to_numeric(series, errors='coerce').fillna(0)
+    if is_hours_float:
+        tot_min = (num_s * 60.0).round().astype(int)
+    else:
+        tot_min = num_s.round().astype(int)
+    tot_min = tot_min.clip(lower=0)
+    hours = (tot_min // 60).astype(str).str.zfill(2)
+    mins = (tot_min % 60).astype(str).str.zfill(2)
+    return hours + ":" + mins
+
 @st.cache_data(ttl=60, show_spinner=False)
 def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str] = None, db_path: str = DB_PATH) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
@@ -416,11 +430,11 @@ def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str
     df_asistencia = pd.read_sql_query(query_asis, conn, params=params)
 
     if not df_asistencia.empty:
-        df_asistencia['HORAS TRABAJADAS (HH:MM)'] = df_asistencia['HORAS TRABAJADAS'].apply(lambda x: format_hhmm_cell(x, is_hours_float=True))
-        df_asistencia['TARDANZA (HH:MM)'] = df_asistencia['TARDANZA (MIN)'].apply(lambda x: format_hhmm_cell(x, is_hours_float=False))
-        df_asistencia['SALIDA ANTICIPADA (HH:MM)'] = df_asistencia['SALIDA ANTICIPADA (MIN)'].apply(lambda x: format_hhmm_cell(x, is_hours_float=False))
-        df_asistencia['EXCESO JORNADA (HH:MM)'] = df_asistencia['EXCESO JORNADA'].apply(lambda x: format_hhmm_cell(x, is_hours_float=False))
-        df_asistencia['TOTAL HORAS ADICIONALES (HH:MM)'] = df_asistencia['TOTAL HORAS ADICIONALES'].apply(lambda x: format_hhmm_cell(x, is_hours_float=False))
+        df_asistencia['HORAS TRABAJADAS (HH:MM)'] = format_hhmm_series(df_asistencia['HORAS TRABAJADAS'], is_hours_float=True)
+        df_asistencia['TARDANZA (HH:MM)'] = format_hhmm_series(df_asistencia['TARDANZA (MIN)'], is_hours_float=False)
+        df_asistencia['SALIDA ANTICIPADA (HH:MM)'] = format_hhmm_series(df_asistencia['SALIDA ANTICIPADA (MIN)'], is_hours_float=False)
+        df_asistencia['EXCESO JORNADA (HH:MM)'] = format_hhmm_series(df_asistencia['EXCESO JORNADA'], is_hours_float=False)
+        df_asistencia['TOTAL HORAS ADICIONALES (HH:MM)'] = format_hhmm_series(df_asistencia['TOTAL HORAS ADICIONALES'], is_hours_float=False)
     
     # 4. Horas Extra
     query_he = f"""
@@ -442,7 +456,7 @@ def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str
     df_horas_extra = pd.read_sql_query(query_he, conn, params=params)
 
     if not df_horas_extra.empty:
-        df_horas_extra['DURACIÓN (HH:MM)'] = df_horas_extra['DURACIÓN'].apply(lambda x: format_hhmm_cell(x, is_hours_float=False))
+        df_horas_extra['DURACIÓN (HH:MM)'] = format_hhmm_series(df_horas_extra['DURACIÓN'], is_hours_float=False)
     
     # 5. Incidencias
     query_inc = f"""
