@@ -1255,9 +1255,8 @@ with st.sidebar.popover(texto_boton, use_container_width=True):
 
     for cargo_item in opciones_cargos:
         k = f"c_box_{cargo_item}_{sync_ver}"
-        if k not in st.session_state:
-            st.session_state[k] = True
-        st.checkbox(cargo_item, key=k)
+        val_default = bool(st.session_state.get(k, True))
+        st.checkbox(cargo_item, value=val_default, key=k)
 
 # EVALUACIÓN DE CARGOS TRAS RENDERIZAR
 selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"c_box_{c}_{sync_ver}", True)]
