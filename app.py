@@ -1111,8 +1111,12 @@ if not is_authenticated():
         header[data-testid="stHeader"],div[data-testid="stDecoration"],
         div[data-testid="stStatusWidget"],div[data-testid="stToolbar"],
         iframe,#MainMenu,footer,.stDeployButton{display:none!important;}
-        [data-testid="stMainBlockContainer"]{
-            max-width:460px!important;margin:0 auto!important;padding-top:2.5rem!important;
+        /* CENTRADO Y ANCHO FIJO PARA LOGIN SIN MUTAR stMainBlockContainer */
+        .gzg-login-wrapper {
+            max-width: 460px !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+            padding-top: 1rem !important;
         }
         /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' */
         [data-testid="stInputInstructions"],
@@ -1178,45 +1182,48 @@ if not is_authenticated():
     """, unsafe_allow_html=True)
 
     logo_b64 = get_logo_base64()
-    st.markdown(f'''
-    <div style="text-align: center; padding-bottom: 20px; width: 100%;">
-        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
-        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-        <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
-    </div>
-    ''', unsafe_allow_html=True)
     
-    st.markdown('''
-    <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px; width: 100%;">
-        <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
-    </div>
-    ''', unsafe_allow_html=True)
+    col_l1, col_login_box, col_l3 = st.columns([1, 2.2, 1])
+    with col_login_box:
+        st.markdown(f'''
+        <div style="text-align: center; padding-bottom: 20px; width: 100%;">
+            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
+            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px; width: 100%;">
+            <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
+        </div>
+        ''', unsafe_allow_html=True)
 
-    # Formulario de login con soporte Enter key
-    with st.form("gzg_login_form", clear_on_submit=False, enter_to_submit=True):
-        u_val = st.text_input("Usuario", value="", key="login_u_k",
-                              placeholder="Ingrese su usuario...")
-        p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k",
-                              placeholder="Ingrese su contraseña...",
-                              autocomplete="current-password")
-        st.markdown("<br>", unsafe_allow_html=True)
-        btn_login = st.form_submit_button(
-            "🚀 INGRESAR AL SISTEMA",
-            use_container_width=True,
-            type="primary"
-        )
+        # Formulario de login con soporte Enter key
+        with st.form("gzg_login_form", clear_on_submit=False, enter_to_submit=True):
+            u_val = st.text_input("Usuario", value="", key="login_u_k",
+                                  placeholder="Ingrese su usuario...")
+            p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k",
+                                  placeholder="Ingrese su contraseña...",
+                                  autocomplete="current-password")
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn_login = st.form_submit_button(
+                "🚀 INGRESAR AL SISTEMA",
+                use_container_width=True,
+                type="primary"
+            )
 
-    if btn_login:
-        u_s = u_val.strip() if u_val else ""
-        p_s = p_val.strip() if p_val else ""
-        if u_s and p_s:
-            if login_user(u_s, p_s):
-                st.session_state['authenticated'] = True
-                st.rerun()
+        if btn_login:
+            u_s = u_val.strip() if u_val else ""
+            p_s = p_val.strip() if p_val else ""
+            if u_s and p_s:
+                if login_user(u_s, p_s):
+                    st.session_state['authenticated'] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos.")
             else:
-                st.error("❌ Usuario o contraseña incorrectos.")
-        else:
-            st.warning("⚠️ Ingrese su usuario y contraseña.")
+                st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
 
