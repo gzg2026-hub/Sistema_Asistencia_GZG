@@ -1043,6 +1043,28 @@ def _inject_dashboard_css():
         max-width: 320px !important;
         box-sizing: border-box !important;
     }
+    /* CAMPO DE BÚSQUEDA SUTIL DENTRO DEL POPOVER DE TRABAJADORES */
+    [data-testid="stPopoverBody"] div[data-testid="stTextInput"] > div[data-baseweb="input"],
+    [data-testid="stPopoverContent"] div[data-testid="stTextInput"] > div[data-baseweb="input"] {
+        background-color: #11131c !important;
+        border: 1.5px solid #222638 !important;
+        border-radius: 6px !important;
+        height: 34px !important;
+        margin-bottom: 6px !important;
+        padding: 0 6px !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stTextInput"] input,
+    [data-testid="stPopoverContent"] div[data-testid="stTextInput"] input {
+        font-size: 0.8rem !important;
+        color: #ffffff !important;
+        padding: 4px 6px !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    [data-testid="stPopoverBody"] div[data-testid="stTextInput"] > div[data-baseweb="input"]:focus-within {
+        border-color: #dfa86a !important;
+        box-shadow: 0 0 8px rgba(223, 168, 106, 0.4) !important;
+    }
     /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) - FUENTE MÁS PEQUEÑA (0.76rem) Y TEXTO ALINEADO A LA IZQUIERDA */
     [data-testid="stPopoverBody"] button,
     [data-testid="stPopoverContent"] button {
@@ -1438,14 +1460,27 @@ else:
         titulo_trabajador = titulo_trabajador[:26] + "..."
 
 with st.sidebar.popover(titulo_trabajador, use_container_width=True):
+    search_q = st.text_input("Buscar", value="", key="search_worker_filter_q",
+                             placeholder="🔍 Escriba DNI o Nombre...",
+                             label_visibility="collapsed").strip().lower()
+    
     st.button("👥 Todo el Personal", use_container_width=True, key="btn_worker_todos",
               on_click=cb_set_worker, args=("TODO EL PERSONAL",))
     st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
-    for idx_w, opcion_w in enumerate(opciones_trabajadores[1:]):  # saltar 'TODO EL PERSONAL'
-        is_sel = (opcion_w == worker_actual)
-        btn_label = ("✅ " if is_sel else "👤 ") + opcion_w
-        st.button(btn_label, use_container_width=True, key=f"btn_w_{idx_w}",
-                  on_click=cb_set_worker, args=(opcion_w,))
+    
+    # Filtrar opciones según la búsqueda ingresada
+    opciones_filtradas = opciones_trabajadores[1:]
+    if search_q:
+        opciones_filtradas = [w for w in opciones_filtradas if search_q in w.lower()]
+    
+    if len(opciones_filtradas) == 0:
+        st.markdown("<p style='color:#94a3b8; font-size:0.8rem; text-align:center; margin:8px 0;'>No se encontraron coincidencias</p>", unsafe_allow_html=True)
+    else:
+        for idx_w, opcion_w in enumerate(opciones_filtradas):
+            is_sel = (opcion_w == worker_actual)
+            btn_label = ("✅ " if is_sel else "👤 ") + opcion_w
+            st.button(btn_label, use_container_width=True, key=f"btn_w_{opcion_w}",
+                      on_click=cb_set_worker, args=(opcion_w,))
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
