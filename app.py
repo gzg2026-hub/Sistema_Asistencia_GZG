@@ -1702,8 +1702,6 @@ with tab_dash:
                     rows_html = ""
                     for idx, (_, r) in enumerate(df_tard_sum.iterrows(), start=1):
                         nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
-                        if len(nombre) > 22:
-                            nombre = nombre[:20] + ".."
                         min_str = format_hhmm(r['MINUTOS'])
                         rows_html += f"<tr><td class='top10-num'>{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
                     
@@ -1733,8 +1731,6 @@ with tab_dash:
                     rows_html = ""
                     for idx, (_, r) in enumerate(df_he_sum.iterrows(), start=1):
                         nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
-                        if len(nombre) > 22:
-                            nombre = nombre[:20] + ".."
                         min_str = format_hhmm(r['MINUTOS'])
                         rows_html += f"<tr><td class='top10-num'>{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
                     
@@ -1761,8 +1757,6 @@ with tab_dash:
                     rows_html = ""
                     for idx, (_, r) in enumerate(df_inc_rank.iterrows(), start=1):
                         nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
-                        if len(nombre) > 20:
-                            nombre = nombre[:18] + ".."
                         rows_html += f"<tr><td class='top10-num'>{idx}</td><td style='text-align:left;'>{nombre}</td><td>{r['CANTIDAD']} reg.</td></tr>"
                     
                     st.markdown(f'''
