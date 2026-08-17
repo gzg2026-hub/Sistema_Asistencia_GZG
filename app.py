@@ -894,16 +894,6 @@ def auto_seed_database_if_empty():
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Procesar intento de login desde parámetros de URL formateados por el formulario HTML nativo
-    if "u" in st.query_params and "p" in st.query_params:
-        u_q = st.query_params.get("u", "")
-        p_q = st.query_params.get("p", "")
-        st.query_params.clear()
-        if login_user(u_q.strip(), p_q.strip()):
-            st.rerun()
-        else:
-            st.session_state["login_err_msg"] = "❌ Usuario o contraseña incorrectos."
-
     login_holder = st.empty()
     with login_holder.container():
         st.markdown("""
@@ -916,6 +906,16 @@ if not is_authenticated():
                 max-width: 460px !important;
                 margin: 0 auto !important;
                 padding-top: 3.5rem !important;
+            }
+            div[data-testid="stInputInstructions"],
+            small[data-testid="stInputInstructions"],
+            span[data-testid="stInputInstructions"],
+            [data-testid="stInputInstructions"] {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                opacity: 0 !important;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -935,50 +935,21 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
 
-        if "login_err_msg" in st.session_state and st.session_state["login_err_msg"]:
-            st.error(st.session_state["login_err_msg"])
-            st.session_state["login_err_msg"] = None
-        
-        components.html("""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body { margin: 0; padding: 0; background: transparent; font-family: 'Segoe UI', Roboto, sans-serif; color: #ffffff; }
-                .form-box { display: flex; flex-direction: column; gap: 14px; }
-                .field-group { display: flex; flex-direction: column; gap: 6px; }
-                .field-label { color: #ffffff; font-size: 0.95rem; font-weight: 700; }
-                .field-input { background: #11131c; border: 1px solid #222638; border-radius: 8px; color: #ffffff; padding: 12px 14px; font-size: 1rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; width: 100%; }
-                .field-input:focus { border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3); }
-                .submit-btn { margin-top: 8px; background: #0284c7; color: #ffffff; border: 1px solid #0369a1; border-radius: 8px; padding: 13px; font-size: 1rem; font-weight: 800; cursor: pointer; width: 100%; transition: background-color 0.2s, box-shadow 0.2s; }
-                .submit-btn:hover { background: #0369a1; box-shadow: 0 0 14px rgba(56, 189, 248, 0.4); }
-            </style>
-        </head>
-        <body>
-            <form id="gzg_login_form" class="form-box">
-                <div class="field-group">
-                    <label class="field-label">Usuario</label>
-                    <input type="text" id="gzg_user" autocomplete="off" required class="field-input" />
-                </div>
-                <div class="field-group">
-                    <label class="field-label">Contraseña</label>
-                    <input type="password" id="gzg_pass" autocomplete="off" required class="field-input" />
-                </div>
-                <button type="submit" class="submit-btn">🚀 INGRESAR AL SISTEMA</button>
-            </form>
-            <script>
-                document.getElementById('gzg_login_form').onsubmit = function(e) {
-                    e.preventDefault();
-                    const u = document.getElementById('gzg_user').value;
-                    const p = document.getElementById('gzg_pass').value;
-                    if(u && p) {
-                        window.parent.location.search = '?u=' + encodeURIComponent(u) + '&p=' + encodeURIComponent(p);
-                    }
-                };
-            </script>
-        </body>
-        </html>
-        """, height=260)
+        with st.form("gzg_login_form", clear_on_submit=False):
+            u_val = st.text_input("Usuario", value="", key="login_user_field")
+            p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
+            st.markdown("<br>", unsafe_allow_html=True)
+            btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+
+        if btn_login:
+            if u_val and p_val:
+                if login_user(u_val.strip(), p_val.strip()):
+                    login_holder.empty()
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o contraseña incorrectos.")
+            else:
+                st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 
 auto_seed_database_if_empty()
