@@ -1365,9 +1365,9 @@ if not df_trab_opciones.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
-# Callbacks para trabajador (popover con opcion unica)
-def cb_select_worker_option(dni_val):
-    st.session_state['pending_worker_val'] = dni_val
+# Callback para selección instantánea de trabajador a UN SOLO CLICK
+def cb_set_worker(target_val):
+    st.session_state['pending_worker_val'] = target_val
 
 worker_actual = st.session_state.get('pending_worker_val', st.session_state.get('applied_worker', 'TODO EL PERSONAL'))
 if worker_actual not in opciones_trabajadores:
@@ -1375,7 +1375,7 @@ if worker_actual not in opciones_trabajadores:
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
-# Popover idéntico al de cargos
+# Popover idéntico al de cargos (Selección a UN SOLO CLICK)
 if worker_actual == 'TODO EL PERSONAL':
     titulo_trabajador = "TODO EL PERSONAL"
 else:
@@ -1387,13 +1387,13 @@ else:
 
 with st.sidebar.popover(titulo_trabajador, use_container_width=True):
     st.button("👥 Todo el Personal", use_container_width=True, key="btn_worker_todos",
-              on_click=lambda: st.session_state.update({'pending_worker_val': 'TODO EL PERSONAL'}))
+              on_click=cb_set_worker, args=("TODO EL PERSONAL",))
     st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
-    for opcion_w in opciones_trabajadores[1:]:  # saltar 'TODO EL PERSONAL'
+    for idx_w, opcion_w in enumerate(opciones_trabajadores[1:]):  # saltar 'TODO EL PERSONAL'
         is_sel = (opcion_w == worker_actual)
         btn_label = ("✅ " if is_sel else "   ") + opcion_w
-        if st.button(btn_label, use_container_width=True, key=f"btn_w_{opcion_w}"):
-            st.session_state['pending_worker_val'] = opcion_w
+        st.button(btn_label, use_container_width=True, key=f"btn_w_{idx_w}",
+                  on_click=cb_set_worker, args=(opcion_w,))
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
