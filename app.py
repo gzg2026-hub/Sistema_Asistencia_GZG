@@ -915,17 +915,91 @@ def auto_seed_database_if_empty():
 auto_seed_database_if_empty()
 
 # ---------------------------------------------------------
-# ACCESO DIRECTO AL DASHBOARD (SIN PANTALLA DE LOGIN)
+# PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
-st.session_state['authenticated'] = True
-st.session_state['user'] = {
-    'id': 1,
-    'username': 'admin',
-    'nombre_completo': 'Administración RRHH',
-    'rol': 'ADMINISTRACION',
-    'area_asignada': 'TODAS',
-    'cargo': 'Administrador de Sistema'
-}
+if not is_authenticated():
+    login_holder = st.empty()
+    with login_holder.container():
+        st.markdown("""
+        <style>
+            /* Ocultar barra lateral en pantalla de login */
+            section[data-testid="stSidebar"],
+            div[data-testid="stSidebarCollapsedControl"] {
+                display: none !important;
+                visibility: hidden !important;
+                width: 0 !important;
+            }
+            [data-testid="stMainBlockContainer"] {
+                max-width: 500px !important;
+                margin: 0 auto !important;
+                padding-top: 3rem !important;
+            }
+            /* Ocultar modales emergentes de Streamlit */
+            div[data-testid="stDialog"], div[role="dialog"], .stDialog {
+                display: none !important;
+            }
+            /* Mascara de puntos negros sin activar sugerencias de Chrome */
+            .no-autofill-mask input {
+                -webkit-text-security: disc !important;
+                text-security: disc !important;
+                -moz-text-security: disc !important;
+            }
+        </style>
+        <script>
+            // Forzar desactivacion de autocompletado y menues flotantes de contraseñas en Chrome
+            setInterval(function() {
+                var inps = document.querySelectorAll('input');
+                inps.forEach(function(el) {
+                    el.setAttribute('autocomplete', 'one-time-code');
+                    el.setAttribute('aria-autocomplete', 'none');
+                    el.setAttribute('data-lpignore', 'true');
+                });
+            }, 50);
+        </script>
+        """, unsafe_allow_html=True)
+        
+        logo_b64 = get_logo_base64()
+        st.markdown(f'''
+        <div style="text-align: center; padding-bottom: 15px;">
+            {f'<img src="data:image/png;base64,{logo_b64}" style="height:85px; margin-bottom:8px;"><br>' if logo_b64 else ''}
+            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+            <p style="color:#94a3b8; font-size:0.9rem; margin-top:4px;">Sistema de Control de Asistencia y Aprobación de Horas Extra</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px 25px 15px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔑 Acceso al Sistema</h3>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        u_val = st.text_input("Usuario", value="", placeholder="ej. raul.espinoza", key="login_u_field")
+        
+        st.markdown('<div class="no-autofill-mask">', unsafe_allow_html=True)
+        p_val = st.text_input("Código de Acceso", value="", type="default", key="login_p_field")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg_clean"):
+            if u_val and p_val:
+                if login_user(u_val.strip(), p_val.strip()):
+                    login_holder.empty()
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o código de acceso incorrectos.")
+            else:
+                st.warning("⚠️ Ingrese su usuario y código de acceso.")
+                
+        with st.expander("ℹ️ Ver Usuarios Autorizados"):
+            st.markdown("""
+            - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
+            - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
+            - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
+            - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
+            - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
+            - 💼 **Administración RRHH**: `admin` / `gzg2026*`
+            """)
+    st.stop()
 
 current_user = get_current_user()
 
