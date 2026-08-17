@@ -940,65 +940,6 @@ if not is_authenticated():
         </style>
         """, unsafe_allow_html=True)
 
-        components.html("""
-        <script>
-            const purgeAllHints = () => {
-                try {
-                    const pDoc = window.parent.document;
-                    if (!pDoc.getElementById('gzg-global-purge-style')) {
-                        const style = pDoc.createElement('style');
-                        style.id = 'gzg-global-purge-style';
-                        style.innerHTML = `
-                            [data-testid="stInputInstructions"],
-                            div[data-testid="stInputInstructions"],
-                            small[data-testid="stInputInstructions"],
-                            span[data-testid="stInputInstructions"],
-                            div[data-testid="stForm"] [data-testid="stInputInstructions"],
-                            div[data-testid="stForm"] small,
-                            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
-                            div[data-testid="stTextInput"] small,
-                            div[data-baseweb="input"] > div:not(:first-child),
-                            div[data-baseweb="input"] small,
-                            div[data-baseweb="base-input"] + div,
-                            .st-emotion-cache-1gulkj,
-                            .e1bv8flp0 {
-                                display: none !important;
-                                visibility: hidden !important;
-                                opacity: 0 !important;
-                                font-size: 0px !important;
-                                height: 0px !important;
-                                width: 0px !important;
-                                color: transparent !important;
-                                -webkit-text-fill-color: transparent !important;
-                                position: absolute !important;
-                                top: -9999px !important;
-                                left: -9999px !important;
-                                pointer-events: none !important;
-                            }
-                        `;
-                        pDoc.head.appendChild(style);
-                    }
-                    
-                    pDoc.querySelectorAll('[data-testid="stInputInstructions"], div[data-baseweb="input"] > div:not(:first-child)').forEach(el => {
-                        el.style.display = 'none';
-                        el.style.visibility = 'hidden';
-                        el.style.opacity = '0';
-                        el.style.height = '0px';
-                        el.remove();
-                    });
-                    
-                    pDoc.querySelectorAll('input').forEach(inp => {
-                        inp.setAttribute('autocomplete', 'new-password');
-                        inp.setAttribute('autocorrect', 'off');
-                        inp.setAttribute('spellcheck', 'false');
-                    });
-                } catch(e){}
-            };
-            setInterval(purgeAllHints, 30);
-            purgeAllHints();
-        </script>
-        """, height=0, width=0)
-        
         logo_b64 = get_logo_base64()
         st.markdown(f'''
         <div style="text-align: center; padding-bottom: 20px;">
@@ -1019,6 +960,55 @@ if not is_authenticated():
             p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
             st.markdown("<br>", unsafe_allow_html=True)
             btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+
+        components.html("""
+        <script>
+            const purgeTextNodes = () => {
+                try {
+                    const pDoc = window.parent.document;
+                    if (!pDoc.getElementById('gzg-purge-style-v2')) {
+                        const style = pDoc.createElement('style');
+                        style.id = 'gzg-purge-style-v2';
+                        style.innerHTML = `
+                            [data-testid="stInputInstructions"],
+                            small[data-testid="stInputInstructions"],
+                            span[data-testid="stInputInstructions"] {
+                                display: none !important;
+                                visibility: hidden !important;
+                                opacity: 0 !important;
+                                font-size: 0px !important;
+                                color: transparent !important;
+                            }
+                        `;
+                        pDoc.head.appendChild(style);
+                    }
+                    
+                    const walker = pDoc.createTreeWalker(pDoc.body, NodeFilter.SHOW_TEXT, null, false);
+                    while (walker.nextNode()) {
+                        const node = walker.currentNode;
+                        if (node && node.nodeValue && (node.nodeValue.includes('Press Enter') || node.nodeValue.includes('submit form') || node.nodeValue.includes('apply'))) {
+                            const p = node.parentElement;
+                            if (p && p.tagName !== 'INPUT' && p.tagName !== 'BUTTON') {
+                                p.style.display = 'none';
+                                p.style.visibility = 'hidden';
+                                p.style.fontSize = '0px';
+                                p.style.color = 'transparent';
+                                node.nodeValue = '';
+                            }
+                        }
+                    }
+                    
+                    pDoc.querySelectorAll('input').forEach(inp => {
+                        inp.setAttribute('autocomplete', 'new-password');
+                        inp.setAttribute('autocorrect', 'off');
+                        inp.setAttribute('spellcheck', 'false');
+                    });
+                } catch(e){}
+            };
+            setInterval(purgeTextNodes, 20);
+            purgeTextNodes();
+        </script>
+        """, height=0, width=0)
 
         if btn_login:
             if u_val and p_val:
