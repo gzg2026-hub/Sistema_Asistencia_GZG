@@ -1220,59 +1220,56 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# INICIALIZACIÓN DE CASILLAS DE CARGOS ACTIVAS POR DEFECTO (V2)
-if 'chk_cargos_v2_init' not in st.session_state:
-    st.session_state['chk_cargos_v2_init'] = True
-    for c in opciones_cargos:
-        st.session_state[f"chk_v2_{c}"] = True
+# GESTIÓN Y SELECCIÓN DE CARGOS (TODOS ACTIVOS POR DEFECTO)
+if 'selected_cargos_set' not in st.session_state or not isinstance(st.session_state['selected_cargos_set'], set):
+    st.session_state['selected_cargos_set'] = set(opciones_cargos)
 
-# 1. SELECTOR MULTIPLE DE CARGO (CON BOTONES 'TODOS' Y 'DESMARCAR')
-for c in opciones_cargos:
-    if f"chk_v2_{c}" not in st.session_state:
-        st.session_state[f"chk_v2_{c}"] = True
+current_active_cargos = [c for c in opciones_cargos if c in st.session_state['selected_cargos_set']]
 
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_v2_{c}", True)]
-
-if len(selected_cargos_keys) == 0:
-    pending_cargos = ["__NINGUNO__"]
-else:
-    pending_cargos = selected_cargos_keys
-
-if not pending_cargos or len(pending_cargos) == len(opciones_cargos):
+if not current_active_cargos or len(current_active_cargos) == len(opciones_cargos):
     texto_boton = "TODOS LOS CARGOS"
-elif pending_cargos == ["__NINGUNO__"]:
+elif len(current_active_cargos) == 0:
     texto_boton = "NINGÚN CARGO SELECCIONADO"
-elif len(pending_cargos) <= 2:
-    texto_boton = ", ".join(pending_cargos)
+elif len(current_active_cargos) <= 2:
+    texto_boton = ", ".join(current_active_cargos)
 else:
-    texto_boton = f"{len(pending_cargos)} Cargos seleccionados"
+    texto_boton = f"{len(current_active_cargos)} Cargos seleccionados"
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
+
+def on_toggle_cargo_cb(cargo_val: str):
+    if cargo_val in st.session_state['selected_cargos_set']:
+        st.session_state['selected_cargos_set'].discard(cargo_val)
+    else:
+        st.session_state['selected_cargos_set'].add(cargo_val)
 
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        if st.button("✅ Todos", use_container_width=True, key="pop_btn_marcar_todos_v2"):
-            for c in opciones_cargos:
-                st.session_state[f"chk_v2_{c}"] = True
+        if st.button("✅ Todos", use_container_width=True, key="btn_cargos_select_all_clean"):
+            st.session_state['selected_cargos_set'] = set(opciones_cargos)
             st.rerun()
     with col_all2:
-        if st.button("🧹 Desmarcar", use_container_width=True, key="pop_btn_desmarcar_todos_v2"):
-            for c in opciones_cargos:
-                st.session_state[f"chk_v2_{c}"] = False
+        if st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargos_unselect_all_clean"):
+            st.session_state['selected_cargos_set'] = set()
             st.rerun()
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"chk_v2_{cargo_item}")
+        checked_status = cargo_item in st.session_state['selected_cargos_set']
+        st.checkbox(
+            cargo_item,
+            value=checked_status,
+            key=f"cbx_c_{cargo_item}_{checked_status}",
+            on_change=on_toggle_cargo_cb,
+            args=(cargo_item,)
+        )
 
-# RE-EVALUAR CARGOS SELECCIONADOS TRAS INTERACCIÓN CON CHECKBOXES
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"chk_v2_{c}", True)]
-if len(selected_cargos_keys) == 0:
+# CARGOS ACTIVOS EN ESTE CICLO
+pending_cargos = [c for c in opciones_cargos if c in st.session_state['selected_cargos_set']]
+if len(pending_cargos) == 0:
     pending_cargos = ["__NINGUNO__"]
-else:
-    pending_cargos = selected_cargos_keys
 
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
