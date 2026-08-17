@@ -118,6 +118,22 @@ st.markdown("""
         pointer-events: none !important;
     }
 
+    /* OCULTAR LAS INSTRUCCIONES DE 'Press Enter to submit form' / 'Press Enter to apply' EN TODOS LOS CAMPOS */
+    div[data-testid="stInputInstructions"],
+    small[data-testid="stInputInstructions"],
+    span[data-testid="stInputInstructions"],
+    [data-testid="stInputInstructions"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        width: 0 !important;
+        font-size: 0 !important;
+        line-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     /* BARRA CABECERA STREAMLIT TRANSPARENTE */
     header[data-testid="stHeader"],
     div[data-testid="stHeader"],
