@@ -1035,25 +1035,45 @@ def _inject_dashboard_css():
         border-radius: 10px !important;
         box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
     }
+    /* BOTONES DENTRO DEL DESPLEGABLE POPOVER (Cargos y Trabajadores) */
     [data-testid="stPopoverBody"] button,
-    [data-testid="stPopoverContent"] button,
-    .stPopover button {
+    [data-testid="stPopoverContent"] button {
         white-space: nowrap !important;
         font-size: 0.85rem !important;
-        padding: 0.2rem 0.4rem !important;
-        height: 2.4rem !important;
-        min-height: 2.4rem !important;
+        font-weight: 600 !important;
+        padding: 0.4rem 0.6rem !important;
+        height: auto !important;
+        min-height: 38px !important;
         display: flex !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        color: #ffffff !important;
+        background-color: #11131c !important;
+        border: 1px solid #222638 !important;
+        border-radius: 6px !important;
+        margin-bottom: 4px !important;
+        width: 100% !important;
     }
-    [data-testid="stPopoverBody"] button p,
-    [data-testid="stPopoverContent"] button p,
-    .stPopover button p {
+    [data-testid="stPopoverBody"] button:hover,
+    [data-testid="stPopoverContent"] button:hover {
+        background-color: #1a1e2e !important;
+        border-color: #dfa86a !important;
+        color: #dfa86a !important;
+    }
+    [data-testid="stPopoverBody"] button *,
+    [data-testid="stPopoverContent"] button * {
+        color: #ffffff !important;
         font-size: 0.85rem !important;
+        font-weight: 600 !important;
         white-space: nowrap !important;
         margin: 0 !important;
         padding: 0 !important;
+        text-align: left !important;
+    }
+    [data-testid="stPopoverBody"] button:hover *,
+    [data-testid="stPopoverContent"] button:hover * {
+        color: #dfa86a !important;
     }
 </style>
     """, unsafe_allow_html=True)
@@ -1401,7 +1421,7 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
     st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
     for idx_w, opcion_w in enumerate(opciones_trabajadores[1:]):  # saltar 'TODO EL PERSONAL'
         is_sel = (opcion_w == worker_actual)
-        btn_label = ("✅ " if is_sel else "   ") + opcion_w
+        btn_label = ("✅ " if is_sel else "👤 ") + opcion_w
         st.button(btn_label, use_container_width=True, key=f"btn_w_{idx_w}",
                   on_click=cb_set_worker, args=(opcion_w,))
 
