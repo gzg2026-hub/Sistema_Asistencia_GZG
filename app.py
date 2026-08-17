@@ -1405,6 +1405,13 @@ if active_worker in worker_options_map and worker_options_map[active_worker] != 
         if col_dni:
             df_marc_db = df_marc_db[df_marc_db[col_dni].astype(str).str.strip() == selected_dni]
 
+elif isinstance(active_cargos, list) and len(active_cargos) == 0:
+    df_trab_db = df_trab_db.iloc[0:0]
+    df_asis_db = df_asis_db.iloc[0:0]
+    df_inc_db = df_inc_db.iloc[0:0]
+    df_he_db = df_he_db.iloc[0:0]
+    df_marc_db = df_marc_db.iloc[0:0]
+
 elif active_cargos:
     cargos_set = set(active_cargos)
     if not df_trab_db.empty and 'CARGO' in df_trab_db.columns:
