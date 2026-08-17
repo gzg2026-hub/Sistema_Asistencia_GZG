@@ -1185,7 +1185,7 @@ else:
     pending_cargos = selected_cargos_keys
 
 if not pending_cargos or len(pending_cargos) == len(opciones_cargos):
-    texto_boton = "TODO EL PERSONAL"
+    texto_boton = "TODOS LOS CARGOS"
 elif pending_cargos == ["__NINGUNO__"]:
     texto_boton = "NINGÚN CARGO SELECCIONADO"
 elif len(pending_cargos) <= 2:
