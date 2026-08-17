@@ -1066,40 +1066,8 @@ if not is_authenticated():
         /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
         [data-testid="InputInstructions"],
         [data-testid="stInputInstructions"],
-        div[data-testid="InputInstructions"],
-        div[data-testid="stInputInstructions"],
-        small[data-testid="InputInstructions"],
-        small[data-testid="stInputInstructions"],
-        span[data-testid="InputInstructions"],
-        span[data-testid="stInputInstructions"],
-        p[data-testid="InputInstructions"],
-        div[data-testid="stTextInput"] [data-testid="InputInstructions"],
-        div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
-        div[data-testid="stTextInput"] small,
-        div[data-baseweb="input"] > div:not(:first-child),
-        div[data-baseweb="input"] small,
-        div[data-baseweb="base-input"] > div:not(:first-child),
-        div[data-baseweb="base-input"] small,
-        div[data-baseweb="base-input"] + div,
-        [class*="InputInstructions"],
-        [class*="inputInstructions"],
-        [class*="instructions"],
-        [class*="Instructions"] {
+        .stInputInstructions {
             display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            color: transparent !important;
-            -webkit-text-fill-color: transparent !important;
-            font-size: 0px !important;
-            line-height: 0 !important;
-            height: 0px !important;
-            width: 0px !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            position: absolute !important;
-            top: -9999px !important;
-            left: -9999px !important;
-            pointer-events: none !important;
         }
 
         /* ENMASCARAR CONTRASEÑA CON PUNTOS NEGROS SIN ACTIVAR EL GESTOR DE GOOGLE */
@@ -1133,10 +1101,11 @@ if not is_authenticated():
         btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
 
     if btn_login:
-        u_s = str(st.session_state.get("login_u_k", "") or u_val or "").strip()
-        p_s = str(st.session_state.get("login_p_k", "") or p_val or "").strip()
+        u_s = str(u_val or st.session_state.get("login_u_k", "")).strip()
+        p_s = str(p_val or st.session_state.get("login_p_k", "")).strip()
         if u_s and p_s:
             if login_user(u_s, p_s):
+                st.session_state['authenticated'] = True
                 st.rerun()
             else:
                 st.error("❌ Usuario o contraseña incorrectos.")
