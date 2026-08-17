@@ -857,7 +857,7 @@ st.markdown("""
         background-color: #161926;
     }
     .top10-num {
-        color: #f59e0b;
+        color: #ffffff !important;
         font-weight: 900;
         text-align: center !important;
         font-size: 1.15rem;
@@ -1705,11 +1705,11 @@ with tab_dash:
                         if len(nombre) > 22:
                             nombre = nombre[:20] + ".."
                         min_str = format_hhmm(r['MINUTOS'])
-                        rows_html += f"<tr><td class='top10-num'>#{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
+                        rows_html += f"<tr><td class='top10-num'>{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
                     
                     st.markdown(f'''
                     <table class="top10-table-custom">
-                        <thead><tr><th>#</th><th style="text-align:left;">Personal</th><th>HH:MM</th></tr></thead>
+                        <thead><tr><th>#</th><th style="text-align:left;">Nombre</th><th>HH:MM</th></tr></thead>
                         <tbody>{rows_html}</tbody>
                     </table>
                     ''', unsafe_allow_html=True)
@@ -1736,11 +1736,11 @@ with tab_dash:
                         if len(nombre) > 22:
                             nombre = nombre[:20] + ".."
                         min_str = format_hhmm(r['MINUTOS'])
-                        rows_html += f"<tr><td class='top10-num' style='color:#3b82f6;'>#{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
+                        rows_html += f"<tr><td class='top10-num'>{idx}</td><td style='text-align:left;'>{nombre}</td><td>{min_str}</td></tr>"
                     
                     st.markdown(f'''
                     <table class="top10-table-custom">
-                        <thead><tr><th>#</th><th style="text-align:left;">Personal</th><th>HH:MM</th></tr></thead>
+                        <thead><tr><th>#</th><th style="text-align:left;">Nombre</th><th>HH:MM</th></tr></thead>
                         <tbody>{rows_html}</tbody>
                     </table>
                     ''', unsafe_allow_html=True)
@@ -1763,11 +1763,11 @@ with tab_dash:
                         nombre = f"{r['APELLIDOS']} {r['NOMBRES']}".strip()
                         if len(nombre) > 20:
                             nombre = nombre[:18] + ".."
-                        rows_html += f"<tr><td class='top10-num' style='color:#ef4444;'>#{idx}</td><td style='text-align:left;'>{nombre}</td><td>{r['CANTIDAD']} reg.</td></tr>"
+                        rows_html += f"<tr><td class='top10-num'>{idx}</td><td style='text-align:left;'>{nombre}</td><td>{r['CANTIDAD']} reg.</td></tr>"
                     
                     st.markdown(f'''
                     <table class="top10-table-custom">
-                        <thead><tr><th>#</th><th style="text-align:left;">Personal</th><th>Total</th></tr></thead>
+                        <thead><tr><th>#</th><th style="text-align:left;">Nombre</th><th>Total</th></tr></thead>
                         <tbody>{rows_html}</tbody>
                     </table>
                     ''', unsafe_allow_html=True)
