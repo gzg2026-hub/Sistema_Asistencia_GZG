@@ -1177,13 +1177,13 @@ with c_act2:
         st.download_button(
             label="📊 DESCARGAR EXCEL BASE v1.0 (.xlsx)",
             data=excel_bytes,
-            file_name=f"Sistema_Asistencia_GZG_{f_ini_str}_a_{f_fin_str}.xlsx",
+            file_name="Sistema_Asistencia_GZG_Export.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True
         )
 
 with c_act3:
-    st.info(f"📁 Filtro ({f_ini_str} al {f_fin_str}): **{len(df_trab_db)} Personal**, **{len(df_marc_db)} Marcaciones**, **{len(df_asis_db)} Registros Asistencia**")
+    st.info(f"📁 Registros en BD: **{len(df_trab_db)} Personal**, **{len(df_marc_db)} Marcaciones**, **{len(df_asis_db)} Registros Asistencia**")
 
 st.markdown("---")
 
