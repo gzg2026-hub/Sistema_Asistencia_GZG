@@ -872,8 +872,18 @@ if not is_authenticated():
         st.markdown("""
         <style>
             section[data-testid="stSidebar"],
-            div[data-testid="stSidebarCollapsedControl"] {
+            div[data-testid="stSidebarCollapsedControl"],
+            header[data-testid="stHeader"],
+            div[data-testid="stDecoration"],
+            div[data-testid="stStatusWidget"],
+            div[data-testid="stToolbar"],
+            iframe {
                 display: none !important;
+                visibility: hidden !important;
+                height: 0px !important;
+                width: 0px !important;
+                opacity: 0 !important;
+                border: none !important;
             }
             [data-testid="stMainBlockContainer"],
             div[data-testid="stForm"],
@@ -940,56 +950,6 @@ if not is_authenticated():
                 p_val = st.text_input("Contraseña", value="", type="password", key="login_pass_field")
                 st.markdown("<br>", unsafe_allow_html=True)
                 btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
-
-            components.html("""
-            <script>
-                const purgeTextNodes = () => {
-                    try {
-                        const pDoc = window.parent.document;
-                        if (!pDoc.getElementById('gzg-purge-style-v2')) {
-                            const style = pDoc.createElement('style');
-                            style.id = 'gzg-purge-style-v2';
-                            style.innerHTML = `
-                                [data-testid="stInputInstructions"],
-                                small[data-testid="stInputInstructions"],
-                                span[data-testid="stInputInstructions"] {
-                                    display: none !important;
-                                    visibility: hidden !important;
-                                    opacity: 0 !important;
-                                    font-size: 0px !important;
-                                    color: transparent !important;
-                                }
-                            `;
-                            pDoc.head.appendChild(style);
-                        }
-                        
-                        const walker = pDoc.createTreeWalker(pDoc.body, NodeFilter.SHOW_TEXT, null, false);
-                        while (walker.nextNode()) {
-                            const node = walker.currentNode;
-                            if (node && node.nodeValue && (node.nodeValue.includes('Press Enter') || node.nodeValue.includes('submit form') || node.nodeValue.includes('apply'))) {
-                                const p = node.parentElement;
-                                if (p && p.tagName !== 'INPUT' && p.tagName !== 'BUTTON') {
-                                    p.style.display = 'none';
-                                    p.style.visibility = 'hidden';
-                                    p.style.fontSize = '0px';
-                                    p.style.color = 'transparent';
-                                    node.nodeValue = '';
-                                }
-                            }
-                        }
-                        
-                        pDoc.querySelectorAll('input').forEach(inp => {
-                            inp.setAttribute('autocomplete', 'one-time-code');
-                            inp.setAttribute('autocorrect', 'off');
-                            inp.setAttribute('spellcheck', 'false');
-                            inp.setAttribute('role', 'presentation');
-                        });
-                    } catch(e){}
-                };
-                setInterval(purgeTextNodes, 20);
-                purgeTextNodes();
-            </script>
-            """, height=0, width=0)
 
             u_s = str(st.session_state.get("login_user_field", "") or u_val or "").strip()
             p_s = str(st.session_state.get("login_pass_field", "") or p_val or "").strip()
