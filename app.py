@@ -1683,7 +1683,7 @@ with tab_dash:
 
         # FILA 4: RANKINGS TOP 5 EJECUTIVOS
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="section-title" style="justify-content: flex-start !important; text-align: left !important; padding-left: 4px;">🏆 Ranking Top 5</div>', unsafe_allow_html=True)
+        st.markdown('<div style="color: #ffffff; font-size: 1.45rem; font-weight: 900; margin-top: 0.2rem; margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: flex-start; text-align: left; gap: 8px; padding: 0; margin-left: 0;">🏆 Ranking Top 5</div>', unsafe_allow_html=True)
 
         col_top1, col_top2, col_top3 = st.columns(3)
 
