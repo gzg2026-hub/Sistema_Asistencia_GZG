@@ -942,7 +942,7 @@ if not is_authenticated():
         </style>
         """, unsafe_allow_html=True)
 
-        c1, c2, c3 = st.columns([1, 1.2, 1])
+        c1, c2, c3 = st.columns([1.8, 1, 1.8])
         with c2:
             logo_b64 = get_logo_base64()
             st.markdown(f'''
