@@ -438,9 +438,7 @@ st.markdown("""
        FORMATO DE CAJÓN UNIFICADO CON ILUMINACIÓN DORADA PERMANENTE
        (Idéntico para Cargos, Trabajador, Fechas y Text Inputs en Sidebar)
        ========================================================================= */
-    section[data-testid="stSidebar"] div[data-baseweb="base-input"],
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [role="combobox"],
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [aria-haspopup="listbox"] {
+    .stApp section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
@@ -448,13 +446,9 @@ st.markdown("""
         outline: none !important;
     }
 
-    section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"],
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-    section[data-testid="stSidebar"] div[data-baseweb="select"],
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
+    /* 1. Popover Cargos */
+    .stApp section[data-testid="stSidebar"] div[data-testid="stPopover"] > button,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stPopover"] button {
         background-color: #11131c !important;
         background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
@@ -468,28 +462,64 @@ st.markdown("""
         align-items: center !important;
         justify-content: space-between !important;
         width: 100% !important;
-        transition: all 0.3s ease !important;
         box-sizing: border-box !important;
+        transition: all 0.3s ease !important;
     }
 
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"]:has(> div) {
-        border: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-        padding: 0 !important;
+    /* 2. Selectbox Trabajador (Cajón idéntico) */
+    .stApp section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    .stApp section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #11131c !important;
+        background: #11131c !important;
+        border: 1.5px solid #dfa86a !important;
+        border-radius: 8px !important;
+        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        padding: 0 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        transition: all 0.3s ease !important;
     }
 
-    section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
-    section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
-    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"]:hover,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
-    section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus {
+    /* 3. Fechas y Text Inputs (Cajón idéntico) */
+    .stApp section[data-testid="stSidebar"] div[data-testid="stDateInput"] div[data-baseweb="input"],
+    .stApp section[data-testid="stSidebar"] div[data-testid="stTextInput"] div[data-baseweb="input"],
+    .stApp section[data-testid="stSidebar"] div[data-baseweb="input"] {
+        background-color: #11131c !important;
+        background: #11131c !important;
+        border: 1.5px solid #dfa86a !important;
+        border-radius: 8px !important;
+        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        padding: 0 12px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* Hover & Focus idéntico en todos */
+    .stApp section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stPopover"] button:hover,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:focus,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stPopover"] button:focus,
+    .stApp section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div:hover,
+    .stApp section[data-testid="stSidebar"] .stSelectbox [data-baseweb="select"] > div:focus-within,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+    .stApp section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
+    .stApp section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
+    .stApp section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within {
         border-color: #f59e0b !important;
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
