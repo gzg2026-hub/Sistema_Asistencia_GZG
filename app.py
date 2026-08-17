@@ -1042,6 +1042,26 @@ def _inject_dashboard_css():
         box-shadow: 0 0 15px rgba(223, 168, 106, 0.6) !important;
         color: #ffffff !important;
     }
+    /* BOTONES COMPACTOS DE PRESETS RÁPIDOS DE FECHA EN LA BARRA LATERAL */
+    button[key^="btn_preset_"] {
+        font-size: 0.75rem !important;
+        font-weight: 700 !important;
+        padding: 0.2rem 0.3rem !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        border-radius: 6px !important;
+        background-color: #11131c !important;
+        border: 1px solid #222638 !important;
+        color: #cbd5e1 !important;
+    }
+    button[key^="btn_preset_"]:hover {
+        border-color: #dfa86a !important;
+        color: #dfa86a !important;
+        background-color: #1a1e2e !important;
+    }
     /* CONTENEDOR FLOTANTE DE POPOVERS (Cargos y Trabajadores) LIMITADO AL ANCHO COMPACTO DE LA BARRA LATERAL (320px) */
     div[data-baseweb="popover"] {
         width: 320px !important;
@@ -1505,9 +1525,17 @@ if trabajador_seleccionado not in opciones_trabajadores:
     trabajador_seleccionado = 'TODO EL PERSONAL'
 
 st.sidebar.markdown("---")
+st.sidebar.subheader("📅 Consulta por Rango de Fechas")
+col_d1, col_d2 = st.sidebar.columns(2)
+with col_d1:
+    fecha_inicio_sel = st.date_input("Fecha Inicio", value=st.session_state.get('pending_f_ini', st.session_state['applied_f_ini']), key="sidebar_f_ini")
+    st.session_state['pending_f_ini'] = fecha_inicio_sel
+with col_d2:
+    fecha_fin_sel = st.date_input("Fecha Fin", value=st.session_state.get('pending_f_fin', st.session_state['applied_f_fin']), key="sidebar_f_fin")
+    st.session_state['pending_f_fin'] = fecha_fin_sel
 
-# PRESETS RÁPIDOS DE FECHA DE 1 CLIC
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; font-size:0.95rem; font-weight:700; color:#ffffff;'>⚡ Presets Rápidos de Fecha</p>", unsafe_allow_html=True)
+# PRESETS RÁPIDOS DE FECHA DE 1 CLIC (UBICADOS DEBAJO DE LAS FECHAS)
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; margin-top:8px; font-size:0.85rem; font-weight:700; color:#cbd5e1;'>⚡ Presets Rápidos</p>", unsafe_allow_html=True)
 
 def apply_preset_date(f_start, f_end):
     st.session_state['pending_f_ini'] = f_start
@@ -1528,7 +1556,7 @@ with col_p2:
         yest = curr_now.date() - timedelta(days=1)
         apply_preset_date(yest, yest)
 with col_p3:
-    if st.button("📊 Semana", use_container_width=True, key="btn_preset_week"):
+    if st.button("📆 Semana", use_container_width=True, key="btn_preset_week"):
         mon = curr_now.date() - timedelta(days=curr_now.date().weekday())
         apply_preset_date(mon, curr_now.date())
 
@@ -1547,19 +1575,9 @@ with col_p4:
                 q_e = date(c_d.year, c_d.month + 1, 1) - timedelta(days=1)
         apply_preset_date(q_s, q_e)
 with col_p5:
-    if st.button("📆 Este Mes", use_container_width=True, key="btn_preset_month"):
+    if st.button("📊 Este Mes", use_container_width=True, key="btn_preset_month"):
         m_s = date(curr_now.date().year, curr_now.date().month, 1)
         apply_preset_date(m_s, curr_now.date())
-
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-st.sidebar.subheader("📅 Consulta por Rango de Fechas")
-col_d1, col_d2 = st.sidebar.columns(2)
-with col_d1:
-    fecha_inicio_sel = st.date_input("Fecha Inicio", value=st.session_state.get('pending_f_ini', st.session_state['applied_f_ini']), key="sidebar_f_ini")
-    st.session_state['pending_f_ini'] = fecha_inicio_sel
-with col_d2:
-    fecha_fin_sel = st.date_input("Fecha Fin", value=st.session_state.get('pending_f_fin', st.session_state['applied_f_fin']), key="sidebar_f_fin")
-    st.session_state['pending_f_fin'] = fecha_fin_sel
 
 st.sidebar.markdown("<br>", unsafe_allow_html=True)
 if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", key="btn_apply_filters"):
@@ -1843,7 +1861,7 @@ with tab_dash:
             )
             st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True})
 
-        # LOGICA Y CALCULO DE MEDICION DE ESTADO DE HORAS EXTRA (APROBADAS / PENDIENTES / RECHAZADAS)
+        # LOGICA Y CALCULO DE MEDICION DE SOLICITUDES DE HORAS EXTRA Y POR AREAS
         he_total_solicitadas_min = 0
         he_aprobadas_min = 0
         he_pendientes_min = 0
@@ -1885,20 +1903,20 @@ with tab_dash:
         he_pend_fmt = format_hhmm(he_pendientes_min)
         he_rech_fmt = format_hhmm(he_rechazadas_min)
 
-        # SECCIÓN DE KPIS: ESTADO Y MEDICIÓN DE APROBACIÓN DE HORAS EXTRA
+        # SECCIÓN DE KPIS: NÚMERO DE SOLICITUDES DE HORAS EXTRA (H.E.) Y ESTADO DE APROBACIÓN
         st.markdown(f'''
         <div style="color: #ffffff; font-size: 1.1rem; font-weight: 800; margin-top: 15px; margin-bottom: 8px; font-family: \'Outfit\', sans-serif;">
-            ⚡ Estado de Aprobación de Horas Extra (H.E.)
+            ⚡ Medición de Solicitudes de Horas Extra (H.E.) por Estado
         </div>
         <div class="kpi-grid-container" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;">
             <div class="kpi-cajon-single" style="border: 1px solid #3b82f6;">
                 <div class="kpi-icon-badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M11 15h2v2h-2zm0-8h2v5h-2zm1-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8z"/></svg>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title">TOTAL H.E. GENERADAS</div>
-                    <div class="kpi-cajon-single-number">{he_tot_fmt}</div>
-                    <div style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">{cnt_he_total} Solicitudes generadas</div>
+                    <div class="kpi-cajon-single-title">TOTAL SOLICITUDES</div>
+                    <div class="kpi-cajon-single-number">{cnt_he_total} Solicitudes</div>
+                    <div style="font-size: 0.78rem; color: #94a3b8; font-weight: 600;">Acumulado: {he_tot_fmt}</div>
                 </div>
             </div>
             <div class="kpi-cajon-single" style="border: 1px solid #22c55e;">
@@ -1906,9 +1924,9 @@ with tab_dash:
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title" style="color: #22c55e;">H.E. APROBADAS</div>
-                    <div class="kpi-cajon-single-number" style="color: #22c55e;">{he_aprob_fmt}</div>
-                    <div style="font-size: 0.78rem; color: #22c55e; font-weight: 600;">{cnt_he_aprobadas} Aprobadas ({round((cnt_he_aprobadas/cnt_he_total*100.0) if cnt_he_total>0 else 100.0, 1)}%)</div>
+                    <div class="kpi-cajon-single-title" style="color: #22c55e;">SOLICITUDES APROBADAS</div>
+                    <div class="kpi-cajon-single-number" style="color: #22c55e;">{cnt_he_aprobadas} Aprobadas</div>
+                    <div style="font-size: 0.78rem; color: #22c55e; font-weight: 600;">{he_aprob_fmt} ({round((cnt_he_aprobadas/cnt_he_total*100.0) if cnt_he_total>0 else 100.0, 1)}%)</div>
                 </div>
             </div>
             <div class="kpi-cajon-single" style="border: 1px solid #f59e0b;">
@@ -1916,9 +1934,9 @@ with tab_dash:
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title" style="color: #f59e0b;">H.E. PENDIENTES</div>
-                    <div class="kpi-cajon-single-number" style="color: #f59e0b;">{he_pend_fmt}</div>
-                    <div style="font-size: 0.78rem; color: #f59e0b; font-weight: 600;">{cnt_he_pendientes} Por revisar ({round((cnt_he_pendientes/cnt_he_total*100.0) if cnt_he_total>0 else 0.0, 1)}%)</div>
+                    <div class="kpi-cajon-single-title" style="color: #f59e0b;">PENDIENTES POR APROBAR</div>
+                    <div class="kpi-cajon-single-number" style="color: #f59e0b;">{cnt_he_pendientes} Pendientes</div>
+                    <div style="font-size: 0.78rem; color: #f59e0b; font-weight: 600;">{he_pend_fmt} ({round((cnt_he_pendientes/cnt_he_total*100.0) if cnt_he_total>0 else 0.0, 1)}%)</div>
                 </div>
             </div>
             <div class="kpi-cajon-single" style="border: 1px solid #ef4444;">
@@ -1926,9 +1944,9 @@ with tab_dash:
                     <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title" style="color: #ef4444;">H.E. RECHAZADAS</div>
-                    <div class="kpi-cajon-single-number" style="color: #ef4444;">{he_rech_fmt}</div>
-                    <div style="font-size: 0.78rem; color: #ef4444; font-weight: 600;">{cnt_he_rechazadas} Denegadas ({round((cnt_he_rechazadas/cnt_he_total*100.0) if cnt_he_total>0 else 0.0, 1)}%)</div>
+                    <div class="kpi-cajon-single-title" style="color: #ef4444;">SOLICITUDES RECHAZADAS</div>
+                    <div class="kpi-cajon-single-number" style="color: #ef4444;">{cnt_he_rechazadas} Denegadas</div>
+                    <div style="font-size: 0.78rem; color: #ef4444; font-weight: 600;">{he_rech_fmt} ({round((cnt_he_rechazadas/cnt_he_total*100.0) if cnt_he_total>0 else 0.0, 1)}%)</div>
                 </div>
             </div>
         </div>
@@ -1976,7 +1994,7 @@ with tab_dash:
                              dict(text=f"<b style='font-size: 26px; color: #ffffff;'>{total_reg:,}</b>", x=0.5, y=0.44, font=dict(color='#ffffff', size=26, family='Segoe UI, sans-serif'), showarrow=False)],
                 margin=dict(t=20, b=90, l=20, r=20), height=460
             )
-            st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True})
+            st.plotly_chart(fig_donut_est, use_container_width=True, config={'responsive': True}, key="dash_chart_donut_est")
 
         with c_chart2:
             st.markdown('<div class="section-title">📊 Top 5 Cargos con Mayor Cantidad de Incidencias y Tardanzas</div>', unsafe_allow_html=True)
@@ -2010,11 +2028,11 @@ with tab_dash:
                     yaxis=dict(title=dict(text='Cargo', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12), showgrid=False),
                     margin=dict(t=30, b=50, l=10, r=30)
                 )
-                st.plotly_chart(fig_top5, use_container_width=True, config={'responsive': True})
+                st.plotly_chart(fig_top5, use_container_width=True, config={'responsive': True}, key="dash_chart_top5_cargos")
 
-        # FILA 3: TENDENCIA DIARIA DE ASISTENCIA Y DISTRIBUCIÓN DE HORAS EXTRA POR ÁREA
+        # FILA 3: TENDENCIA DIARIA DE ASISTENCIA Y SOLICITUDES DE HORAS EXTRA POR ÁREA
         st.markdown("<br>", unsafe_allow_html=True)
-        c_tr1, c_tr2 = st.columns([1.5, 1])
+        c_tr1, c_tr2 = st.columns([1.4, 1.1])
 
         with c_tr1:
             st.markdown('<div class="section-title">📈 Tendencia Diaria de Asistencias, Tardanzas e Incidencias</div>', unsafe_allow_html=True)
@@ -2038,34 +2056,46 @@ with tab_dash:
                     legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center", bgcolor="#090a0f"),
                     margin=dict(t=20, b=60, l=10, r=10), height=380
                 )
-                st.plotly_chart(fig_line, use_container_width=True, config={'responsive': True})
+                st.plotly_chart(fig_line, use_container_width=True, config={'responsive': True}, key="dash_chart_trend_daily")
 
         with c_tr2:
-            st.markdown('<div class="section-title">📊 Horas Extra Acumuladas por Área</div>', unsafe_allow_html=True)
+            st.markdown('<div class="section-title">🎯 Solicitudes de Horas Extra por Área y Estado</div>', unsafe_allow_html=True)
             if not df_he_db.empty and ('ÁREA' in df_he_db.columns or 'AREA' in df_he_db.columns):
                 col_area_he = 'ÁREA' if 'ÁREA' in df_he_db.columns else 'AREA'
-                col_he_target = 'DURACIÓN' if 'DURACIÓN' in df_he_db.columns else 'DURACIÓN (HH:MM)'
+                col_est_he = 'ESTADO' if 'ESTADO' in df_he_db.columns else ('ESTADO_SOLICITUD' if 'ESTADO_SOLICITUD' in df_he_db.columns else None)
+                
                 df_he_area = df_he_db.copy()
-                df_he_area['MINUTOS'] = to_numeric_minutes(df_he_area[col_he_target])
-                df_he_grouped = df_he_area.groupby(col_area_he)['MINUTOS'].sum().reset_index()
-                df_he_grouped['HH:MM'] = df_he_grouped['MINUTOS'].apply(format_hhmm)
-                df_he_grouped = df_he_grouped.sort_values(by='MINUTOS', ascending=True)
+                if not col_est_he:
+                    df_he_area['ESTADO_CALC'] = 'APROBADO'
+                    col_est_he = 'ESTADO_CALC'
+
+                df_he_grouped = df_he_area.groupby([col_area_he, col_est_he]).size().reset_index(name='Cantidad_Solicitudes')
+
+                color_map_he_status = {
+                    'APROBADO': '#22c55e',
+                    'PENDIENTE': '#f59e0b',
+                    'NUEVO': '#f59e0b',
+                    'SOLICITADO': '#f59e0b',
+                    'RECHAZADO': '#ef4444'
+                }
 
                 fig_he_bar = px.bar(
-                    df_he_grouped, y=col_area_he, x='MINUTOS', orientation='h',
-                    text='HH:MM', color_discrete_sequence=['#3b82f6'], height=380
+                    df_he_grouped, y=col_area_he, x='Cantidad_Solicitudes', color=col_est_he,
+                    orientation='h', barmode='stack', text='Cantidad_Solicitudes',
+                    color_discrete_map=color_map_he_status, height=380
                 )
-                fig_he_bar.update_traces(textposition='outside', textfont=dict(color='#ffffff', size=12, weight='bold'))
+                fig_he_bar.update_traces(textposition='inside', insidetextanchor='middle', textfont=dict(color='#ffffff', size=12, weight='bold'))
                 fig_he_bar.update_layout(
                     paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
                     font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
-                    xaxis=dict(title='Minutos Acumulados', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
+                    xaxis=dict(title='N° de Solicitudes H.E.', showgrid=True, gridcolor='#1c1e29', tickfont=dict(color='#ffffff')),
                     yaxis=dict(title='Área', showgrid=False, tickfont=dict(color='#ffffff')),
-                    margin=dict(t=20, b=40, l=10, r=10)
+                    legend=dict(orientation="h", y=-0.22, x=0.5, xanchor="center", bgcolor="#090a0f"),
+                    margin=dict(t=20, b=60, l=10, r=10)
                 )
-                st.plotly_chart(fig_he_bar, use_container_width=True, config={'responsive': True})
+                st.plotly_chart(fig_he_bar, use_container_width=True, config={'responsive': True}, key="dash_chart_he_area_status")
             else:
-                st.info("Sin registros de Horas Extra para mostrar por área.")
+                st.info("Sin registros de Solicitudes de Horas Extra por área.")
 
         # FILA 4: MAPA DE CALOR (HEATMAP) DE TARDANZAS E INCIDENCIAS POR DÍA Y HORARIO
         st.markdown("<br>", unsafe_allow_html=True)
@@ -2121,7 +2151,7 @@ with tab_dash:
                     yaxis=dict(title=dict(text='Día de la Semana', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12)),
                     margin=dict(t=20, b=40, l=10, r=10), height=380
                 )
-                st.plotly_chart(fig_heatmap, use_container_width=True, config={'responsive': True})
+                st.plotly_chart(fig_heatmap, use_container_width=True, config={'responsive': True}, key="dash_chart_heatmap_inc")
             else:
                 st.info("ℹ️ No se registran incidencias o tardanzas en el periodo seleccionado para generar el mapa de calor.")
 
