@@ -938,22 +938,66 @@ if not is_authenticated():
                 pointer-events: none !important;
             }
         </style>
+        """, unsafe_allow_html=True)
+
+        components.html("""
         <script>
-            const purgeLoginHints = () => {
+            const purgeAllHints = () => {
                 try {
-                    document.querySelectorAll('div[data-testid="stInputInstructions"], small[data-testid="stInputInstructions"]').forEach(el => {
+                    const pDoc = window.parent.document;
+                    if (!pDoc.getElementById('gzg-global-purge-style')) {
+                        const style = pDoc.createElement('style');
+                        style.id = 'gzg-global-purge-style';
+                        style.innerHTML = `
+                            [data-testid="stInputInstructions"],
+                            div[data-testid="stInputInstructions"],
+                            small[data-testid="stInputInstructions"],
+                            span[data-testid="stInputInstructions"],
+                            div[data-testid="stForm"] [data-testid="stInputInstructions"],
+                            div[data-testid="stForm"] small,
+                            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+                            div[data-testid="stTextInput"] small,
+                            div[data-baseweb="input"] > div:not(:first-child),
+                            div[data-baseweb="input"] small,
+                            div[data-baseweb="base-input"] + div,
+                            .st-emotion-cache-1gulkj,
+                            .e1bv8flp0 {
+                                display: none !important;
+                                visibility: hidden !important;
+                                opacity: 0 !important;
+                                font-size: 0px !important;
+                                height: 0px !important;
+                                width: 0px !important;
+                                color: transparent !important;
+                                -webkit-text-fill-color: transparent !important;
+                                position: absolute !important;
+                                top: -9999px !important;
+                                left: -9999px !important;
+                                pointer-events: none !important;
+                            }
+                        `;
+                        pDoc.head.appendChild(style);
+                    }
+                    
+                    pDoc.querySelectorAll('[data-testid="stInputInstructions"], div[data-baseweb="input"] > div:not(:first-child)').forEach(el => {
                         el.style.display = 'none';
                         el.style.visibility = 'hidden';
                         el.style.opacity = '0';
+                        el.style.height = '0px';
+                        el.remove();
                     });
-                    document.querySelectorAll('input').forEach(inp => {
+                    
+                    pDoc.querySelectorAll('input').forEach(inp => {
                         inp.setAttribute('autocomplete', 'new-password');
+                        inp.setAttribute('autocorrect', 'off');
+                        inp.setAttribute('spellcheck', 'false');
                     });
                 } catch(e){}
             };
-            setInterval(purgeLoginHints, 50);
+            setInterval(purgeAllHints, 30);
+            purgeAllHints();
         </script>
-        """, unsafe_allow_html=True)
+        """, height=0, width=0)
         
         logo_b64 = get_logo_base64()
         st.markdown(f'''
