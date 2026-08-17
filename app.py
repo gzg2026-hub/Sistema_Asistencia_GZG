@@ -1211,20 +1211,17 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# 1. SELECTOR MULTIPLE DE CARGO (CON CLAVES ESTABLES Y RESPUESTA ILIMITADA)
-def cb_marcar_todos_cargos():
+# 1. SELECTOR MULTIPLE DE CARGO (TODOS MARCADOS POR DEFECTO Y ACCIONES INSTANTÁNEAS)
+if 'cargo_master_init' not in st.session_state:
+    st.session_state['cargo_master_init'] = True
     for c in opciones_cargos:
-        st.session_state[f"cargo_box_{c}"] = True
-
-def cb_desmarcar_todos_cargos():
-    for c in opciones_cargos:
-        st.session_state[f"cargo_box_{c}"] = False
+        st.session_state[f"ui_c_{c}"] = True
 
 for c in opciones_cargos:
-    if f"cargo_box_{c}" not in st.session_state:
-        st.session_state[f"cargo_box_{c}"] = True
+    if f"ui_c_{c}" not in st.session_state:
+        st.session_state[f"ui_c_{c}"] = True
 
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_box_{c}", True)]
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"ui_c_{c}", True)]
 
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
@@ -1245,17 +1242,23 @@ st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; fo
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        st.button("✅ Todos", use_container_width=True, key="btn_cargo_pop_all", on_click=cb_marcar_todos_cargos)
+        if st.button("✅ Todos", use_container_width=True, key="btn_cargo_marcar_todos_sync"):
+            for c in opciones_cargos:
+                st.session_state[f"ui_c_{c}"] = True
+            st.rerun()
     with col_all2:
-        st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargo_pop_none", on_click=cb_desmarcar_todos_cargos)
+        if st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargo_desmarcar_todos_sync"):
+            for c in opciones_cargos:
+                st.session_state[f"ui_c_{c}"] = False
+            st.rerun()
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"cargo_box_{cargo_item}")
+        st.checkbox(cargo_item, key=f"ui_c_{cargo_item}")
 
 # RE-EVALUAR TRAS LA RENDERIZACIÓN DE LOS CHECKBOXES
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_box_{c}", True)]
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"ui_c_{c}", True)]
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
