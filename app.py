@@ -917,82 +917,91 @@ auto_seed_database_if_empty()
 # ---------------------------------------------------------
 # VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
 # ---------------------------------------------------------
-# ---------------------------------------------------------
-# VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
-# ---------------------------------------------------------
-# ---------------------------------------------------------
-# VERIFICACIÓN Y PANTALLA DE INICIO DE SESIÓN (LOGIN GZG)
-# ---------------------------------------------------------
 if not is_authenticated():
-    st.markdown("""
-    <style>
-        /* Ocultar barra lateral por completo en pantalla de login */
-        section[data-testid="stSidebar"],
-        div[data-testid="stSidebarCollapsedControl"] {
-            display: none !important;
-            visibility: hidden !important;
-            width: 0 !important;
-        }
-        [data-testid="stMainBlockContainer"] {
-            max-width: 520px !important;
-            margin: 0 auto !important;
-            padding-top: 2.5rem !important;
-        }
-        /* Bloquear modals emergentes de Streamlit */
-        div[data-testid="stDialog"], div[role="dialog"], .stDialog {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-        }
-        /* Enmascaramiento de puntos negros evitando sugerencias de contraseñas de Chrome */
-        .clave-mask input {
-            -webkit-text-security: disc !important;
-            text-security: disc !important;
-            -moz-text-security: disc !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    logo_b64 = get_logo_base64()
-    st.markdown(f'''
-    <div style="text-align: center; padding: 10px 0 15px 0;">
-        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 8px;"><br>' if logo_b64 else ''}
-        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-        <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    st.markdown('''
-    <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px 25px 5px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-        <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔐 Acceso Autorizado</h3>
-    </div>
-    ''', unsafe_allow_html=True)
-    
-    u_input = st.text_input("Usuario Acceso", value="", placeholder="ej. raul.espinoza", key="login_usr_clean")
-    
-    st.markdown('<div class="clave-mask">', unsafe_allow_html=True)
-    p_input = st.text_input("Clave Acceso", value="", type="default", key="login_pwd_clean")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg"):
-        if u_input and p_input:
-            if login_user(u_input.strip(), p_input.strip()):
-                st.rerun()
-            else:
-                st.error("❌ Usuario o clave incorrectos. Verifica tus datos.")
-        else:
-            st.warning("⚠️ Ingrese usuario y clave para ingresar.")
-            
-    with st.expander("ℹ️ Ver Usuarios Autorizados del Sistema"):
+    login_container = st.empty()
+    with login_container.container():
         st.markdown("""
-        - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
-        - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
-        - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
-        - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
-        - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
-        - 💼 **Administración RRHH**: `admin` / `gzg2026*`
-        """)
+        <style>
+            /* Ocultar barra lateral por completo en pantalla de login */
+            section[data-testid="stSidebar"],
+            div[data-testid="stSidebarCollapsedControl"] {
+                display: none !important;
+                visibility: hidden !important;
+                width: 0 !important;
+            }
+            [data-testid="stMainBlockContainer"] {
+                max-width: 520px !important;
+                margin: 0 auto !important;
+                padding-top: 2.5rem !important;
+            }
+            /* Bloquear modals emergentes de Streamlit */
+            div[data-testid="stDialog"], div[role="dialog"], .stDialog {
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+            }
+            /* Enmascaramiento de puntos negros evitando sugerencias de contraseñas de Chrome */
+            .clave-mask input {
+                -webkit-text-security: disc !important;
+                text-security: disc !important;
+                -moz-text-security: disc !important;
+            }
+        </style>
+        <script>
+            // Bloquear activamente el autocompletado y menú flotante de contraseñas de Chrome
+            setInterval(function() {
+                var inputs = document.querySelectorAll('input');
+                inputs.forEach(function(inp) {
+                    inp.setAttribute('autocomplete', 'new-password');
+                    inp.setAttribute('data-lpignore', 'true');
+                    inp.setAttribute('data-form-type', 'other');
+                    inp.setAttribute('role', 'presentation');
+                });
+            }, 50);
+        </script>
+        """, unsafe_allow_html=True)
+        
+        logo_b64 = get_logo_base64()
+        st.markdown(f'''
+        <div style="text-align: center; padding: 10px 0 15px 0;">
+            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom: 8px;"><br>' if logo_b64 else ''}
+            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        st.markdown('''
+        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 20px 25px 5px 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <h3 style="color:#ffffff; margin-top:0; text-align:center; font-family:\'Outfit\', sans-serif;">🔐 Acceso Autorizado</h3>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        u_input = st.text_input("Usuario Acceso", value="", placeholder="ej. raul.espinoza", key="login_usr_clean")
+        
+        st.markdown('<div class="clave-mask">', unsafe_allow_html=True)
+        p_input = st.text_input("Clave Acceso", value="", type="default", key="login_pwd_clean")
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="btn_ingresar_gzg"):
+            if u_input and p_input:
+                if login_user(u_input.strip(), p_input.strip()):
+                    login_container.empty()
+                    st.rerun()
+                else:
+                    st.error("❌ Usuario o clave incorrectos. Verifica tus datos.")
+            else:
+                st.warning("⚠️ Ingrese usuario y clave para ingresar.")
+                
+        with st.expander("ℹ️ Ver Usuarios Autorizados del Sistema"):
+            st.markdown("""
+            - 👑 **Gerente General**: `raul.espinoza` / `gzg2026*`
+            - 🏬 **Gerente de Planta**: `jhon.alva` / `gzg2026*`
+            - 🏛️ **Superintendente Mina**: `carlos.mendoza` / `gzg2026*`
+            - 👷 **Jefe Operaciones (OPER&MTTO)**: `manuel.benitez` / `gzg2026*`
+            - 👷 **Supervisor (JEFATURA)**: `javier.delariva` / `gzg2026*`
+            - 💼 **Administración RRHH**: `admin` / `gzg2026*`
+            """)
     st.stop()
 
 current_user = get_current_user()
