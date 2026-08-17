@@ -1220,57 +1220,55 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# GESTIÓN Y SELECCIÓN DE CARGOS CON GENERACIÓN DE CLAVES (PERMITE CLICS INFINITOS)
-if 'cargos_ver' not in st.session_state:
-    st.session_state['cargos_ver'] = 0
-if 'selected_cargos_set' not in st.session_state or not isinstance(st.session_state['selected_cargos_set'], set):
-    st.session_state['selected_cargos_set'] = set(opciones_cargos)
+# 1. SELECTOR MULTIPLE DE CARGO (CON BOTONES 'TODOS' Y 'DESMARCAR')
+def cb_marcar_todos_cargos():
+    for c in opciones_cargos:
+        st.session_state[f"cargo_chk_{c}"] = True
 
-c_ver = st.session_state['cargos_ver']
-current_active_cargos = [c for c in opciones_cargos if c in st.session_state['selected_cargos_set']]
+def cb_desmarcar_todos_cargos():
+    for c in opciones_cargos:
+        st.session_state[f"cargo_chk_{c}"] = False
 
-if not current_active_cargos or len(current_active_cargos) == len(opciones_cargos):
-    texto_boton = "TODOS LOS CARGOS"
-elif len(current_active_cargos) == 0:
-    texto_boton = "NINGÚN CARGO SELECCIONADO"
-elif len(current_active_cargos) <= 2:
-    texto_boton = ", ".join(current_active_cargos)
+for c in opciones_cargos:
+    if f"cargo_chk_{c}" not in st.session_state:
+        st.session_state[f"cargo_chk_{c}"] = True
+
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
+
+if len(selected_cargos_keys) == 0:
+    pending_cargos = ["__NINGUNO__"]
 else:
-    texto_boton = f"{len(current_active_cargos)} Cargos seleccionados"
+    pending_cargos = selected_cargos_keys
+
+if not pending_cargos or len(pending_cargos) == len(opciones_cargos):
+    texto_boton = "TODOS LOS CARGOS"
+elif pending_cargos == ["__NINGUNO__"]:
+    texto_boton = "NINGÚN CARGO SELECCIONADO"
+elif len(pending_cargos) <= 2:
+    texto_boton = ", ".join(pending_cargos)
+else:
+    texto_boton = f"{len(pending_cargos)} Cargos seleccionados"
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
 
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        if st.button("✅ Todos", use_container_width=True, key=f"btn_all_ver_{c_ver}"):
-            st.session_state['selected_cargos_set'] = set(opciones_cargos)
-            st.session_state['cargos_ver'] = c_ver + 1
-            for c in opciones_cargos:
-                st.session_state[f"chk_v_{c}_{c_ver + 1}"] = True
-            st.rerun()
+        st.button("✅ Todos", use_container_width=True, key="btn_cargo_all_act", on_click=cb_marcar_todos_cargos)
     with col_all2:
-        if st.button("🧹 Desmarcar", use_container_width=True, key=f"btn_none_ver_{c_ver}"):
-            st.session_state['selected_cargos_set'] = set()
-            st.session_state['cargos_ver'] = c_ver + 1
-            for c in opciones_cargos:
-                st.session_state[f"chk_v_{c}_{c_ver + 1}"] = False
-            st.rerun()
+        st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargo_none_act", on_click=cb_desmarcar_todos_cargos)
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        initial_val = cargo_item in st.session_state['selected_cargos_set']
-        k = f"chk_v_{cargo_item}_{c_ver}"
-        if k not in st.session_state:
-            st.session_state[k] = initial_val
-        st.checkbox(cargo_item, key=k)
+        st.checkbox(cargo_item, key=f"cargo_chk_{cargo_item}")
 
-# RECALCULAR CONJUNTO ACTIVO DE CARGOS EN TIEMPO REAL TRAS CUALQUIER INTERACCIÓN
-st.session_state['selected_cargos_set'] = {c for c in opciones_cargos if st.session_state.get(f"chk_v_{c}_{c_ver}", True)}
-pending_cargos = [c for c in opciones_cargos if c in st.session_state['selected_cargos_set']]
-if len(pending_cargos) == 0:
+# RE-EVALUAR CARGOS TRAS LA RENDERIZACIÓN DE LOS CHECKBOXES
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
+if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
+else:
+    pending_cargos = selected_cargos_keys
 
 # 2. RE-CALCULAR LISTA DE TRABAJADORES (FILTRADA POR CARGOS SELECCIONADOS EN TIEMPO REAL)
 worker_options_map = {"TODO EL PERSONAL": "TODOS"}
