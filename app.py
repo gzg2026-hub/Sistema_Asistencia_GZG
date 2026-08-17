@@ -1292,39 +1292,33 @@ if not df_trab_master_db.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
-# 3. SELECTOR DE TRABAJADOR Y FECHAS EN TIEMPO REAL (REACTIVO A LOS KPIS)
-curr_idx = 0
-if st.session_state['active_worker'] in opciones_trabajadores:
-    curr_idx = opciones_trabajadores.index(st.session_state['active_worker'])
-else:
+# 3. FORMULARIO DE CONSULTA (ACTUALIZA LOS RESULTADOS SOLO AL PRESIONAR FILTRAR)
+with st.sidebar.form(key="filter_form"):
     curr_idx = 0
-    st.session_state['active_worker'] = "TODO EL PERSONAL"
+    if st.session_state['active_worker'] in opciones_trabajadores:
+        curr_idx = opciones_trabajadores.index(st.session_state['active_worker'])
+    st.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
+    trabajador_input = st.selectbox("Filtrar por Trabajador", opciones_trabajadores, index=curr_idx, label_visibility="collapsed")
 
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
-trabajador_input = st.sidebar.selectbox("Filtrar por Trabajador", opciones_trabajadores, index=curr_idx, label_visibility="collapsed", key="sb_worker_select_live")
-st.session_state['active_worker'] = trabajador_input
+    st.markdown("---")
+    st.subheader("📅 Consulta por Rango de Fechas")
+    col_d1, col_d2 = st.columns(2)
+    with col_d1:
+        fecha_inicio_input = st.date_input("Fecha Inicio", value=st.session_state['active_f_ini'])
+    with col_d2:
+        fecha_fin_input = st.date_input("Fecha Fin", value=st.session_state['active_f_fin'])
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("📅 Consulta por Rango de Fechas")
-col_d1, col_d2 = st.sidebar.columns(2)
-with col_d1:
-    fecha_inicio_input = st.date_input("Fecha Inicio", value=st.session_state['active_f_ini'], key="sb_date_ini_live")
-    st.session_state['active_f_ini'] = fecha_inicio_input
-with col_d2:
-    fecha_fin_input = st.date_input("Fecha Fin", value=st.session_state['active_f_fin'], key="sb_date_fin_live")
-    st.session_state['active_f_fin'] = fecha_fin_input
+    st.markdown("<br>", unsafe_allow_html=True)
+    btn_filtrar = st.form_submit_button("🔍 FILTRAR", use_container_width=True)
 
-st.sidebar.markdown("<br>", unsafe_allow_html=True)
-if st.sidebar.button("🔍 FILTRAR / ACTUALIZAR", use_container_width=True, key="btn_manual_filter_live"):
+if btn_filtrar:
     st.session_state['active_cargos'] = pending_cargos
     st.session_state['active_worker'] = trabajador_input
     st.session_state['active_f_ini'] = fecha_inicio_input
     st.session_state['active_f_fin'] = fecha_fin_input
     st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
-    st.toast("🔍 Indicadores y Filtros Actualizados", icon="🎯")
+    st.toast("🔍 Filtros aplicados correctamente", icon="🎯")
     st.rerun()
-
-st.session_state['active_cargos'] = pending_cargos
 
 # 3. CARGA DE TRANSACCIONES HIKVISION
 st.sidebar.markdown("---")
