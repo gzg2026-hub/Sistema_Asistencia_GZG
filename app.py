@@ -1020,120 +1020,117 @@ init_app_boot_once()
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
 if not is_authenticated():
-    login_holder = st.empty()
-    with login_holder.container():
-        st.markdown("""
-        <style>
-            section[data-testid="stSidebar"],
-            div[data-testid="stSidebarCollapsedControl"],
-            header[data-testid="stHeader"],
-            div[data-testid="stDecoration"],
-            div[data-testid="stStatusWidget"],
-            div[data-testid="stToolbar"],
-            iframe {
-                display: none !important;
-                visibility: hidden !important;
-                height: 0px !important;
-                width: 0px !important;
-                opacity: 0 !important;
-                border: none !important;
-            }
-            [data-testid="stMainBlockContainer"],
-            .stMainBlockContainer {
-                max-width: 480px !important;
-                width: 100% !important;
-                margin: 0 auto !important;
-                padding-top: 3rem !important;
-            }
-            div[data-testid="stForm"],
-            .stForm {
-                width: 100% !important;
-                border: 1px solid #1c1e29 !important;
-                background-color: #0d0f17 !important;
-                border-radius: 12px !important;
-                padding: 24px !important;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
-            }
-            /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
-            [data-testid="InputInstructions"],
-            [data-testid="stInputInstructions"],
-            div[data-testid="InputInstructions"],
-            div[data-testid="stInputInstructions"],
-            small[data-testid="InputInstructions"],
-            small[data-testid="stInputInstructions"],
-            span[data-testid="InputInstructions"],
-            span[data-testid="stInputInstructions"],
-            p[data-testid="InputInstructions"],
-            div[data-testid="stTextInput"] [data-testid="InputInstructions"],
-            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
-            div[data-testid="stTextInput"] small,
-            div[data-baseweb="input"] > div:not(:first-child),
-            div[data-baseweb="input"] small,
-            div[data-baseweb="base-input"] > div:not(:first-child),
-            div[data-baseweb="base-input"] small,
-            div[data-baseweb="base-input"] + div,
-            [class*="InputInstructions"],
-            [class*="inputInstructions"],
-            [class*="instructions"],
-            [class*="Instructions"] {
-                display: none !important;
-                visibility: hidden !important;
-                opacity: 0 !important;
-                color: transparent !important;
-                -webkit-text-fill-color: transparent !important;
-                font-size: 0px !important;
-                line-height: 0 !important;
-                height: 0px !important;
-                width: 0px !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                position: absolute !important;
-                top: -9999px !important;
-                left: -9999px !important;
-                pointer-events: none !important;
-            }
+    st.markdown("""
+    <style>
+        section[data-testid="stSidebar"],
+        div[data-testid="stSidebarCollapsedControl"],
+        header[data-testid="stHeader"],
+        div[data-testid="stDecoration"],
+        div[data-testid="stStatusWidget"],
+        div[data-testid="stToolbar"],
+        iframe {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0px !important;
+            width: 0px !important;
+            opacity: 0 !important;
+            border: none !important;
+        }
+        [data-testid="stMainBlockContainer"],
+        .stMainBlockContainer {
+            max-width: 480px !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+            padding-top: 3rem !important;
+        }
+        div[data-testid="stForm"],
+        .stForm {
+            width: 100% !important;
+            border: 1px solid #1c1e29 !important;
+            background-color: #0d0f17 !important;
+            border-radius: 12px !important;
+            padding: 24px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+        }
+        /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
+        [data-testid="InputInstructions"],
+        [data-testid="stInputInstructions"],
+        div[data-testid="InputInstructions"],
+        div[data-testid="stInputInstructions"],
+        small[data-testid="InputInstructions"],
+        small[data-testid="stInputInstructions"],
+        span[data-testid="InputInstructions"],
+        span[data-testid="stInputInstructions"],
+        p[data-testid="InputInstructions"],
+        div[data-testid="stTextInput"] [data-testid="InputInstructions"],
+        div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+        div[data-testid="stTextInput"] small,
+        div[data-baseweb="input"] > div:not(:first-child),
+        div[data-baseweb="input"] small,
+        div[data-baseweb="base-input"] > div:not(:first-child),
+        div[data-baseweb="base-input"] small,
+        div[data-baseweb="base-input"] + div,
+        [class*="InputInstructions"],
+        [class*="inputInstructions"],
+        [class*="instructions"],
+        [class*="Instructions"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            color: transparent !important;
+            -webkit-text-fill-color: transparent !important;
+            font-size: 0px !important;
+            line-height: 0 !important;
+            height: 0px !important;
+            width: 0px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: absolute !important;
+            top: -9999px !important;
+            left: -9999px !important;
+            pointer-events: none !important;
+        }
 
-            /* ENMASCARAR CONTRASEÑA CON PUNTOS NEGROS SIN ACTIVAR EL GESTOR DE GOOGLE */
-            div[data-testid="stTextInput"]:nth-of-type(2) input,
-            input[aria-label="Contraseña"] {
-                -webkit-text-security: disk !important;
-                text-security: disk !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
+        /* ENMASCARAR CONTRASEÑA CON PUNTOS NEGROS SIN ACTIVAR EL GESTOR DE GOOGLE */
+        div[data-testid="stTextInput"]:nth-of-type(2) input,
+        input[aria-label="Contraseña"] {
+            -webkit-text-security: disk !important;
+            text-security: disk !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
-        logo_b64 = get_logo_base64()
-        st.markdown(f'''
-        <div style="text-align: center; padding-bottom: 20px; width: 100%;">
-            {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
-            <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
-            <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        st.markdown('''
-        <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px; width: 100%;">
-            <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
-        </div>
-        ''', unsafe_allow_html=True)
+    logo_b64 = get_logo_base64()
+    st.markdown(f'''
+    <div style="text-align: center; padding-bottom: 20px; width: 100%;">
+        {f'<img src="data:image/png;base64,{logo_b64}" style="height:90px; margin-bottom:10px;"><br>' if logo_b64 else ''}
+        <h2 style="color:#dfa86a; margin:0; font-weight:800; letter-spacing:1.5px; font-family:\'Outfit\', sans-serif;">GZG MINERALES PERU S.R.L.</h2>
+        <p style="color:#94a3b8; font-size:0.95rem; margin-top:4px;">Sistema de Control de Asistencia y Gestión de Personal</p>
+    </div>
+    ''', unsafe_allow_html=True)
+    
+    st.markdown('''
+    <div style="background: #10131d; border: 1px solid #dfa86a; border-radius: 12px; padding: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center; margin-bottom: 20px; width: 100%;">
+        <h3 style="color:#ffffff; margin:0; font-family:\'Outfit\', sans-serif;">🔐 Acceso al Sistema</h3>
+    </div>
+    ''', unsafe_allow_html=True)
 
-        with st.form("gzg_login_form", clear_on_submit=False):
-            u_val = st.text_input("Usuario", value="")
-            p_val = st.text_input("Contraseña", value="", type="password")
-            st.markdown("<br>", unsafe_allow_html=True)
-            btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+    with st.form("gzg_login_form", clear_on_submit=False):
+        u_val = st.text_input("Usuario", value="", key="login_u_k")
+        p_val = st.text_input("Contraseña", value="", type="password", key="login_p_k")
+        st.markdown("<br>", unsafe_allow_html=True)
+        btn_login = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
 
-        if btn_login:
-            u_s = str(u_val or "").strip()
-            p_s = str(p_val or "").strip()
-            if u_s and p_s:
-                if login_user(u_s, p_s):
-                    login_holder.empty()
-                    st.rerun()
-                else:
-                    st.error("❌ Usuario o contraseña incorrectos.")
+    if btn_login:
+        u_s = str(st.session_state.get("login_u_k", "") or u_val or "").strip()
+        p_s = str(st.session_state.get("login_p_k", "") or p_val or "").strip()
+        if u_s and p_s:
+            if login_user(u_s, p_s):
+                st.rerun()
             else:
-                st.warning("⚠️ Ingrese su usuario y contraseña.")
+                st.error("❌ Usuario o contraseña incorrectos.")
+        else:
+            st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
 
