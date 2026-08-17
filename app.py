@@ -465,6 +465,9 @@ st.markdown("""
         justify-content: space-between !important;
         width: 100% !important;
         box-sizing: border-box !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
         transition: all 0.3s ease !important;
     }
 
@@ -495,6 +498,37 @@ st.markdown("""
         background-color: transparent !important;
         border: none !important;
         box-shadow: none !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.95rem !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] {
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] [role="combobox"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSelectbox"] svg {
+        fill: #ffffff !important;
+        color: #ffffff !important;
+        margin-left: 6px !important;
     }
 
     /* 3. CAJÓN DE FECHAS Y TEXT INPUTS (DateInput y TextInput) */
