@@ -77,6 +77,15 @@ st.markdown("""
         background-color: #090a0f !important;
         color: #ffffff;
         font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        transition: none !important;
+        animation: none !important;
+    }
+
+    section[data-testid="stSidebar"],
+    [data-testid="stSidebarContent"],
+    [data-testid="stSidebarCollapsedControl"] {
+        transition: none !important;
+        animation: none !important;
     }
 
     [data-testid="stMainBlockContainer"] {
@@ -753,7 +762,25 @@ st.markdown("""
         transform: none !important;
     }
 
-    /* TARJETAS KPI SUPERIORES (TÍTULO Y NÚMERO CENTRADOS EN EL ESPACIO RESTANTE) */
+    /* TARJETAS KPI SUPERIORES EN GRID ATÓMICO (CARGA INSTANTÁNEA SIN POP-IN) */
+    .kpi-grid-container {
+        display: grid !important;
+        grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+        gap: 12px !important;
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+    @media (max-width: 1500px) {
+        .kpi-grid-container {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        }
+    }
+    @media (max-width: 800px) {
+        .kpi-grid-container {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
     .kpi-cajon-single {
         background: #090a0f;
         border: 1px solid #1c1e29;
@@ -1544,11 +1571,9 @@ with tab_dash:
         prom_tard_min = int(round(tard_only.mean())) if not tard_only.empty else 0
         prom_tard_str = f"Prom. Tardanza: {prom_tard_min} min" if prom_tard_min > 0 else "Total tardanzas"
 
-        # FILA 1: 8 TARJETAS KPI CAJÓN
-        k1, k2, k3, k4, k5, k6, k7, k8 = st.columns(8)
-        
-        with k1:
-            st.markdown(f'''
+        # FILA 1: 8 TARJETAS KPI EN UN SOLO RENDER ATÓMICO INSTANTÁNEO
+        st.markdown(f'''
+        <div class="kpi-grid-container">
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
@@ -1558,10 +1583,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{tot_personal}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-            
-        with k2:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(34, 197, 94, 0.15); color: #22c55e;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
@@ -1571,10 +1592,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{total_presentes}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-
-        with k3:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
@@ -1584,10 +1601,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{total_ausentes}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-
-        with k4:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
@@ -1597,10 +1610,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{total_tardanzas}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-
-        with k5:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
@@ -1610,10 +1619,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{exceso_fmt}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-
-        with k6:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
@@ -1623,10 +1628,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{he_fmt}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-
-        with k7:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
@@ -1636,10 +1637,6 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{total_incidencias}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
-
-        with k8:
-            st.markdown(f'''
             <div class="kpi-cajon-single">
                 <div class="kpi-icon-badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
@@ -1649,7 +1646,8 @@ with tab_dash:
                     <div class="kpi-cajon-single-number">{total_salidas_ant}</div>
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
+        </div>
+        ''', unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
         
