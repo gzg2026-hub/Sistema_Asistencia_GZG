@@ -2057,63 +2057,7 @@ with tab_dash:
             else:
                 st.info("Sin registros de Solicitudes de Horas Extra por área.")
 
-        # FILA 4: MAPA DE CALOR (HEATMAP) DE TARDANZAS E INCIDENCIAS POR DÍA Y HORARIO
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="section-title">🔥 Mapa de Calor (Heatmap): Distribución de Tardanzas e Incidencias por Día y Horario de Ingreso</div>', unsafe_allow_html=True)
-        
-        if 'FECHA' in df_asis_db.columns:
-            df_heat = df_asis_db.copy()
-            df_heat['FECHA_DT'] = pd.to_datetime(df_heat['FECHA'])
-            
-            dias_es = {0: 'Lunes', 1: 'Martes', 2: 'Miércoles', 3: 'Jueves', 4: 'Viernes', 5: 'Sábado', 6: 'Domingo'}
-            df_heat['DIA_NOMBRE'] = df_heat['FECHA_DT'].dt.weekday.map(dias_es)
-            
-            def get_hour_bucket(row):
-                ent = str(row.get('ENTRADA', '')).strip()
-                if ent and ent not in ['--', 'N/A', 'None', 'nan', '']:
-                    try:
-                        h = int(ent.split(':')[0])
-                        return f"{h:02d}:00 hs"
-                    except:
-                        pass
-                return "08:00 hs"
 
-            df_heat['HORA_BUCKET'] = df_heat.apply(get_hour_bucket, axis=1)
-            
-            df_heat_filtered = df_heat[df_heat['ESTADO ASISTENCIA'].isin([
-                'TARDANZA', 'SALIDA ANTICIPADA', 'ASISTIO CON INCIDENCIAS',
-                'TARDANZA + SALIDA ANTICIPADA', 'FALTA', 'SALIDA PENDIENTE', 'ENTRADA PENDIENTE'
-            ])]
-            
-            if not df_heat_filtered.empty:
-                pivot_heat = df_heat_filtered.pivot_table(
-                    index='DIA_NOMBRE', columns='HORA_BUCKET', values='ESTADO ASISTENCIA', aggfunc='count', fill_value=0
-                )
-                
-                dias_orden = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-                pivot_heat = pivot_heat.reindex([d for d in dias_orden if d in pivot_heat.index])
-
-                fig_heatmap = go.Figure(data=go.Heatmap(
-                    z=pivot_heat.values,
-                    x=pivot_heat.columns,
-                    y=pivot_heat.index,
-                    colorscale=[[0, '#0d0f17'], [0.3, '#1e2538'], [0.7, '#f59e0b'], [1.0, '#ef4444']],
-                    text=pivot_heat.values,
-                    texttemplate="%{text}",
-                    textfont=dict(color="#ffffff", size=13, family="Segoe UI, sans-serif"),
-                    colorbar=dict(title="Incidencias", tickfont=dict(color='#ffffff'))
-                ))
-
-                fig_heatmap.update_layout(
-                    paper_bgcolor='#090a0f', plot_bgcolor='#090a0f',
-                    font=dict(color='#ffffff', size=13, family='Segoe UI, sans-serif'),
-                    xaxis=dict(title=dict(text='Horario de Ingreso / Turno', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12)),
-                    yaxis=dict(title=dict(text='Día de la Semana', font=dict(color='#ffffff', size=14)), tickfont=dict(color='#ffffff', size=12)),
-                    margin=dict(t=20, b=40, l=10, r=10), height=380
-                )
-                st.plotly_chart(fig_heatmap, use_container_width=True, config={'responsive': True}, key="dash_chart_heatmap_inc")
-            else:
-                st.info("ℹ️ No se registran incidencias o tardanzas en el periodo seleccionado para generar el mapa de calor.")
 
         # FILA 4: RANKINGS TOP 5 EJECUTIVOS
         st.markdown("<br>", unsafe_allow_html=True)
