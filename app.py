@@ -470,6 +470,45 @@ st.markdown("""
         box-shadow: none !important;
     }
 
+    /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' EN TODO EL SISTEMA */
+    [data-testid="InputInstructions"],
+    [data-testid="stInputInstructions"],
+    div[data-testid="InputInstructions"],
+    div[data-testid="stInputInstructions"],
+    small[data-testid="InputInstructions"],
+    small[data-testid="stInputInstructions"],
+    span[data-testid="InputInstructions"],
+    span[data-testid="stInputInstructions"],
+    p[data-testid="InputInstructions"],
+    div[data-testid="stTextInput"] [data-testid="InputInstructions"],
+    div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
+    div[data-testid="stTextInput"] small,
+    div[data-baseweb="input"] > div:not(:first-child),
+    div[data-baseweb="input"] small,
+    div[data-baseweb="base-input"] > div:not(:first-child),
+    div[data-baseweb="base-input"] small,
+    div[data-baseweb="base-input"] + div,
+    [class*="InputInstructions"],
+    [class*="inputInstructions"],
+    [class*="instructions"],
+    [class*="Instructions"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        color: transparent !important;
+        -webkit-text-fill-color: transparent !important;
+        font-size: 0px !important;
+        line-height: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        pointer-events: none !important;
+    }
+
     /* ELIMINAR EFECTO DE OSCURECIMIENTO / PARPADEO DE STREAMLIT AL INTERACTUAR */
     *[data-stale="true"],
     div[data-stale="true"],
@@ -902,15 +941,27 @@ if not is_authenticated():
                 box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
             }
             /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
+            [data-testid="InputInstructions"],
             [data-testid="stInputInstructions"],
+            div[data-testid="InputInstructions"],
             div[data-testid="stInputInstructions"],
+            small[data-testid="InputInstructions"],
             small[data-testid="stInputInstructions"],
+            span[data-testid="InputInstructions"],
             span[data-testid="stInputInstructions"],
+            p[data-testid="InputInstructions"],
+            div[data-testid="stTextInput"] [data-testid="InputInstructions"],
             div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
             div[data-testid="stTextInput"] small,
             div[data-baseweb="input"] > div:not(:first-child),
             div[data-baseweb="input"] small,
-            div[data-baseweb="base-input"] + div {
+            div[data-baseweb="base-input"] > div:not(:first-child),
+            div[data-baseweb="base-input"] small,
+            div[data-baseweb="base-input"] + div,
+            [class*="InputInstructions"],
+            [class*="inputInstructions"],
+            [class*="instructions"],
+            [class*="Instructions"] {
                 display: none !important;
                 visibility: hidden !important;
                 opacity: 0 !important;
