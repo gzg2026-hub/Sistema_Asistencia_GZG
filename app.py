@@ -434,7 +434,10 @@ st.markdown("""
         font-size: 0.95rem !important;
     }
 
-    /* Inputs, Selectbox, Date Inputs en Sidebar (UN SOLO CAJÓN CON ILUMINACIÓN DORADA) */
+    /* =========================================================================
+       FORMATO DE CAJÓN UNIFICADO CON ILUMINACIÓN DORADA PERMANENTE
+       (Idéntico para Cargos, Trabajador, Fechas y Text Inputs en Sidebar)
+       ========================================================================= */
     section[data-testid="stSidebar"] div[data-baseweb="base-input"] {
         background: transparent !important;
         background-color: transparent !important;
@@ -444,18 +447,29 @@ st.markdown("""
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="input"],
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div {
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button {
         background-color: #11131c !important;
+        background: #11131c !important;
         border: 1.5px solid #dfa86a !important;
         border-radius: 8px !important;
         box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        max-height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
         transition: all 0.3s ease !important;
     }
 
     section[data-testid="stSidebar"] div[data-baseweb="input"]:hover,
     section[data-testid="stSidebar"] div[data-baseweb="input"]:focus-within,
     section[data-testid="stSidebar"] div[data-baseweb="select"] > div:hover,
-    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within {
+    section[data-testid="stSidebar"] div[data-baseweb="select"] > div:focus-within,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover,
+    section[data-testid="stSidebar"] div[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button:hover {
         border-color: #f59e0b !important;
         box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
     }
@@ -466,38 +480,6 @@ st.markdown("""
         background: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
-    }
-    div[data-testid="stPopover"] > button {
-        height: 42px !important;
-        min-height: 42px !important;
-        max-height: 42px !important;
-        border-radius: 8px !important;
-        background-color: #11131c !important;
-        border: 1.5px solid #dfa86a !important;
-        box-shadow: 0 0 10px rgba(223, 168, 106, 0.45) !important;
-        padding: 0 12px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        width: 100% !important;
-    }
-    div[data-testid="stPopover"] > button:hover {
-        border-color: #f59e0b !important;
-        box-shadow: 0 0 16px rgba(245, 158, 11, 0.75) !important;
-    }
-    div[data-testid="stPopover"] > button p,
-    div[data-testid="stPopover"] > button span {
-        font-size: 0.92rem !important;
-        font-weight: 800 !important;
-        color: #ffffff !important;
-        text-transform: uppercase !important;
-        margin: 0 !important;
-        text-align: center !important;
-        flex: 1 !important;
-    }
-    div[data-testid="stPopover"] > button svg {
-        fill: #dfa86a !important;
-        color: #dfa86a !important;
     }
     div[data-testid="stPopoverBody"],
     div[data-testid="stPopoverContent"] {
@@ -515,12 +497,11 @@ st.markdown("""
         font-size: 0.90rem !important;
     }
 
+    /* Estilos de Textos dentro de los Cajones */
     section[data-testid="stSidebar"] input[type="text"], 
-    section[data-testid="stSidebar"] input[type="date"], 
-    section[data-testid="stSidebar"] div[role="combobox"] {
+    section[data-testid="stSidebar"] input[type="date"] {
         color: #ffffff !important;
         background: transparent !important;
-        background-color: transparent !important;
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -529,11 +510,19 @@ st.markdown("""
         text-align: center !important;
     }
 
-    section[data-testid="stSidebar"] input[type="text"]:focus,
-    section[data-testid="stSidebar"] input[type="date"]:focus {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
+    section[data-testid="stSidebar"] div[data-baseweb="select"] span,
+    section[data-testid="stSidebar"] div[data-baseweb="select"] p,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button span,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button p {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 0.90rem !important;
+    }
+
+    section[data-testid="stSidebar"] div[data-baseweb="select"] svg,
+    section[data-testid="stSidebar"] div[data-testid="stPopover"] > button svg {
+        fill: #dfa86a !important;
+        color: #dfa86a !important;
     }
 
     /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' EN TODO EL SISTEMA */
