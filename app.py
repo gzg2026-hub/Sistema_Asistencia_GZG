@@ -449,7 +449,8 @@ st.markdown("""
         box-shadow: 0 0 8px rgba(245, 158, 11, 0.35) !important;
     }
 
-    section[data-testid="stSidebar"] input, 
+    section[data-testid="stSidebar"] input[type="text"], 
+    section[data-testid="stSidebar"] input[type="date"], 
     section[data-testid="stSidebar"] div[role="combobox"] {
         color: #ffffff !important;
         background: transparent !important;
@@ -462,7 +463,8 @@ st.markdown("""
         text-align: center !important;
     }
 
-    section[data-testid="stSidebar"] input:focus {
+    section[data-testid="stSidebar"] input[type="text"]:focus,
+    section[data-testid="stSidebar"] input[type="date"]:focus {
         border: none !important;
         outline: none !important;
         box-shadow: none !important;
@@ -548,25 +550,14 @@ st.markdown("""
     /* CHECKBOXES DENTRO DEL POPOVER */
     div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"],
     div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] {
-        padding: 4px 0 !important;
+        padding: 3px 0 !important;
     }
-    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label,
-    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label {
+    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] label p,
+    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] label p {
         color: #ffffff !important;
         font-weight: 600 !important;
         font-size: 0.90rem !important;
         cursor: pointer !important;
-    }
-    div[data-testid="stPopoverBody"] div[data-testid="stCheckbox"] input[type="checkbox"],
-    div[data-testid="stPopoverContent"] div[data-testid="stCheckbox"] input[type="checkbox"] {
-        accent-color: #f59e0b !important;
-        width: 18px !important;
-        height: 18px !important;
-        cursor: pointer !important;
-    }
-    div[data-testid="stPopoverBody"] div[data-baseweb="checkbox"] div,
-    div[data-testid="stPopoverContent"] div[data-baseweb="checkbox"] div {
-        border-color: #dfa86a !important;
     }
 
     div[data-baseweb="tag"] svg,
@@ -1220,51 +1211,56 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# 1. SELECTOR MULTIPLE DE CARGO (CON BOTONES 'TODOS' Y 'DESMARCAR')
-def cb_marcar_todos_cargos():
+# 1. SELECTOR MULTIPLE DE CARGO (CON VERSIONADO GENERACIONAL PARA DESMARCAR Y TODOS)
+if 'cargos_sync_ver' not in st.session_state:
+    st.session_state['cargos_sync_ver'] = 0
     for c in opciones_cargos:
-        st.session_state[f"cargo_chk_{c}"] = True
+        st.session_state[f"c_box_{c}_0"] = True
+
+sync_ver = st.session_state['cargos_sync_ver']
+
+def cb_marcar_todos_cargos():
+    next_ver = st.session_state['cargos_sync_ver'] + 1
+    st.session_state['cargos_sync_ver'] = next_ver
+    for c in opciones_cargos:
+        st.session_state[f"c_box_{c}_{next_ver}"] = True
 
 def cb_desmarcar_todos_cargos():
+    next_ver = st.session_state['cargos_sync_ver'] + 1
+    st.session_state['cargos_sync_ver'] = next_ver
     for c in opciones_cargos:
-        st.session_state[f"cargo_chk_{c}"] = False
+        st.session_state[f"c_box_{c}_{next_ver}"] = False
 
-for c in opciones_cargos:
-    if f"cargo_chk_{c}" not in st.session_state:
-        st.session_state[f"cargo_chk_{c}"] = True
+current_cargos_selected = [c for c in opciones_cargos if st.session_state.get(f"c_box_{c}_{sync_ver}", True)]
 
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
-
-if len(selected_cargos_keys) == 0:
-    pending_cargos = ["__NINGUNO__"]
-else:
-    pending_cargos = selected_cargos_keys
-
-if not pending_cargos or len(pending_cargos) == len(opciones_cargos):
+if not current_cargos_selected or len(current_cargos_selected) == len(opciones_cargos):
     texto_boton = "TODOS LOS CARGOS"
-elif pending_cargos == ["__NINGUNO__"]:
+elif len(current_cargos_selected) == 0:
     texto_boton = "NINGÚN CARGO SELECCIONADO"
-elif len(pending_cargos) <= 2:
-    texto_boton = ", ".join(pending_cargos)
+elif len(current_cargos_selected) <= 2:
+    texto_boton = ", ".join(current_cargos_selected)
 else:
-    texto_boton = f"{len(pending_cargos)} Cargos seleccionados"
+    texto_boton = f"{len(current_cargos_selected)} Cargos seleccionados"
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
 
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        st.button("✅ Todos", use_container_width=True, key="btn_cargo_all_act", on_click=cb_marcar_todos_cargos)
+        st.button("✅ Todos", use_container_width=True, key=f"btn_all_{sync_ver}", on_click=cb_marcar_todos_cargos)
     with col_all2:
-        st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargo_none_act", on_click=cb_desmarcar_todos_cargos)
+        st.button("🧹 Desmarcar", use_container_width=True, key=f"btn_none_{sync_ver}", on_click=cb_desmarcar_todos_cargos)
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        st.checkbox(cargo_item, key=f"cargo_chk_{cargo_item}")
+        k = f"c_box_{cargo_item}_{sync_ver}"
+        if k not in st.session_state:
+            st.session_state[k] = True
+        st.checkbox(cargo_item, key=k)
 
-# RE-EVALUAR CARGOS TRAS LA RENDERIZACIÓN DE LOS CHECKBOXES
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_chk_{c}", True)]
+# EVALUACIÓN DE CARGOS TRAS RENDERIZAR
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"c_box_{c}_{sync_ver}", True)]
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
