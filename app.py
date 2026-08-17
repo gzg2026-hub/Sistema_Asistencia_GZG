@@ -1211,55 +1211,51 @@ if current_user:
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")
 
-# 1. SELECTOR MULTIPLE DE CARGO (CON VERSIONADO GENERACIONAL PARA DESMARCAR Y TODOS)
-if 'cargos_sync_ver' not in st.session_state:
-    st.session_state['cargos_sync_ver'] = 0
-    for c in opciones_cargos:
-        st.session_state[f"c_box_{c}_0"] = True
-
-sync_ver = st.session_state['cargos_sync_ver']
-
+# 1. SELECTOR MULTIPLE DE CARGO (CON CLAVES ESTABLES Y RESPUESTA ILIMITADA)
 def cb_marcar_todos_cargos():
-    next_ver = st.session_state['cargos_sync_ver'] + 1
-    st.session_state['cargos_sync_ver'] = next_ver
     for c in opciones_cargos:
-        st.session_state[f"c_box_{c}_{next_ver}"] = True
+        st.session_state[f"cargo_box_{c}"] = True
 
 def cb_desmarcar_todos_cargos():
-    next_ver = st.session_state['cargos_sync_ver'] + 1
-    st.session_state['cargos_sync_ver'] = next_ver
     for c in opciones_cargos:
-        st.session_state[f"c_box_{c}_{next_ver}"] = False
+        st.session_state[f"cargo_box_{c}"] = False
 
-current_cargos_selected = [c for c in opciones_cargos if st.session_state.get(f"c_box_{c}_{sync_ver}", True)]
+for c in opciones_cargos:
+    if f"cargo_box_{c}" not in st.session_state:
+        st.session_state[f"cargo_box_{c}"] = True
 
-if not current_cargos_selected or len(current_cargos_selected) == len(opciones_cargos):
-    texto_boton = "TODOS LOS CARGOS"
-elif len(current_cargos_selected) == 0:
-    texto_boton = "NINGÚN CARGO SELECCIONADO"
-elif len(current_cargos_selected) <= 2:
-    texto_boton = ", ".join(current_cargos_selected)
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_box_{c}", True)]
+
+if len(selected_cargos_keys) == 0:
+    pending_cargos = ["__NINGUNO__"]
 else:
-    texto_boton = f"{len(current_cargos_selected)} Cargos seleccionados"
+    pending_cargos = selected_cargos_keys
+
+if not pending_cargos or len(pending_cargos) == len(opciones_cargos):
+    texto_boton = "TODOS LOS CARGOS"
+elif pending_cargos == ["__NINGUNO__"]:
+    texto_boton = "NINGÚN CARGO SELECCIONADO"
+elif len(pending_cargos) <= 2:
+    texto_boton = ", ".join(pending_cargos)
+else:
+    texto_boton = f"{len(pending_cargos)} Cargos seleccionados"
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Cargo(s)</p>", unsafe_allow_html=True)
 
 with st.sidebar.popover(texto_boton, use_container_width=True):
     col_all1, col_all2 = st.columns(2)
     with col_all1:
-        st.button("✅ Todos", use_container_width=True, key=f"btn_all_{sync_ver}", on_click=cb_marcar_todos_cargos)
+        st.button("✅ Todos", use_container_width=True, key="btn_cargo_pop_all", on_click=cb_marcar_todos_cargos)
     with col_all2:
-        st.button("🧹 Desmarcar", use_container_width=True, key=f"btn_none_{sync_ver}", on_click=cb_desmarcar_todos_cargos)
+        st.button("🧹 Desmarcar", use_container_width=True, key="btn_cargo_pop_none", on_click=cb_desmarcar_todos_cargos)
 
     st.markdown("<hr style='margin:8px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
     for cargo_item in opciones_cargos:
-        k = f"c_box_{cargo_item}_{sync_ver}"
-        val_default = bool(st.session_state.get(k, True))
-        st.checkbox(cargo_item, value=val_default, key=k)
+        st.checkbox(cargo_item, key=f"cargo_box_{cargo_item}")
 
-# EVALUACIÓN DE CARGOS TRAS RENDERIZAR
-selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"c_box_{c}_{sync_ver}", True)]
+# RE-EVALUAR TRAS LA RENDERIZACIÓN DE LOS CHECKBOXES
+selected_cargos_keys = [c for c in opciones_cargos if st.session_state.get(f"cargo_box_{c}", True)]
 if len(selected_cargos_keys) == 0:
     pending_cargos = ["__NINGUNO__"]
 else:
