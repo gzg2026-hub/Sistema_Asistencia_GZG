@@ -67,8 +67,9 @@ def to_numeric_minutes(series) -> pd.Series:
             
     return num_s.fillna(0.0)
 
-# Custom CSS: Theme Negro Absoluto, Bronze Elegante GZG, Ocultar Botones Derechos Superior
-st.markdown("""
+def _inject_dashboard_css():
+    """Inyecta el CSS completo del dashboard. Solo se llama cuando el usuario está autenticado."""
+    st.markdown("""
 <style>
     /* Theme Base Oscuro (#090a0f) */
     .stApp, [data-testid="stMain"] {
@@ -1045,7 +1046,7 @@ st.markdown("""
         padding: 0 !important;
     }
 </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # ---------------------------------------------------------
@@ -1065,43 +1066,38 @@ init_app_boot_once()
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
 # ---------------------------------------------------------
 if not is_authenticated():
+    # CSS MÍNIMO SOLO PARA LOGIN
     st.markdown("""
     <style>
+        .stApp,[data-testid="stMain"]{background:#090a0f!important;}
         section[data-testid="stSidebar"],
         div[data-testid="stSidebarCollapsedControl"],
-        header[data-testid="stHeader"],
-        div[data-testid="stDecoration"],
-        div[data-testid="stStatusWidget"],
-        div[data-testid="stToolbar"],
-        iframe {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0px !important;
-            width: 0px !important;
-            opacity: 0 !important;
-            border: none !important;
+        header[data-testid="stHeader"],div[data-testid="stDecoration"],
+        div[data-testid="stStatusWidget"],div[data-testid="stToolbar"],
+        iframe,#MainMenu,footer,.stDeployButton{display:none!important;}
+        [data-testid="stMainBlockContainer"]{
+            max-width:460px!important;margin:0 auto!important;padding-top:2.5rem!important;
         }
-        [data-testid="stMainBlockContainer"],
-        .stMainBlockContainer {
-            max-width: 480px !important;
-            width: 100% !important;
-            margin: 0 auto !important;
-            padding-top: 3rem !important;
+        [data-testid="stInputInstructions"]{display:none!important;}
+        div[data-testid="stForm"]{
+            background:#0d0f17;border:1px solid #1c1e29;
+            border-radius:12px;padding:24px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.6);
         }
-        div[data-testid="stForm"],
-        .stForm {
-            width: 100% !important;
-            border: 1px solid #1c1e29 !important;
-            background-color: #0d0f17 !important;
-            border-radius: 12px !important;
-            padding: 24px !important;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+        div[data-testid="stFormSubmitButton"] button{
+            background:linear-gradient(135deg,#c58b4e,#dfa86a)!important;
+            color:#fff!important;font-weight:800!important;
+            border:none!important;border-radius:8px!important;
+            height:46px!important;font-size:1rem!important;
         }
-        /* OCULTAR DEFINITIVAMENTE 'Press Enter to submit form' / 'Press Enter to apply' */
-        [data-testid="InputInstructions"],
-        [data-testid="stInputInstructions"],
-        .stInputInstructions {
-            display: none !important;
+        div[data-testid="stTextInput"] label{color:#94a3b8!important;font-size:.9rem!important;}
+        div[data-testid="stTextInput"] input{
+            background:#11131c!important;color:#fff!important;
+            border:1.5px solid #2a2d3e!important;border-radius:8px!important;
+        }
+        div[data-testid="stTextInput"] input:focus{
+            border-color:#dfa86a!important;
+            box-shadow:0 0 0 2px rgba(223,168,106,.25)!important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -1148,6 +1144,9 @@ if not is_authenticated():
             st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 current_user = get_current_user()
+
+# Inyectar CSS completo del dashboard SOLO cuando ya está autenticado
+_inject_dashboard_css()
 
 logo_b64 = get_logo_base64()
 peru_tz = timezone(timedelta(hours=-5))
