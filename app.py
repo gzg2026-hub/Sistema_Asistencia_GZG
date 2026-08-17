@@ -1054,31 +1054,10 @@ st.markdown("""
 # AUTO-SEEDA EN MEMORIA ONCE AT BOOT (RESPUESTA INSTANTÁNEA EN LOGIN)
 # ---------------------------------------------------------
 @st.cache_resource
-def auto_seed_database_if_empty():
-    try:
-        init_db()
-        _, _, df_asis_chk, _, _ = obtener_datos_db()
-        if df_asis_chk.empty:
-            sample_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico", "Transacciones_2026-08-01_2026-08-11.xlsx")
-            if os.path.exists(sample_file):
-                df_t_samp, df_m_samp, df_he_samp = cargar_datos_excel(sample_file)
-                base_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsm")
-                if os.path.exists(base_file):
-                    df_t_master, _, _ = cargar_datos_excel(base_file)
-                    if df_t_samp.empty:
-                        df_t_samp = df_t_master
-                guardar_trabajadores(df_t_samp)
-                guardar_marcaciones_raw(df_m_samp, archivo_origen=sample_file)
-                df_asis_s, df_he_s, df_inc_s, _ = procesar_asistencia_df(df_t_samp, df_m_samp, df_he_samp, AttendanceConfig())
-                guardar_asistencia_y_reportes(df_asis_s, df_he_s, df_inc_s)
-    except Exception as e:
-        print(f"Error auto-seeding: {e}")
-
-@st.cache_resource
 def init_app_boot_once():
     try:
+        init_db()
         init_auth()
-        auto_seed_database_if_empty()
     except Exception as e:
         print(f"Error boot initialization: {e}")
 
