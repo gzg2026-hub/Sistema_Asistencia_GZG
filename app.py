@@ -1093,9 +1093,6 @@ if not is_authenticated():
 current_user = get_current_user()
 
 logo_b64 = get_logo_base64()
-curr_now = datetime.now()
-date_display = curr_now.strftime("%d/%m/%Y")
-time_display = curr_now.strftime("%I:%M:%S %p").lower()
 
 st.markdown(f'''
 <div class="main-header-cajon">
@@ -1108,20 +1105,6 @@ st.markdown(f'''
         <div class="header-divider"></div>
         <div class="header-titles">
             <div class="main-title-text">CENTRO DE CONTROL DE ASISTENCIA v1.0</div>
-        </div>
-    </div>
-    <div class="header-widgets">
-        <div class="widget-box-equal">
-            <div class="widget-label">FECHA</div>
-            <div class="widget-val">{date_display}</div>
-        </div>
-        <div class="widget-box-equal">
-            <div class="widget-label">HORA ACTUAL</div>
-            <div class="widget-val">{time_display}</div>
-        </div>
-        <div class="widget-box-equal">
-            <div class="widget-label">ÚLTIMA ACTUALIZACIÓN</div>
-            <div class="widget-val">{time_display}</div>
         </div>
     </div>
 </div>
