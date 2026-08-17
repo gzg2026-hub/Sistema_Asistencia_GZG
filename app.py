@@ -890,9 +890,15 @@ def auto_seed_database_if_empty():
     except Exception as e:
         print(f"Error auto-seeding: {e}")
 
-# Inicializar base de datos y usuarios maestros al iniciar la aplicación
-init_auth()
-auto_seed_database_if_empty()
+@st.cache_resource
+def init_app_boot_once():
+    try:
+        init_auth()
+        auto_seed_database_if_empty()
+    except Exception as e:
+        print(f"Error boot initialization: {e}")
+
+init_app_boot_once()
 
 # ---------------------------------------------------------
 # PANTALLA DE INICIO DE SESIÓN Y CONTROL DE ACCESO (RBAC)
