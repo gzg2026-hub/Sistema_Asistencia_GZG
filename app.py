@@ -948,12 +948,14 @@ if not is_authenticated():
             small[data-testid="stInputInstructions"],
             span[data-testid="stInputInstructions"],
             [data-testid="stInputInstructions"],
-            div[data-baseweb="input"] + div,
+            div[data-baseweb="input"] > span,
+            div[data-baseweb="input"] > div:not(:first-child),
+            div[data-baseweb="input"] span,
+            div[data-baseweb="input"] p,
+            div[data-baseweb="input"] small,
             div[data-baseweb="base-input"] + div,
             div[data-testid="stTextInput"] small,
-            div[data-testid="stTextInput"] [data-testid="stInputInstructions"],
-            div[data-baseweb="input"] span,
-            div[data-baseweb="input"] small {
+            div[data-testid="stTextInput"] [data-testid="stInputInstructions"] {
                 display: none !important;
                 visibility: hidden !important;
                 opacity: 0 !important;
@@ -962,6 +964,7 @@ if not is_authenticated():
                 font-size: 0 !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                pointer-events: none !important;
             }
         </style>
         """, unsafe_allow_html=True)
@@ -981,20 +984,19 @@ if not is_authenticated():
         </div>
         ''', unsafe_allow_html=True)
         
-        with st.form("login_form", clear_on_submit=False):
-            u_val = st.text_input("Usuario", value="", key="std_user_input")
-            p_val = st.text_input("Contraseña", value="", type="password", key="std_pass_input")
-            st.markdown("<br>", unsafe_allow_html=True)
-            submitted = st.form_submit_button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary")
+        u_val = st.text_input("Usuario", value="", key="std_user_input")
+        p_val = st.text_input("Contraseña", value="", type="password", key="std_pass_input")
+        st.markdown("<br>", unsafe_allow_html=True)
+        btn_login = st.button("🚀 INGRESAR AL SISTEMA", use_container_width=True, type="primary", key="std_login_btn")
             
-        if submitted:
+        if btn_login or (u_val.strip() and p_val.strip()):
             if u_val and p_val:
                 if login_user(u_val.strip(), p_val.strip()):
                     login_holder.empty()
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
-            else:
+            elif btn_login:
                 st.warning("⚠️ Ingrese su usuario y contraseña.")
     st.stop()
 
