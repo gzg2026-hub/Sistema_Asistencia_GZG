@@ -1863,10 +1863,10 @@ with tab_dash:
         he_pend_fmt = format_hhmm(he_pendientes_min)
         he_rech_fmt = format_hhmm(he_rechazadas_min)
 
-        # SECCIÓN DE KPIS: NÚMERO DE SOLICITUDES DE HORAS EXTRA (H.E.) Y ESTADO DE APROBACIÓN
+        # SECCIÓN DE KPIS: NÚMERO DE SOLICITUDES DE HORAS EXTRA Y ESTADO DE APROBACIÓN
         st.markdown(f'''
         <div style="color: #ffffff; font-size: 1.1rem; font-weight: 800; margin-top: 15px; margin-bottom: 8px; font-family: \'Outfit\', sans-serif;">
-            ⚡ Medición de Solicitudes de Horas Extra (H.E.) por Estado
+            ⚡ Medición de Solicitudes de Horas Extra por Estado
         </div>
         <div class="kpi-grid-container">
             <div class="kpi-cajon-single">
@@ -1874,7 +1874,7 @@ with tab_dash:
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title">SOLICITUDES H.E.</div>
+                    <div class="kpi-cajon-single-title">SOLICITUDES TOTALES</div>
                     <div class="kpi-cajon-single-number">{cnt_he_total}</div>
                 </div>
             </div>
@@ -1883,7 +1883,7 @@ with tab_dash:
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title">H.E. APROBADAS</div>
+                    <div class="kpi-cajon-single-title">APROBADAS</div>
                     <div class="kpi-cajon-single-number">{cnt_he_aprobadas}</div>
                 </div>
             </div>
@@ -1892,7 +1892,7 @@ with tab_dash:
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title">H.E. PENDIENTES</div>
+                    <div class="kpi-cajon-single-title">PENDIENTES</div>
                     <div class="kpi-cajon-single-number">{cnt_he_pendientes}</div>
                 </div>
             </div>
@@ -1901,7 +1901,7 @@ with tab_dash:
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/></svg>
                 </div>
                 <div class="kpi-text-block">
-                    <div class="kpi-cajon-single-title">H.E. RECHAZADAS</div>
+                    <div class="kpi-cajon-single-title">RECHAZADAS</div>
                     <div class="kpi-cajon-single-number">{cnt_he_rechazadas}</div>
                 </div>
             </div>
