@@ -15,3 +15,13 @@ ENV/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Archivos temporales de Excel abiertos (Office lock files)
+~$*.xlsx
+~$*.xls
+~$*.xlsm
+
+# Carpetas generadas localmente (no subir a la nube)
+logs/
+downloads/
+descargas_biometrico/
