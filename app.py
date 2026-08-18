@@ -1529,27 +1529,7 @@ worker_actual = st.session_state.get('pending_worker_val', st.session_state.get(
 if worker_actual not in opciones_trabajadores:
     worker_actual = 'TODO EL PERSONAL'
 
-# ── Leer selección enviada desde JS via input oculto (React native setter trick) ──
-_gzg_recv = st.session_state.get("_gzg_wk_recv_", "")
-if _gzg_recv.startswith("§GZG§"):
-    _sel_w = _gzg_recv[5:]
-    if _sel_w in opciones_trabajadores or _sel_w == "TODO EL PERSONAL":
-        st.session_state['pending_worker_val'] = _sel_w
-        worker_actual = _sel_w
-    st.session_state["_gzg_wk_recv_"] = ""  # limpiar para próxima vez
-
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
-
-# Input oculto: canal de comunicación JS→Python (visualmente invisible)
-st.sidebar.markdown("""<style>
-[data-testid="stSidebar"] [data-testid="stTextInput"]:has(input[placeholder="§gzg§"]) {
-    height:0 !important; min-height:0 !important;
-    overflow:hidden !important; margin:0 !important; padding:0 !important;
-    pointer-events:none !important;
-}
-</style>""", unsafe_allow_html=True)
-st.sidebar.text_input("gzg_wk_recv", key="_gzg_wk_recv_",
-                      label_visibility="collapsed", placeholder="§gzg§")
 
 if worker_actual == 'TODO EL PERSONAL':
     titulo_trabajador = "TODO EL PERSONAL"
@@ -1560,105 +1540,27 @@ else:
         titulo_trabajador = titulo_trabajador[:26] + "..."
 
 with st.sidebar.popover(titulo_trabajador, use_container_width=True):
-    import json as _json
-    _lista_js = [{"label": "👥 Todo el Personal", "val": "TODO EL PERSONAL"}]
+    # Busqueda con filtrado Python (Enter/blur aplica filtro; clic en boton siempre funciona)
+    _busq_q = st.text_input(
+        "buscar_trab",
+        key="worker_search_q",
+        placeholder="🔍 Escriba DNI o Nombre...",
+        label_visibility="collapsed"
+    )
+    _q_filter = st.session_state.get("worker_search_q", "").lower().strip()
+
+    st.button("👥 Todo el Personal", use_container_width=True,
+              key="btn_worker_todos", on_click=cb_set_worker,
+              args=("TODO EL PERSONAL",))
+    st.markdown("<hr style='margin:4px 0 6px 0; border-top:1px solid #1e2235;'>", unsafe_allow_html=True)
+
     for _op in opciones_trabajadores[1:]:
-        _marca = "✅ " if _op == worker_actual else "👤 "
-        _lista_js.append({"label": _marca + _op, "val": _op})
-    _workers_json = _json.dumps(_lista_js, ensure_ascii=False)
-    _current_val_json = _json.dumps(worker_actual, ensure_ascii=False)
-
-    components.html(f"""
-<style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-  html, body {{ margin:0; padding:0; background:transparent; font-family:'Segoe UI',Tahoma,sans-serif; overflow:hidden; }}
-  #wf-wrap {{ padding: 4px 2px; }}
-  #wf-input {{
-    width:100%; padding:8px 12px; border-radius:6px;
-    background:#0d1117; color:#ffffff;
-    border:1.5px solid #dfa86a; outline:none;
-    font-size:0.87rem; margin-bottom:6px; caret-color:#f59e0b;
-  }}
-  #wf-input::placeholder {{ color:#7a7a8a; }}
-  #wf-input:focus {{ border-color:#f59e0b; box-shadow:0 0 8px rgba(223,168,106,0.35); }}
-  #wf-list {{
-    max-height:340px; overflow-y:auto; overflow-x:hidden;
-    scrollbar-width:thin; scrollbar-color:#dfa86a #0d1117;
-  }}
-  #wf-list::-webkit-scrollbar {{ width:5px; }}
-  #wf-list::-webkit-scrollbar-track {{ background:#0d1117; }}
-  #wf-list::-webkit-scrollbar-thumb {{ background:#dfa86a; border-radius:4px; }}
-  .wf-btn {{
-    display:block; width:100%; padding:7px 10px; margin-bottom:3px;
-    background:#0d1117; color:#ffffff; border:1px solid #1e2235;
-    border-radius:6px; text-align:left; font-size:0.83rem; cursor:pointer;
-    transition:background 0.12s, border-color 0.12s;
-  }}
-  .wf-btn:hover {{ background:#161c2e; border-color:#dfa86a; color:#f5c97a; }}
-  .wf-btn.selected {{ background:#1e1a06; border-color:#f59e0b; color:#f5c97a; font-weight:700; }}
-  .wf-sep {{ border:none; border-top:1px solid #1e2235; margin:4px 0 6px 0; }}
-</style>
-<div id="wf-wrap">
-  <input id="wf-input" type="text" placeholder="🔍 Escriba DNI o Nombre..." autofocus>
-  <div id="wf-list"></div>
-</div>
-<script>
-  const WORKERS = {_workers_json};
-  const CURRENT = {_current_val_json};
-  const searchInput = document.getElementById('wf-input');
-  const list = document.getElementById('wf-list');
-
-  function render(q) {{
-    list.innerHTML = '';
-    WORKERS.forEach(function(w, i) {{
-      if (i === 0) {{
-        const btn = document.createElement('button');
-        btn.className = 'wf-btn' + (w.val === CURRENT ? ' selected' : '');
-        btn.textContent = w.label;
-        btn.onclick = function() {{ select(w.val); }};
-        list.appendChild(btn);
-        const sep = document.createElement('hr');
-        sep.className = 'wf-sep';
-        list.appendChild(sep);
-        return;
-      }}
-      const txt = w.val.toLowerCase() + ' ' + w.label.toLowerCase();
-      if (q && !txt.includes(q)) return;
-      const btn = document.createElement('button');
-      btn.className = 'wf-btn' + (w.val === CURRENT ? ' selected' : '');
-      btn.textContent = w.label;
-      btn.onclick = function() {{ select(w.val); }};
-      list.appendChild(btn);
-    }});
-  }}
-
-  function select(val) {{
-    try {{
-      // React native value setter trick: escribe en el input oculto de Streamlit
-      // y dispara el evento input para que React/Streamlit detecte el cambio
-      const pDoc = window.parent.document;
-      const recv = pDoc.querySelector('input[placeholder="\u00a7gzg\u00a7"]');
-      if (recv) {{
-        const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-        nativeSetter.call(recv, '\u00a7GZG\u00a7' + val);
-        recv.dispatchEvent(new Event('input', {{ bubbles: true }}));
-        return;
-      }}
-    }} catch(e) {{}}
-    // Fallback: navegación URL
-    const url = new URL(window.parent.location.href);
-    url.searchParams.set('sel_worker', val);
-    window.parent.location.href = url.toString();
-  }}
-
-  searchInput.addEventListener('input', function() {{
-    render(this.value.toLowerCase().trim());
-  }});
-
-  render('');
-  setTimeout(function() {{ searchInput.focus(); }}, 80);
-</script>
-""", height=420, scrolling=False)
+        if _q_filter and _q_filter not in _op.lower():
+            continue
+        _is_sel = (_op == worker_actual)
+        _lbl = ("✅ " if _is_sel else "👤 ") + _op
+        st.button(_lbl, use_container_width=True, key=f"btn_w_{_op}",
+                  on_click=cb_set_worker, args=(_op,))
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
