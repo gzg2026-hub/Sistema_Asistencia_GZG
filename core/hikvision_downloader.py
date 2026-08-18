@@ -2,7 +2,7 @@
 hikvision_downloader.py
 =======================
 Módulo de descarga de transacciones desde HikCentral Access Control / biométricos Hikvision.
-Utiliza automatización en segundo plano para extraer directamente las marcaciones de HikCentral.
+Extrae directamente las marcaciones de HikCentral y genera el Excel 1:1 idéntico al reporte web.
 """
 
 import os
@@ -17,6 +17,16 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_ASISTENCIA_DIR = os.path.join(PROJECT_ROOT, "downloads", "hikvision")
+
+DIAS_SEMANA = {
+    0: "Lunes",
+    1: "Martes",
+    2: "Miércoles",
+    3: "Jueves",
+    4: "Viernes",
+    5: "Sábado",
+    6: "Domingo"
+}
 
 
 def cargar_config_hikvision():
@@ -50,7 +60,7 @@ def descargar_transacciones_hikvision(
 ) -> str:
     """
     Extrae automáticamente las marcaciones de transacciones desde HikCentral Access Control V2.4
-    utilizando Playwright en segundo plano y las guarda en formato Excel oficial de HikCentral.
+    utilizando Playwright en segundo plano y genera el Excel 1:1 idéntico al reporte web.
     """
     cfg = cargar_config_hikvision()
     host = host or cfg.get("host", "127.0.0.1")
@@ -140,18 +150,15 @@ def descargar_transacciones_hikvision(
     except Exception as e:
         print(f"[HikCentral] Error durante autodescarga: {e}")
 
-    # Generar Excel en el formato oficial de HikCentral que reconoce data_loader.py
+    # Generar Excel EXACTO 1:1 idéntico al reporte de HikCentral Web Client
     wb = Workbook()
     ws = wb.active
     ws.title = "Transacciones"
 
-    # Fila 1: Título / Periodo
-    ws.append([f"Periodo : {fecha_inicio} - {fecha_fin}", "", "", "", "", "", "", "", "", ""])
-
-    # Fila 2: Encabezados oficiales de HikCentral
+    # Fila 1: Encabezados oficiales idénticos a la interfaz web de HikCentral
     ws.append([
-        "ID", "Nombre", "Apellido", "Cargo", "Departamento",
-        "Grupo de asistencia", "Tiempo", "Tipo de pase de tarjeta",
+        "ID", "Nombre", "Apellido", "Departamento", "Fecha",
+        "Semana", "Tiempo", "Tipo de pase de tarjeta",
         "Método de verificación", "Punto de control de asistencia"
     ])
 
@@ -160,20 +167,42 @@ def descargar_transacciones_hikvision(
         dni = str(info.get("EmployeeID", ""))
         nombre = info.get("GivenName", "")
         apellido = info.get("FamilyName", "")
-        cargo = info.get("Post", "")
         dept = info.get("DepartmentName", "")
-        grupo = info.get("AttGroupName", "")
 
         swipe_time = r.get("SwipeTime", "")  # "2026-08-18T07:06:30-05:00"
         fecha_ev = swipe_time[:10] if len(swipe_time) >= 10 else fecha_inicio
         hora_ev = swipe_time[11:19] if len(swipe_time) >= 19 else "00:00:00"
-        tiempo_str = f"{fecha_ev} {hora_ev}"
 
-        tipo_pase = "Registro de entrada" if r.get("SwipeType") == 1 else "Registrar salida" if r.get("SwipeType") == 2 else "Marcación"
-        metodo = "Huella dactilar" if r.get("VerifyType") == 2 else "Rostro" if r.get("VerifyType") == 1 else "Tarjeta"
+        # Calcular día de la semana en español
+        try:
+            dt_obj = datetime.datetime.strptime(fecha_ev, "%Y-%m-%d")
+            semana = DIAS_SEMANA.get(dt_obj.weekday(), "")
+        except Exception:
+            semana = ""
+
+        # Mapeo exacto de Tipo de pase de tarjeta (SwipeType)
+        swipe_type_code = r.get("SwipeType")
+        if swipe_type_code == 1:
+            tipo_pase = "Registro de entrada"
+        elif swipe_type_code == 2:
+            tipo_pase = "Registrar salida"
+        else:
+            tipo_pase = "Indefinido"
+
+        # Mapeo exacto de Método de verificación (VerifyType)
+        verify_type_code = r.get("VerifyType")
+        if verify_type_code == 1:
+            metodo = "Imagen de cara"
+        elif verify_type_code == 2:
+            metodo = "Huella dactilar"
+        elif verify_type_code == 3:
+            metodo = "Tarjeta"
+        else:
+            metodo = "--"
+
         punto = r.get("AttendancePointName", "")
 
-        ws.append([dni, nombre, apellido, cargo, dept, grupo, tiempo_str, tipo_pase, metodo, punto])
+        ws.append([dni, nombre, apellido, dept, fecha_ev, semana, hora_ev, tipo_pase, metodo, punto])
 
     try:
         wb.save(target_path)
