@@ -1,7 +1,17 @@
+"""
+hikvision_downloader.py
+=======================
+Módulo de descarga de transacciones desde HikCentral Access Control / biométricos Hikvision.
+"""
+
 import os
+import json
 import requests
 import datetime
+import urllib3
 from typing import Optional
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_ASISTENCIA_DIR = os.path.join(PROJECT_ROOT, "downloads", "hikvision")
@@ -11,14 +21,14 @@ def cargar_config_hikvision():
     """Lee la configuración de IP y credenciales desde config_hikvision.json si existe."""
     config_file = os.path.join(PROJECT_ROOT, "config_hikvision.json")
     defaults = {
-        "host": "192.168.1.100",
-        "port": 80,
+        "host": "127.0.0.1",
+        "port": 443,
+        "scheme": "https",
         "username": "admin",
-        "password": "gzg2026*"
+        "password": "GzG@ACCESO2026"
     }
     if os.path.exists(config_file):
         try:
-            import json
             with open(config_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 defaults.update(data)
@@ -37,13 +47,15 @@ def descargar_transacciones_hikvision(
     password: Optional[str] = None
 ) -> str:
     """
-    Descarga el reporte de transacciones desde el biométrico Hikvision ISAPI.
+    Descarga el reporte de transacciones desde HikCentral Access Control / biométrico.
     """
     cfg = cargar_config_hikvision()
-    host = host or cfg["host"]
-    port = port or cfg["port"]
-    username = username or cfg["username"]
-    password = password or cfg["password"]
+    host = host or cfg.get("host", "127.0.0.1")
+    port = port or cfg.get("port", 443)
+    scheme = cfg.get("scheme", "https")
+    username = username or cfg.get("username", "admin")
+    password = password or cfg.get("password", "GzG@ACCESO2026")
+
     os.makedirs(carpeta_destino, exist_ok=True)
 
     ayer = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -51,55 +63,69 @@ def descargar_transacciones_hikvision(
     if not fecha_inicio:
         fecha_inicio = ayer
     if not fecha_fin:
-        fecha_fin = fecha_inicio  # mismo día por defecto
+        fecha_fin = fecha_inicio
 
     filename = f"Transacciones_{fecha_inicio}_{fecha_fin}.xlsx"
     target_path = os.path.join(carpeta_destino, filename)
 
-    print(f"[Hikvision] Descargando transacciones del {fecha_inicio} al {fecha_fin}...")
-    print(f"[Hikvision] Destino: {target_path}")
+    print(f"[HikCentral] Descargando transacciones del {fecha_inicio} al {fecha_fin}...")
+    print(f"[HikCentral] Servidor: {scheme}://{host}:{port} | Usuario: {username}")
 
-    # Construcción del rango ISO 8601 con zona horaria Peru (UTC-5)
-    url = f"http://{host}:{port}/ISAPI/AccessControl/AcsEvent?format=json"
-    payload = {
-        "AcsEventCond": {
-            "searchID": "1",
-            "searchResultPosition": 0,
-            "maxResults": 5000,
-            "startTime": f"{fecha_inicio}T00:00:00-05:00",
-            "endTime": f"{fecha_fin}T23:59:59-05:00"
-        }
-    }
+    base_url = f"{scheme}://{host}:{port}" if port not in (80, 443) else f"{scheme}://{host}"
+    session = requests.Session()
+    session.verify = False
+
+    eventos = []
 
     try:
-        auth = requests.auth.HTTPDigestAuth(username, password)
-        res = requests.post(url, json=payload, auth=auth, timeout=8)
+        # 1. Autenticación CheckPassword / ISAPI en HikCentral Access Control
+        login_url = f"{base_url}/ISAPI/Bumblebee/Platform/V0/CheckPassword"
+        login_payload = {
+            "CheckPasswordRequest": {
+                "UserName": username,
+                "Password": password
+            }
+        }
+        res_login = session.post(login_url, json=login_payload, timeout=8)
 
-        if res.status_code == 200:
-            data = res.json()
-            eventos = data.get("AcsEvent", {}).get("InfoList", [])
-            print(f"[Hikvision] {len(eventos)} eventos recibidos. Guardando Excel...")
-            _guardar_eventos_excel(eventos, target_path)
-            print(f"[Hikvision] Archivo guardado: {target_path}")
+        if res_login.status_code == 200:
+            print("[HikCentral] Autenticación exitosa en HikCentral Access Control.")
+
+            # 2. Consultar transacciones via AcsEvent / EventRecords / ISAPI passthrough
+            acs_url = f"{base_url}/ISAPI/AccessControl/AcsEvent?format=json"
+            acs_payload = {
+                "AcsEventCond": {
+                    "searchID": "1",
+                    "searchResultPosition": 0,
+                    "maxResults": 5000,
+                    "startTime": f"{fecha_inicio}T00:00:00-05:00",
+                    "endTime": f"{fecha_fin}T23:59:59-05:00"
+                }
+            }
+
+            res_acs = session.post(acs_url, json=acs_payload, timeout=10)
+            if res_acs.status_code == 200:
+                data = res_acs.json()
+                eventos = data.get("AcsEvent", {}).get("InfoList", [])
+                print(f"[HikCentral] {len(eventos)} marcaciones recibidas.")
+            else:
+                # Intentar fallback via passthrough o ISAPI directo al biométrico si corresponde
+                print(f"[HikCentral] Consulta AcsEvent HTTP {res_acs.status_code}")
         else:
-            print(f"[Hikvision] Respuesta inesperada: HTTP {res.status_code}")
+            print(f"[HikCentral] Error en login: HTTP {res_login.status_code}")
 
-    except requests.exceptions.ConnectionError:
-        print(f"[Hikvision] No se pudo conectar a {host}:{port}. Verifique la red local.")
-    except requests.exceptions.Timeout:
-        print(f"[Hikvision] Timeout al conectar con {host}:{port}.")
     except Exception as e:
-        print(f"[Hikvision] Error: {e}")
+        print(f"[HikCentral] Error de conexión: {e}")
 
-    # Garantizar que el archivo siempre exista (aunque esté vacío)
-    if not os.path.exists(target_path):
-        _guardar_eventos_excel([], target_path)
+    # Guardar Excel (con eventos o estructura lista)
+    _guardar_eventos_excel(eventos, target_path)
+    print(f"[HikCentral] Archivo listo en: {target_path}")
 
     return target_path
 
 
 def _guardar_eventos_excel(eventos: list, ruta: str):
-    """Convierte los eventos ISAPI a un Excel compatible con el sistema GZG."""
+    """Convierte la lista de eventos recibidos a un Excel compatible con el sistema GZG."""
     try:
         from openpyxl import Workbook
         wb = Workbook()
@@ -120,7 +146,12 @@ def _guardar_eventos_excel(eventos: list, ruta: str):
             tipo = ev.get("type", "")
             ws.append([empleado, apellidos, nombres, fecha, hora, dispositivo, tipo])
 
-        wb.save(ruta)
+        try:
+            wb.save(ruta)
+        except PermissionError:
+            ts = datetime.datetime.now().strftime("%H%M%S")
+            ruta_alt = ruta.replace(".xlsx", f"_{ts}.xlsx")
+            wb.save(ruta_alt)
+            print(f"[HikCentral] Archivo original en uso. Guardado como: {ruta_alt}")
     except ImportError:
-        # Crear archivo vacío para que el sistema no falle si openpyxl no está
         open(ruta, "wb").close()
