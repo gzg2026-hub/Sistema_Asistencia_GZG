@@ -1532,10 +1532,19 @@ if worker_actual not in opciones_trabajadores:
 # Leer selección hecha desde el HTML component via query_params
 _qp_worker = st.query_params.get("sel_worker", None)
 if _qp_worker and _qp_worker != "__none__":
+    # Decodificar por si viene URL-encoded desde JS
+    try:
+        from urllib.parse import unquote as _url_unquote
+        _qp_worker = _url_unquote(_qp_worker)
+    except Exception:
+        pass
     if _qp_worker in opciones_trabajadores or _qp_worker == "TODO EL PERSONAL":
         st.session_state['pending_worker_val'] = _qp_worker
         worker_actual = _qp_worker
-    st.query_params.pop("sel_worker", None)
+    try:
+        del st.query_params["sel_worker"]
+    except Exception:
+        pass
 
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
@@ -1589,15 +1598,15 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
   #wf-list::-webkit-scrollbar-thumb {{ background: #dfa86a; border-radius: 4px; }}
   .wf-btn {{
     display: block; width: 100%; padding: 7px 10px; margin-bottom: 3px;
-    background: #0d1117; color: #cbc5a8;
+    background: #0d1117; color: #ffffff;
     border: 1px solid #1e2235;
     border-radius: 6px; text-align: left; font-size: 0.83rem; cursor: pointer;
     transition: background 0.12s, border-color 0.12s;
   }}
   .wf-btn:hover {{ background: #161c2e; border-color: #dfa86a; color: #f5c97a; }}
   .wf-btn.selected {{
-    background: #1a1608; border-color: #dfa86a;
-    color: #f5c97a; font-weight: 600;
+    background: #1e1a06; border-color: #f59e0b;
+    color: #f5c97a; font-weight: 700;
   }}
   .wf-sep {{ border: none; border-top: 1px solid #1e2235; margin: 4px 0 6px 0; }}
 </style>
@@ -1637,9 +1646,15 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
   }}
 
   function select(val) {{
-    const url = new URL(window.parent.location.href);
-    url.searchParams.set('sel_worker', val);
-    window.parent.location.href = url.toString();
+    try {{
+      const url = new URL(window.parent.location.href);
+      // Limpiar params anteriores y setear nuevo
+      url.searchParams.set('sel_worker', encodeURIComponent(val));
+      window.parent.location.href = url.toString();
+    }} catch(e) {{
+      // fallback: postMessage
+      window.parent.postMessage({{type: 'sel_worker', val: val}}, '*');
+    }}
   }}
 
   input.addEventListener('input', function() {{
