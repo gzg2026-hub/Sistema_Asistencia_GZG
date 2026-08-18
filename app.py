@@ -1363,6 +1363,35 @@ components.html("""
     };
     setInterval(updateHeaderClock, 200);
     updateHeaderClock();
+
+    // Listener de filtrado dinámico instantáneo caracter por caracter en el popover de trabajadores
+    try {
+        const pDoc = window.parent.document;
+        if (!pDoc.dataset.workerFilterListenerAttached) {
+            pDoc.dataset.workerFilterListenerAttached = "true";
+            pDoc.addEventListener('input', function(e) {
+                const target = e.target;
+                if (target && target.tagName === 'INPUT') {
+                    const placeholder = (target.getAttribute('placeholder') || '').toLowerCase();
+                    if (placeholder.includes('escriba dni') || placeholder.includes('buscar')) {
+                        const q = target.value.toLowerCase().trim();
+                        const popover = target.closest('div[data-testid="stPopoverBody"]') || pDoc;
+                        const buttons = popover.querySelectorAll('button');
+                        buttons.forEach(btn => {
+                            const txt = btn.innerText.toLowerCase();
+                            if (txt.includes('todo el personal') || txt.includes('todos')) return;
+                            const container = btn.closest('div[data-testid="element-container"]') || btn;
+                            if (!q || txt.includes(q)) {
+                                container.style.display = '';
+                            } else {
+                                container.style.display = 'none';
+                            }
+                        });
+                    }
+                }
+            }, true);
+        }
+    } catch(e) {}
 </script>
 """, height=0, width=0)
 
@@ -1492,23 +1521,40 @@ if not df_trab_opciones.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
+# Callback para selección instantánea de trabajador a UN SOLO CLICK
+def cb_set_worker(target_val):
+    st.session_state['pending_worker_val'] = target_val
+
 worker_actual = st.session_state.get('pending_worker_val', st.session_state.get('applied_worker', 'TODO EL PERSONAL'))
 if worker_actual not in opciones_trabajadores:
     worker_actual = 'TODO EL PERSONAL'
 
-idx_w_curr = opciones_trabajadores.index(worker_actual) if worker_actual in opciones_trabajadores else 0
-
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
-selected_w = st.sidebar.selectbox(
-    "Filtrar por Trabajador",
-    options=opciones_trabajadores,
-    index=idx_w_curr,
-    key="sb_worker_select_live",
-    label_visibility="collapsed"
-)
+if worker_actual == 'TODO EL PERSONAL':
+    titulo_trabajador = "TODO EL PERSONAL"
+else:
+    # mostrar solo apellidos+nombres sin el DNI para titulo corto
+    partes = worker_actual.split(' - ', 1)
+    titulo_trabajador = partes[1] if len(partes) > 1 else worker_actual
+    if len(titulo_trabajador) > 28:
+        titulo_trabajador = titulo_trabajador[:26] + "..."
 
-st.session_state['pending_worker_val'] = selected_w
+with st.sidebar.popover(titulo_trabajador, use_container_width=True):
+    st.text_input("Buscar", value="", key="search_worker_filter_q",
+                  placeholder="🔍 Escriba DNI o Nombre...",
+                  label_visibility="collapsed")
+    
+    st.button("👥 Todo el Personal", use_container_width=True, key="btn_worker_todos",
+              on_click=cb_set_worker, args=("TODO EL PERSONAL",))
+    st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
+    
+    opciones_filtradas = opciones_trabajadores[1:]
+    for idx_w, opcion_w in enumerate(opciones_filtradas):
+        is_sel = (opcion_w == worker_actual)
+        btn_label = ("✅ " if is_sel else "👤 ") + opcion_w
+        st.button(btn_label, use_container_width=True, key=f"btn_w_{opcion_w}",
+                  on_click=cb_set_worker, args=(opcion_w,))
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
