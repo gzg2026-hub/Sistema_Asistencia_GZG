@@ -89,9 +89,9 @@ def exportar_asistencia_excel(
     
     from openpyxl.styles import PatternFill, Font, Alignment
 
-    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-    header_font = Font(name="Calibri", size=11, bold=True, color="1F4E78")
-    header_align = Alignment(horizontal="center", vertical="center")
+    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         for sheet_name, df_raw in target_sheets:

@@ -171,11 +171,11 @@ def descargar_transacciones_hikvision(
     ws = wb.active
     ws.title = "Transacciones"
 
-    # Estilos elegantes para los encabezados de columna (Azul pastel #D9E1F2 + Texto azul oscuro #1F4E78)
+    # Estilos elegantes para los encabezados de columna (Azul marino #1F4E78 + Texto blanco #FFFFFF)
     from openpyxl.styles import PatternFill, Font, Alignment
 
-    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
-    header_font = Font(name="Calibri", size=11, bold=True, color="1F4E78")
+    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
     header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     headers = [
