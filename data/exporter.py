@@ -109,20 +109,58 @@ def guardar_excel_base(
     df_incidencias: pd.DataFrame,
     target_path: str = BASE_EXCEL_TEMPLATE
 ) -> bool:
-    """Guarda directamente los resultados en el archivo Excel base en disco si no está bloqueado."""
+    """Guarda directamente los resultados en el archivo Excel base de forma totalmente segura sin corromper la estructura."""
     excel_bytes = exportar_asistencia_excel(
         df_trabajadores, df_marcaciones, df_asistencia, df_horas_extra, df_incidencias, target_path
     )
     try:
+        if os.path.exists(target_path) and target_path.lower().endswith('.xlsm'):
+            is_xlsm = True
+            wb = openpyxl.load_workbook(target_path, keep_vba=True)
+            target_sheets = [
+                ('01_TRABAJADORES', df_trabajadores, ['DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'AREA']),
+                ('02_MARCACIONES', df_marcaciones, [
+                    'FECHA', 'ID', 'Nombre', 'Apellido', 'Cargo', 'Departamento',
+                    'Grupo de asistencia', 'Tiempo', 'Tipo de pase de tarjeta',
+                    'Método de verificación', 'Punto de control de asistencia'
+                ]),
+                ('03_ASISTENCIA', df_asistencia, [
+                    'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO',
+                    'ENTRADA', 'SALIDA', 'HORAS TRABAJADAS (HH:MM)',
+                    'TARDANZA (HH:MM)', 'SALIDA ANTICIPADA (HH:MM)', 'EXCESO JORNADA (HH:MM)',
+                    'TOTAL HORAS ADICIONALES (HH:MM)', 'INCIDENCIAS', 'ESTADO ASISTENCIA', 'OBSERVACIONES'
+                ]),
+                ('04_HORAS_EXTRA', df_horas_extra, [
+                    'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO', 'INICIO H.E.', 'FIN H.E.', 'DURACIÓN (HH:MM)', 'OBSERVACIÓN'
+                ]),
+                ('05_INCIDENCIAS', df_incidencias, [
+                    'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TIPO', 'HORA', 'DESCRIPCIÓN', 'SEVERIDAD', 'OBSERVACIÓN'
+                ])
+            ]
+            for s_name, df_data, headers in target_sheets:
+                if s_name in wb.sheetnames:
+                    ws = wb[s_name]
+                    ws.delete_rows(1, ws.max_row + 1)
+                else:
+                    ws = wb.create_sheet(title=s_name)
+
+                ws.append(headers)
+                if df_data is not None and not df_data.empty:
+                    valid_cols = [c for c in headers if c in df_data.columns]
+                    df_sub = df_data[valid_cols]
+                    for row in df_sub.itertuples(index=False, name=None):
+                        ws.append([str(v) if v is not None else '' for v in row])
+
+            wb.save(target_path)
+            wb.close()
+            return True
+
         with open(target_path, "wb") as f:
             f.write(excel_bytes)
         return True
     except PermissionError:
-        print(f"[Warn] No se pudo sobrescribir '{target_path}' porque el archivo está abierto en Microsoft Excel. Guardando copia procesada.")
-        alt_path = target_path.replace(".xlsm", "_procesado.xlsx")
-        try:
-            with open(alt_path, "wb") as f:
-                f.write(excel_bytes)
-        except Exception:
-            pass
+        print(f"[Warn] No se pudo sobrescribir '{target_path}' porque el archivo está abierto en Microsoft Excel.")
+        return False
+    except Exception as e:
+        print(f"[Error] Error al guardar Excel base: {e}")
         return False
