@@ -2,14 +2,16 @@
 hikvision_downloader.py
 =======================
 Módulo de descarga de transacciones desde HikCentral Access Control / biométricos Hikvision.
+Utiliza automatización en segundo plano para extraer directamente las marcaciones de HikCentral.
 """
 
 import os
 import json
-import requests
+import time
 import datetime
 import urllib3
 from typing import Optional
+from openpyxl import Workbook
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -47,7 +49,8 @@ def descargar_transacciones_hikvision(
     password: Optional[str] = None
 ) -> str:
     """
-    Descarga el reporte de transacciones desde HikCentral Access Control / biométrico.
+    Extrae automáticamente las marcaciones de transacciones desde HikCentral Access Control V2.4
+    utilizando Playwright en segundo plano y las guarda en formato Excel oficial de HikCentral.
     """
     cfg = cargar_config_hikvision()
     host = host or cfg.get("host", "127.0.0.1")
@@ -68,90 +71,117 @@ def descargar_transacciones_hikvision(
     filename = f"Transacciones_{fecha_inicio}_{fecha_fin}.xlsx"
     target_path = os.path.join(carpeta_destino, filename)
 
-    print(f"[HikCentral] Descargando transacciones del {fecha_inicio} al {fecha_fin}...")
-    print(f"[HikCentral] Servidor: {scheme}://{host}:{port} | Usuario: {username}")
-
     base_url = f"{scheme}://{host}:{port}" if port not in (80, 443) else f"{scheme}://{host}"
-    session = requests.Session()
-    session.verify = False
 
-    eventos = []
+    print(f"[HikCentral] Extrayendo transacciones del {fecha_inicio} al {fecha_fin}...")
+    print(f"[HikCentral] Servidor: {base_url} | Usuario: {username}")
+
+    records = []
 
     try:
-        # 1. Autenticación CheckPassword / ISAPI en HikCentral Access Control
-        login_url = f"{base_url}/ISAPI/Bumblebee/Platform/V0/CheckPassword"
-        login_payload = {
-            "CheckPasswordRequest": {
-                "UserName": username,
-                "Password": password
-            }
-        }
-        res_login = session.post(login_url, json=login_payload, timeout=8)
+        from playwright.sync_api import sync_playwright
 
-        if res_login.status_code == 200:
-            print("[HikCentral] Autenticación exitosa en HikCentral Access Control.")
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--ignore-certificate-errors", "--no-sandbox"]
+            )
+            context = browser.new_context(ignore_https_errors=True)
+            page = context.new_page()
 
-            # 2. Consultar transacciones via AcsEvent / EventRecords / ISAPI passthrough
-            acs_url = f"{base_url}/ISAPI/AccessControl/AcsEvent?format=json"
-            acs_payload = {
-                "AcsEventCond": {
-                    "searchID": "1",
-                    "searchResultPosition": 0,
-                    "maxResults": 5000,
-                    "startTime": f"{fecha_inicio}T00:00:00-05:00",
-                    "endTime": f"{fecha_fin}T23:59:59-05:00"
+            page.goto(f"{base_url}/#/", wait_until="domcontentloaded")
+            time.sleep(4)
+
+            page.evaluate("document.querySelectorAll('input').forEach(i => i.removeAttribute('readonly'))")
+            user_inp = page.locator("#username, input[placeholder='Nombre de usuario']").first
+            pass_inp = page.locator("input[type='password']").first
+            login_btn = page.locator("button:has-text('Iniciar')").first
+
+            if user_inp.count() > 0:
+                user_inp.fill(username)
+            if pass_inp.count() > 0:
+                pass_inp.fill(password)
+
+            login_btn.click()
+            time.sleep(5)
+
+            payload_js = json.dumps({
+                "RecordRequest": {
+                    "PageIndex": 1,
+                    "PageSize": 5000,
+                    "QueryInfo": {
+                        "SortInfo": { "SortField": 1, "SortType": 1 },
+                        "BeginTime": f"{fecha_inicio}T00:00:00-05:00",
+                        "EndTime": f"{fecha_fin}T23:59:59-05:00",
+                        "PersonID": [],
+                        "PersonCustomFiledID": [],
+                        "RecordType": 1
+                    }
                 }
-            }
+            })
 
-            res_acs = session.post(acs_url, json=acs_payload, timeout=10)
-            if res_acs.status_code == 200:
-                data = res_acs.json()
-                eventos = data.get("AcsEvent", {}).get("InfoList", [])
-                print(f"[HikCentral] {len(eventos)} marcaciones recibidas.")
-            else:
-                # Intentar fallback via passthrough o ISAPI directo al biométrico si corresponde
-                print(f"[HikCentral] Consulta AcsEvent HTTP {res_acs.status_code}")
-        else:
-            print(f"[HikCentral] Error en login: HTTP {res_login.status_code}")
+            res = page.evaluate(f"""
+                async () => {{
+                    const resp = await fetch('/ISAPI/Bumblebee/AttendancePlugin/V1/Record?MT=GET', {{
+                        method: 'POST',
+                        headers: {{
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        }},
+                        body: JSON.stringify({payload_js})
+                    }});
+                    return await resp.json();
+                }}
+            """)
+
+            browser.close()
+            records = res.get("ResponseStatus", {}).get("Data", {}).get("OriginalRecord", [])
+            print(f"[HikCentral] Autenticación exitosa. {len(records)} marcaciones extraídas.")
 
     except Exception as e:
-        print(f"[HikCentral] Error de conexión: {e}")
+        print(f"[HikCentral] Error durante autodescarga: {e}")
 
-    # Guardar Excel (con eventos o estructura lista)
-    _guardar_eventos_excel(eventos, target_path)
-    print(f"[HikCentral] Archivo listo en: {target_path}")
+    # Generar Excel en el formato oficial de HikCentral que reconoce data_loader.py
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Transacciones"
 
-    return target_path
+    # Fila 1: Título / Periodo
+    ws.append([f"Periodo : {fecha_inicio} - {fecha_fin}", "", "", "", "", "", "", "", "", ""])
 
+    # Fila 2: Encabezados oficiales de HikCentral
+    ws.append([
+        "ID", "Nombre", "Apellido", "Cargo", "Departamento",
+        "Grupo de asistencia", "Tiempo", "Tipo de pase de tarjeta",
+        "Método de verificación", "Punto de control de asistencia"
+    ])
 
-def _guardar_eventos_excel(eventos: list, ruta: str):
-    """Convierte la lista de eventos recibidos a un Excel compatible con el sistema GZG."""
+    for r in records:
+        info = r.get("PersonInfo", {})
+        dni = str(info.get("EmployeeID", ""))
+        nombre = info.get("GivenName", "")
+        apellido = info.get("FamilyName", "")
+        cargo = info.get("Post", "")
+        dept = info.get("DepartmentName", "")
+        grupo = info.get("AttGroupName", "")
+
+        swipe_time = r.get("SwipeTime", "")  # "2026-08-18T07:06:30-05:00"
+        fecha_ev = swipe_time[:10] if len(swipe_time) >= 10 else fecha_inicio
+        hora_ev = swipe_time[11:19] if len(swipe_time) >= 19 else "00:00:00"
+        tiempo_str = f"{fecha_ev} {hora_ev}"
+
+        tipo_pase = "Registro de entrada" if r.get("SwipeType") == 1 else "Registrar salida" if r.get("SwipeType") == 2 else "Marcación"
+        metodo = "Huella dactilar" if r.get("VerifyType") == 2 else "Rostro" if r.get("VerifyType") == 1 else "Tarjeta"
+        punto = r.get("AttendancePointName", "")
+
+        ws.append([dni, nombre, apellido, cargo, dept, grupo, tiempo_str, tipo_pase, metodo, punto])
+
     try:
-        from openpyxl import Workbook
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Transacciones"
-        ws.append(["DNI", "APELLIDOS", "NOMBRES", "FECHA", "HORA", "DISPOSITIVO", "TIPO"])
+        wb.save(target_path)
+    except PermissionError:
+        ts = datetime.datetime.now().strftime("%H%M%S")
+        target_path = os.path.join(carpeta_destino, f"Transacciones_{fecha_inicio}_{fecha_fin}_{ts}.xlsx")
+        wb.save(target_path)
+        print(f"[HikCentral] Archivo en uso, guardado como: {target_path}")
 
-        for ev in eventos:
-            empleado = ev.get("employeeNoString", ev.get("cardNo", ""))
-            nombre_completo = ev.get("name", "")
-            partes = nombre_completo.split(" ", 1) if nombre_completo else ["", ""]
-            apellidos = partes[0] if len(partes) > 0 else ""
-            nombres = partes[1] if len(partes) > 1 else ""
-            tiempo_raw = ev.get("time", "")
-            fecha = tiempo_raw[:10] if len(tiempo_raw) >= 10 else ""
-            hora = tiempo_raw[11:19] if len(tiempo_raw) >= 19 else ""
-            dispositivo = ev.get("devName", "")
-            tipo = ev.get("type", "")
-            ws.append([empleado, apellidos, nombres, fecha, hora, dispositivo, tipo])
-
-        try:
-            wb.save(ruta)
-        except PermissionError:
-            ts = datetime.datetime.now().strftime("%H%M%S")
-            ruta_alt = ruta.replace(".xlsx", f"_{ts}.xlsx")
-            wb.save(ruta_alt)
-            print(f"[HikCentral] Archivo original en uso. Guardado como: {ruta_alt}")
-    except ImportError:
-        open(ruta, "wb").close()
+    print(f"[HikCentral] Archivo guardado con éxito en: {target_path}")
+    return target_path
