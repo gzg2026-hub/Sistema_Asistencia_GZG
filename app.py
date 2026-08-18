@@ -1521,7 +1521,7 @@ if not df_trab_opciones.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
-# Callback para selección instantánea de trabajador a UN SOLO CLICK
+# Callback para selección de trabajador
 def cb_set_worker(target_val):
     st.session_state['pending_worker_val'] = target_val
 
@@ -1529,32 +1529,106 @@ worker_actual = st.session_state.get('pending_worker_val', st.session_state.get(
 if worker_actual not in opciones_trabajadores:
     worker_actual = 'TODO EL PERSONAL'
 
+# Leer selección hecha desde el HTML component via query_params
+_qp_worker = st.query_params.get("sel_worker", None)
+if _qp_worker and _qp_worker != "__none__":
+    if _qp_worker in opciones_trabajadores or _qp_worker == "TODO EL PERSONAL":
+        st.session_state['pending_worker_val'] = _qp_worker
+        worker_actual = _qp_worker
+    st.query_params.pop("sel_worker", None)
+
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
 if worker_actual == 'TODO EL PERSONAL':
     titulo_trabajador = "TODO EL PERSONAL"
 else:
-    # mostrar solo apellidos+nombres sin el DNI para titulo corto
     partes = worker_actual.split(' - ', 1)
     titulo_trabajador = partes[1] if len(partes) > 1 else worker_actual
     if len(titulo_trabajador) > 28:
         titulo_trabajador = titulo_trabajador[:26] + "..."
 
 with st.sidebar.popover(titulo_trabajador, use_container_width=True):
-    st.text_input("Buscar", value="", key="search_worker_filter_q",
-                  placeholder="🔍 Escriba DNI o Nombre...",
-                  label_visibility="collapsed")
+    # Construir la lista de trabajadores en JSON para JS
+    _lista_js = [{"label": "👥 Todo el Personal", "val": "TODO EL PERSONAL"}]
+    for _op in opciones_trabajadores[1:]:
+        _marca = "✅ " if _op == worker_actual else "👤 "
+        _lista_js.append({"label": _marca + _op, "val": _op})
     
-    st.button("👥 Todo el Personal", use_container_width=True, key="btn_worker_todos",
-              on_click=cb_set_worker, args=("TODO EL PERSONAL",))
-    st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
-    
-    opciones_filtradas = opciones_trabajadores[1:]
-    for idx_w, opcion_w in enumerate(opciones_filtradas):
-        is_sel = (opcion_w == worker_actual)
-        btn_label = ("✅ " if is_sel else "👤 ") + opcion_w
-        st.button(btn_label, use_container_width=True, key=f"btn_w_{opcion_w}",
-                  on_click=cb_set_worker, args=(opcion_w,))
+    import json as _json
+    _workers_json = _json.dumps(_lista_js, ensure_ascii=False)
+    _current_val_json = _json.dumps(worker_actual, ensure_ascii=False)
+
+    components.html(f"""
+<style>
+  body {{ margin: 0; padding: 0; background: transparent; font-family: 'Segoe UI', Tahoma, sans-serif; }}
+  #wf-input {{
+    width: 100%; padding: 8px 12px; border-radius: 6px;
+    background-color: #111420; color: #ffffff;
+    border: 1.5px solid #dfa86a; outline: none;
+    font-size: 0.87rem; box-sizing: border-box; margin-bottom: 6px;
+  }}
+  #wf-input:focus {{ border-color: #f59e0b; box-shadow: 0 0 8px rgba(223,168,106,0.4); }}
+  .wf-btn {{
+    display: block; width: 100%; padding: 7px 10px; margin-bottom: 3px;
+    background: #111420; color: #cdd3f0; border: 1px solid #1e2340;
+    border-radius: 6px; text-align: left; font-size: 0.83rem; cursor: pointer;
+    transition: background 0.15s;
+  }}
+  .wf-btn:hover {{ background: #1c2040; border-color: #dfa86a; color: #f5c97a; }}
+  .wf-btn.selected {{ background: #1e2a50; border-color: #4a7aff; color: #a8c0ff; font-weight: 600; }}
+  .wf-sep {{ border: none; border-top: 1px solid #222638; margin: 4px 0 6px 0; }}
+  #wf-list {{ max-height: 320px; overflow-y: auto; }}
+</style>
+<input id="wf-input" type="text" placeholder="🔍 Escriba DNI o Nombre..." autofocus>
+<div id="wf-list"></div>
+<script>
+  const WORKERS = {_workers_json};
+  const CURRENT = {_current_val_json};
+  const input = document.getElementById('wf-input');
+  const list = document.getElementById('wf-list');
+
+  function render(q) {{
+    list.innerHTML = '';
+    WORKERS.forEach(function(w, i) {{
+      if (i === 0) {{
+        // "Todo el Personal" siempre visible
+        const btn = document.createElement('button');
+        btn.className = 'wf-btn' + (w.val === CURRENT ? ' selected' : '');
+        btn.textContent = w.label;
+        btn.onclick = function() {{ select(w.val); }};
+        list.appendChild(btn);
+        const sep = document.createElement('hr');
+        sep.className = 'wf-sep';
+        list.appendChild(sep);
+        return;
+      }}
+      const match = !q || w.label.toLowerCase().includes(q) || w.val.toLowerCase().includes(q);
+      if (!match) return;
+      const btn = document.createElement('button');
+      btn.className = 'wf-btn' + (w.val === CURRENT ? ' selected' : '');
+      btn.textContent = w.label;
+      btn.onclick = function() {{ select(w.val); }};
+      list.appendChild(btn);
+    }});
+  }}
+
+  function select(val) {{
+    // Comunicar selección a Streamlit via query param y recargar
+    const url = new URL(window.parent.location.href);
+    url.searchParams.set('sel_worker', val);
+    window.parent.history.replaceState(null, '', url.toString());
+    // Forzar rerun de Streamlit cambiando la URL con el param
+    window.parent.location.href = url.toString();
+  }}
+
+  input.addEventListener('input', function() {{
+    render(this.value.toLowerCase().trim());
+  }});
+  
+  render('');
+  setTimeout(function() {{ input.focus(); }}, 100);
+</script>
+""", height=400, scrolling=False)
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
