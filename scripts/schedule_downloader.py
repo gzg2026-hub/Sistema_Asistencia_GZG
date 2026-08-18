@@ -184,15 +184,16 @@ def _iniciar_programador():
 if __name__ == '__main__':
     args = sys.argv[1:]
 
-    if not args:
-        # Sin argumentos → modo servicio automatico
-        _iniciar_programador()
-
-    elif args[0].lower() in ("ahora", "now"):
-        # Ejecutar inmediatamente el dia anterior
+    if not args or args[0].lower() in ("ahora", "now", "auto", "automatico"):
+        # Modo por defecto / Tarea Programada de Windows:
+        # Ejecutar INMEDIATAMENTE la descarga del dia anterior y finalizar cleanly.
         fecha = _ayer()
-        _log(f"Ejecucion MANUAL inmediata: descargando dia anterior = {fecha}")
+        _log(f"Ejecucion AUTOMATICA / INMEDIATA: descargando dia anterior = {fecha}")
         _ejecutar_descarga(fecha, fecha)
+
+    elif args[0].lower() in ("daemon", "service", "servicio"):
+        # Modo servicio continuo 24/7 (bucle)
+        _iniciar_programador()
 
     elif args[0].lower() == "manual":
         # Menu interactivo para elegir fecha

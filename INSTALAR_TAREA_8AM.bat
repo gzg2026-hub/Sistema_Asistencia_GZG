@@ -49,7 +49,7 @@ if not exist "%SCRIPT_PATH%" (
 schtasks /delete /tn "%TASK_NAME%" /f >nul 2>&1
 
 :: Crear tarea programada
-schtasks /create /tn "%TASK_NAME%" /tr "\"%PYTHON_EXE%\" \"%SCRIPT_PATH%\"" /sc DAILY /st 08:00 /ru "%USERNAME%" /rl HIGHEST /f
+schtasks /create /tn "%TASK_NAME%" /tr "\"%PYTHON_EXE%\" \"%SCRIPT_PATH%\" ahora" /sc DAILY /st 08:00 /ru "%USERNAME%" /rl HIGHEST /f
 
 if %errorlevel% equ 0 (
     echo.
