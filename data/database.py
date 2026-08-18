@@ -145,18 +145,28 @@ def init_db(db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
+OFFICIAL_DNI_MAPPING = {
+    '3208053': '03208053',
+    '03208053': '03208053',
+    '6616501': '006616501',
+    '06616501': '006616501',
+    '006616501': '006616501',
+}
+
 def clean_dni(val) -> str:
-    """Normaliza cualquier DNI eliminando espacios, caracteres no numéricos y formateando a 8 dígitos zfill(8)."""
+    """Normaliza cualquier DNI respetando estrictamente el Padrón Oficial de Trabajadores."""
     if pd.isna(val) or val is None or str(val).strip() == '':
         return ''
     digits = ''.join(c for c in str(val) if c.isdigit())
     if not digits:
         return ''
+    digits_lstrip = digits.lstrip('0')
+    if digits in OFFICIAL_DNI_MAPPING:
+        return OFFICIAL_DNI_MAPPING[digits]
+    if digits_lstrip in OFFICIAL_DNI_MAPPING:
+        return OFFICIAL_DNI_MAPPING[digits_lstrip]
     if len(digits) <= 8:
         return digits.zfill(8)
-    digits_lstrip = digits.lstrip('0')
-    if len(digits_lstrip) <= 8:
-        return digits_lstrip.zfill(8)
     return digits
 
 def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
