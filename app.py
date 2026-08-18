@@ -1492,87 +1492,23 @@ if not df_trab_opciones.empty:
 
 opciones_trabajadores = ["TODO EL PERSONAL"] + sorted(list(set(opciones_trabajadores[1:])))
 
-# Callback para selección instantánea de trabajador a UN SOLO CLICK
-def cb_set_worker(target_val):
-    st.session_state['pending_worker_val'] = target_val
-
 worker_actual = st.session_state.get('pending_worker_val', st.session_state.get('applied_worker', 'TODO EL PERSONAL'))
 if worker_actual not in opciones_trabajadores:
     worker_actual = 'TODO EL PERSONAL'
 
+idx_w_curr = opciones_trabajadores.index(worker_actual) if worker_actual in opciones_trabajadores else 0
+
 st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:4px; margin-top:10px; font-size:0.95rem; font-weight:700; color:#ffffff;'>Filtrar por Trabajador</p>", unsafe_allow_html=True)
 
-# Popover idéntico al de cargos (Selección a UN SOLO CLICK)
-if worker_actual == 'TODO EL PERSONAL':
-    titulo_trabajador = "TODO EL PERSONAL"
-else:
-    # mostrar solo apellidos+nombres sin el DNI para titulo corto
-    partes = worker_actual.split(' - ', 1)
-    titulo_trabajador = partes[1] if len(partes) > 1 else worker_actual
-    if len(titulo_trabajador) > 28:
-        titulo_trabajador = titulo_trabajador[:26] + "..."
+selected_w = st.sidebar.selectbox(
+    "Filtrar por Trabajador",
+    options=opciones_trabajadores,
+    index=idx_w_curr,
+    key="sb_worker_select_live",
+    label_visibility="collapsed"
+)
 
-with st.sidebar.popover(titulo_trabajador, use_container_width=True):
-    # Campo de búsqueda instantánea en tiempo real (tecleo caracter por caracter sin presionar Enter)
-    st.components.v1.html("""
-    <style>
-        body { margin: 0; padding: 0; background: transparent; }
-        .search-box {
-            width: 100%;
-            padding: 8px 12px;
-            border-radius: 6px;
-            background-color: #111420;
-            color: #ffffff;
-            border: 1px solid #dfa86a;
-            outline: none;
-            font-size: 0.88rem;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            box-sizing: border-box;
-        }
-        .search-box:focus {
-            border-color: #f59e0b;
-            box-shadow: 0 0 8px rgba(223, 168, 106, 0.4);
-        }
-    </style>
-    <input type="text" id="input_worker_search" class="search-box" placeholder="🔍 Escriba DNI, Nombre o Apellido..." >
-    <script>
-        const inputEl = document.getElementById('input_worker_search');
-        inputEl.addEventListener('input', function() {
-            const q = this.value.toLowerCase().trim();
-            const pDoc = window.parent.document;
-            
-            // Buscar los botones de trabajadores dentro del popover abierto
-            const popoverBody = inputEl.closest('div[data-testid="stPopoverBody"]') || pDoc;
-            const buttons = popoverBody.querySelectorAll('button');
-            
-            buttons.forEach(btn => {
-                const txt = btn.innerText.toLowerCase();
-                // Omitir el botón de Todo el Personal
-                if (txt.includes('todo el personal')) return;
-                
-                const container = btn.closest('div[data-testid="element-container"]') || btn;
-                if (!q || txt.includes(q)) {
-                    container.style.display = '';
-                } else {
-                    container.style.display = 'none';
-                }
-            });
-        });
-        // Foco automático al abrir
-        setTimeout(() => inputEl.focus(), 150);
-    </script>
-    """, height=42)
-    
-    st.button("👥 Todo el Personal", use_container_width=True, key="btn_worker_todos",
-              on_click=cb_set_worker, args=("TODO EL PERSONAL",))
-    st.markdown("<hr style='margin:6px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
-    
-    opciones_filtradas = opciones_trabajadores[1:]
-    for idx_w, opcion_w in enumerate(opciones_filtradas):
-        is_sel = (opcion_w == worker_actual)
-        btn_label = ("✅ " if is_sel else "👤 ") + opcion_w
-        st.button(btn_label, use_container_width=True, key=f"btn_w_{opcion_w}",
-                  on_click=cb_set_worker, args=(opcion_w,))
+st.session_state['pending_worker_val'] = selected_w
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
