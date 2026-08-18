@@ -82,6 +82,10 @@ def descargar_transacciones_hikvision(
     except Exception as e:
         print(f"[Hikvision] Error: {e}")
 
+    # Garantizar que el archivo siempre exista (aunque esté vacío)
+    if not os.path.exists(target_path):
+        _guardar_eventos_excel([], target_path)
+
     return target_path
 
 

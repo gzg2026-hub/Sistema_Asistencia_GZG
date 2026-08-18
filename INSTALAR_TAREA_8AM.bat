@@ -1,67 +1,68 @@
 @echo off
-title GZG - Instalador Tarea Programada 7AM
+title GZG - Instalador Tarea Programada 8AM
+cd /d "%~dp0"
+
 echo.
 echo  ============================================================
-echo   GZG - INSTALACION DE DESCARGA AUTOMATICA DIARIA (7:00 AM)
+echo   GZG - DESCARGA AUTOMATICA DIARIA (8:00 AM)
 echo  ============================================================
+echo  Directorio: %CD%
 echo.
-echo  Este script crea una Tarea Programada en Windows para que
-echo  la descarga de Hikvision se ejecute AUTOMATICAMENTE todos
-echo  los dias a las 07:00 AM (descarga el dia anterior).
-echo.
-echo  REQUISITO: ejecutar como ADMINISTRADOR.
+echo  IMPORTANTE: Si no funciona, ejecute como ADMINISTRADOR
+echo  (clic derecho sobre este archivo ^> Ejecutar como administrador)
 echo.
 
-:: Obtener la ruta del proyecto (un nivel arriba del .bat)
-set "PROJECT_DIR=%~dp0"
-if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
-
-:: Buscar python
+:: Verificar Python
 where python >nul 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: Python no encontrado. Instale Python primero.
+    echo  [ERROR] Python no encontrado. Instale Python desde python.org
     pause
     exit /b 1
 )
-for /f "delims=" %%i in ('where python') do set "PYTHON_EXE=%%i" & goto :found_python
+for /f "delims=" %%i in ('where python') do (
+    set "PYTHON_EXE=%%i"
+    goto :found_python
+)
 :found_python
+
+set "PROJECT_DIR=%~dp0"
+if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
 
 set "SCRIPT_PATH=%PROJECT_DIR%\scripts\schedule_downloader.py"
 set "TASK_NAME=GZG_Hikvision_Descarga_8AM"
 
-echo  Python encontrado: %PYTHON_EXE%
-echo  Script           : %SCRIPT_PATH%
-echo  Tarea            : %TASK_NAME%
-echo  Hora programada  : 08:00 AM (diario)
+echo  Python    : %PYTHON_EXE%
+echo  Script    : %SCRIPT_PATH%
+echo  Tarea     : %TASK_NAME%
+echo  Horario   : 08:00 AM diario (descarga el dia anterior)
 echo.
+
+:: Verificar que el script existe
+if not exist "%SCRIPT_PATH%" (
+    echo  [ERROR] No se encuentra el script:
+    echo  %SCRIPT_PATH%
+    pause
+    exit /b 1
+)
 
 :: Eliminar tarea anterior si existe
 schtasks /delete /tn "%TASK_NAME%" /f >nul 2>&1
 
-:: Crear nueva tarea programada
-schtasks /create ^
-  /tn "%TASK_NAME%" ^
-  /tr "\"%PYTHON_EXE%\" \"%SCRIPT_PATH%\"" ^
-  /sc DAILY ^
-  /st 08:00 ^
-  /ru "%USERNAME%" ^
-  /rl HIGHEST ^
-  /f
+:: Crear tarea programada
+schtasks /create /tn "%TASK_NAME%" /tr "\"%PYTHON_EXE%\" \"%SCRIPT_PATH%\"" /sc DAILY /st 08:00 /ru "%USERNAME%" /rl HIGHEST /f
 
 if %errorlevel% equ 0 (
     echo.
-    echo  [OK] Tarea programada creada exitosamente.
-    echo  Los archivos se guardaran en:
-    echo    %PROJECT_DIR%\downloads\hikvision\
-    echo  Los logs se guardan en:
-    echo    %PROJECT_DIR%\logs\descarga_diaria.log
+    echo  [OK] Tarea creada correctamente!
     echo.
-    echo  Para verificar: Abrir "Programador de Tareas" de Windows
-    echo  y buscar la tarea: %TASK_NAME%
+    echo  Archivos descargados: %PROJECT_DIR%\downloads\hikvision\
+    echo  Log de ejecuciones  : %PROJECT_DIR%\logs\descarga_diaria.log
+    echo.
+    echo  Para verificar: Inicio ^> Programador de Tareas ^> %TASK_NAME%
 ) else (
     echo.
     echo  [ERROR] No se pudo crear la tarea.
-    echo  Intente ejecutar este archivo como ADMINISTRADOR (clic derecho ^> Ejecutar como admin).
+    echo  Intente clic derecho ^> "Ejecutar como administrador"
 )
 
 echo.
