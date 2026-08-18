@@ -87,6 +87,12 @@ def exportar_asistencia_excel(
         ('05_INCIDENCIAS', df_incidencias)
     ]
     
+    from openpyxl.styles import PatternFill, Font, Alignment
+
+    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="1F4E78")
+    header_align = Alignment(horizontal="center", vertical="center")
+
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         for sheet_name, df_raw in target_sheets:
             official_headers = OFFICIAL_SCHEMAS.get(sheet_name, [])
@@ -98,7 +104,20 @@ def exportar_asistencia_excel(
                 df_clean.to_excel(writer, sheet_name=sheet_name, index=False)
             else:
                 pd.DataFrame(columns=official_headers).to_excel(writer, sheet_name=sheet_name, index=False)
-                
+            
+            # Dar formato azul pastel a los encabezados del libro de trabajo
+            ws = writer.sheets[sheet_name]
+            for cell in ws[1]:
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = header_align
+            
+            # Autoajustar ancho de columnas
+            for col in ws.columns:
+                max_len = max(len(str(cell.value or '')) for cell in col)
+                col_letter = col[0].column_letter
+                ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+
     return output.getvalue()
 
 def guardar_excel_base(
@@ -145,6 +164,11 @@ def guardar_excel_base(
                     ws = wb.create_sheet(title=s_name)
 
                 ws.append(headers)
+                for cell in ws[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = header_align
+
                 if df_data is not None and not df_data.empty:
                     valid_cols = [c for c in headers if c in df_data.columns]
                     df_sub = df_data[valid_cols]

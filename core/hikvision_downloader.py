@@ -171,12 +171,25 @@ def descargar_transacciones_hikvision(
     ws = wb.active
     ws.title = "Transacciones"
 
-    # Fila 1: Encabezados oficiales de 11 columnas idénticos a la interfaz web de HikCentral
-    ws.append([
+    # Estilos elegantes para los encabezados de columna (Azul pastel #D9E1F2 + Texto azul oscuro #1F4E78)
+    from openpyxl.styles import PatternFill, Font, Alignment
+
+    header_fill = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    header_font = Font(name="Calibri", size=11, bold=True, color="1F4E78")
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    headers = [
         "ID", "Nombre", "Apellido", "Departamento", "Posición", "Fecha",
         "Semana", "Tiempo", "Tipo de pase de tarjeta",
         "Método de verificación", "Punto de control de asistencia"
-    ])
+    ]
+    ws.append(headers)
+
+    # Aplicar formato pastel azul a la fila 1 de encabezados
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_align
 
     for r in records:
         info = r.get("PersonInfo", {})
@@ -208,6 +221,12 @@ def descargar_transacciones_hikvision(
         punto = r.get("AttendancePointName", "")
 
         ws.append([dni, nombre, apellido, dept, posicion, fecha_ev, semana, hora_ev, tipo_pase, metodo, punto])
+
+    # Auto-ajustar ancho de columnas
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col)
+        col_letter = cell.column_letter
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
 
     try:
         wb.save(target_path)
