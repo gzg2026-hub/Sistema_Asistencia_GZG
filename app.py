@@ -28,12 +28,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilo CSS para garantizar que los botones de la barra lateral nunca se desborden ni corten texto
+# Estilo CSS para garantizar que los botones de la barra lateral queden perfectamente centrados sin desbordar
 st.markdown("""
 <style>
 section[data-testid="stSidebar"] div[data-testid="stButton"] button {
-    font-size: 0.82rem !important;
-    padding: 0.3rem 0.35rem !important;
+    padding: 0.25rem 0.2rem !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stButton"] button p {
+    font-size: 0.79rem !important;
+    text-align: center !important;
+    margin: 0 auto !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -1602,8 +1609,8 @@ if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", k
 
 st.sidebar.markdown("<hr style='margin:14px 0 10px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
 
-# PRESETS RÁPIDOS DE FECHA DE 1 CLIC (UBICADOS DEBAJO DEL BOTÓN FILTRAR)
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; font-size:0.85rem; font-weight:700; color:#cbd5e1;'>⚡ Presets Rápidos</p>", unsafe_allow_html=True)
+# FILTROS RÁPIDOS DE FECHA DE 1 CLIC (UBICADOS DEBAJO DEL BOTÓN FILTRAR)
+st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; font-size:0.85rem; font-weight:700; color:#cbd5e1;'>⚡ Filtros Rápidos de Fecha</p>", unsafe_allow_html=True)
 
 def apply_preset_date(f_start, f_end):
     st.session_state['pending_f_ini'] = f_start
@@ -1626,7 +1633,7 @@ with col_p2:
 
 col_p3, col_p4 = st.sidebar.columns(2)
 with col_p3:
-    if st.button("📆 Esta Semana", use_container_width=True, key="btn_preset_week"):
+    if st.button("📆 Semana", use_container_width=True, key="btn_preset_week"):
         mon = curr_now.date() - timedelta(days=curr_now.date().weekday())
         apply_preset_date(mon, curr_now.date())
 with col_p4:
