@@ -6,7 +6,7 @@ import streamlit as st
 from datetime import datetime
 from typing import Optional, Dict
 
-BASE_EXCEL_TEMPLATE = r"C:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\Sistema_Asistencia_GZG_v1.0.xlsm"
+BASE_EXCEL_TEMPLATE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Sistema_Asistencia_GZG_v1.0.xlsx")
 
 def format_date_ddmmyyyy(date_val) -> str:
     """Convierte cualquier representación de fecha a formato latino DD-MM-YYYY (ej. 01-08-2026)."""

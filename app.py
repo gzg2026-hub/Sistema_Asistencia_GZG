@@ -1366,9 +1366,7 @@ components.html("""
 </script>
 """, height=0, width=0)
 
-DEFAULT_ASISTENCIA_DIR = r"C:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\descargas_biometrico"
-os.makedirs(os.path.join(os.path.dirname(os.path.abspath(__file__)), "descargas_biometrico"), exist_ok=True)
-BASE_EXCEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsm")
+BASE_EXCEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsx")
 
 # Cargar la lista completa de trabajadores desde la BD SQLite (Carga instantánea de 0.001s)
 df_trab_master_db = obtener_trabajadores_master()
