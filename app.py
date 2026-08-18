@@ -1366,6 +1366,23 @@ components.html("""
 </script>
 """, height=0, width=0)
 
+@st.cache_data(ttl=120, show_spinner=False)
+def auto_sync_pull_nube():
+    """Verifica y descarga automáticamente cualquier cambio publicado en GitHub hacia la PC local."""
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        import subprocess
+        res = subprocess.run(["git", "pull", "origin", "main"], cwd=base_dir, capture_output=True, text=True, timeout=10)
+        if res.returncode == 0 and "Already up to date" not in res.stdout:
+            return True
+    except Exception:
+        pass
+    return False
+
+# Sincronización automática de 2 minutos (Nube -> PC)
+if auto_sync_pull_nube():
+    st.toast("☁️ Sincronizado automáticamente desde la Nube (GitHub)", icon="🔄")
+
 BASE_EXCEL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Sistema_Asistencia_GZG_v1.0.xlsx")
 
 # Cargar la lista completa de trabajadores desde la BD SQLite (Carga instantánea de 0.001s)
