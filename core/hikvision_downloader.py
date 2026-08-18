@@ -28,6 +28,22 @@ DIAS_SEMANA = {
     6: "Domingo"
 }
 
+# Mapeo verificado 1:1 con la base de datos de HikCentral Access Control
+VERIFY_TYPE_MAP = {
+    3: "Huella dactilar",
+    2: "Imagen de cara",
+    1: "Tarjeta",
+    4: "Iris",
+    5: "Tarjeta + Huella",
+    6: "Tarjeta + Rostro"
+}
+
+SWIPE_TYPE_MAP = {
+    1: "Registro de entrada",
+    2: "Registrar salida",
+    0: "Indefinido"
+}
+
 
 def cargar_config_hikvision():
     """Lee la configuración de IP y credenciales desde config_hikvision.json si existe."""
@@ -173,32 +189,20 @@ def descargar_transacciones_hikvision(
         fecha_ev = swipe_time[:10] if len(swipe_time) >= 10 else fecha_inicio
         hora_ev = swipe_time[11:19] if len(swipe_time) >= 19 else "00:00:00"
 
-        # Calcular día de la semana en español
+        # Día de la semana en español
         try:
             dt_obj = datetime.datetime.strptime(fecha_ev, "%Y-%m-%d")
             semana = DIAS_SEMANA.get(dt_obj.weekday(), "")
         except Exception:
             semana = ""
 
-        # Mapeo exacto de Tipo de pase de tarjeta (SwipeType)
-        swipe_type_code = r.get("SwipeType")
-        if swipe_type_code == 1:
-            tipo_pase = "Registro de entrada"
-        elif swipe_type_code == 2:
-            tipo_pase = "Registrar salida"
-        else:
-            tipo_pase = "Indefinido"
+        # Mapeo exacto 1:1 de Tipo de pase de tarjeta (SwipeType)
+        swipe_type_code = r.get("SwipeType", 0)
+        tipo_pase = SWIPE_TYPE_MAP.get(swipe_type_code, "Indefinido")
 
-        # Mapeo exacto de Método de verificación (VerifyType)
-        verify_type_code = r.get("VerifyType")
-        if verify_type_code == 1:
-            metodo = "Imagen de cara"
-        elif verify_type_code == 2:
-            metodo = "Huella dactilar"
-        elif verify_type_code == 3:
-            metodo = "Tarjeta"
-        else:
-            metodo = "--"
+        # Mapeo exacto 1:1 de Método de verificación (VerifyType) desde JS HikCentral
+        verify_type_code = r.get("VerifyType", 0)
+        metodo = VERIFY_TYPE_MAP.get(verify_type_code, "--")
 
         punto = r.get("AttendancePointName", "")
 
