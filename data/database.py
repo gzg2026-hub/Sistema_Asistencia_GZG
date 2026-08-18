@@ -145,8 +145,22 @@ def init_db(db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
+def clean_dni(val) -> str:
+    """Normaliza cualquier DNI eliminando espacios, caracteres no numéricos y formateando a 8 dígitos zfill(8)."""
+    if pd.isna(val) or val is None or str(val).strip() == '':
+        return ''
+    digits = ''.join(c for c in str(val) if c.isdigit())
+    if not digits:
+        return ''
+    if len(digits) <= 8:
+        return digits.zfill(8)
+    digits_lstrip = digits.lstrip('0')
+    if len(digits_lstrip) <= 8:
+        return digits_lstrip.zfill(8)
+    return digits
+
 def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
-    """Guarda o actualiza la lista de trabajadores maestros."""
+    """Guarda o actualiza la lista de trabajadores maestros normalizando DNIs."""
     if df_trabajadores.empty:
         return
     init_db(db_path)
@@ -154,8 +168,8 @@ def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
     cursor = conn.cursor()
     
     for _, row in df_trabajadores.iterrows():
-        dni = str(row.get('DNI', '')).strip()
-        if not dni or dni == 'nan':
+        dni = clean_dni(row.get('DNI', ''))
+        if not dni:
             continue
         cursor.execute("""
         INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, updated_at)
@@ -395,12 +409,16 @@ def sincronizar_excel_madre_a_db(excel_path: str = None, db_path: str = DB_PATH)
 
 @st.cache_data(ttl=300, show_spinner=False)
 def obtener_trabajadores_master(db_path: str = DB_PATH) -> pd.DataFrame:
-    """Obtiene la lista master de trabajadores rápidamente para selectores de cargos y personal."""
+    """Obtiene la lista master de trabajadores rápidamente para selectores de cargos y personal (deduplicada)."""
     init_db(db_path)
     sincronizar_excel_madre_a_db(db_path=db_path)
     conn = get_connection(db_path)
     df = pd.read_sql_query("SELECT dni as DNI, apellidos as APELLIDOS, nombres as NOMBRES, cargo as CARGO, area as AREA FROM trabajadores ORDER BY apellidos, nombres", conn)
     conn.close()
+    if not df.empty:
+        df['DNI'] = df['DNI'].apply(clean_dni)
+        df = df.drop_duplicates(subset=['DNI'], keep='first')
+        df = df.sort_values(by=['APELLIDOS', 'NOMBRES'])
     return df
 
 @st.cache_data(ttl=60, show_spinner=False)
