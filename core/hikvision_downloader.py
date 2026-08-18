@@ -7,34 +7,43 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_ASISTENCIA_DIR = os.path.join(PROJECT_ROOT, "downloads", "hikvision")
 
 
+def cargar_config_hikvision():
+    """Lee la configuración de IP y credenciales desde config_hikvision.json si existe."""
+    config_file = os.path.join(PROJECT_ROOT, "config_hikvision.json")
+    defaults = {
+        "host": "192.168.1.100",
+        "port": 80,
+        "username": "admin",
+        "password": "gzg2026*"
+    }
+    if os.path.exists(config_file):
+        try:
+            import json
+            with open(config_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                defaults.update(data)
+        except Exception:
+            pass
+    return defaults
+
+
 def descargar_transacciones_hikvision(
     carpeta_destino: str = DEFAULT_ASISTENCIA_DIR,
     fecha_inicio: Optional[str] = None,
     fecha_fin: Optional[str] = None,
-    host: str = "192.168.1.100",
-    port: int = 80,
-    username: str = "admin",
-    password: str = "gzg2026*"
+    host: Optional[str] = None,
+    port: Optional[int] = None,
+    username: Optional[str] = None,
+    password: Optional[str] = None
 ) -> str:
     """
     Descarga el reporte de transacciones desde el biométrico Hikvision ISAPI.
-
-    Parámetros:
-        carpeta_destino: carpeta donde guardar el archivo descargado.
-        fecha_inicio: fecha de inicio en formato 'YYYY-MM-DD'. Default = ayer.
-        fecha_fin:    fecha de fin   en formato 'YYYY-MM-DD'. Default = ayer.
-        host:         IP del biométrico Hikvision en la red local.
-        port:         Puerto HTTP del biométrico.
-        username:     Usuario administrador del equipo.
-        password:     Contraseña del equipo.
-
-    Retorna:
-        Ruta completa del archivo guardado.
-
-    Lógica de fechas:
-        - Automático (7 AM): descarga el DÍA ANTERIOR al actual (ayer).
-        - Manual con argumentos: descarga el rango indicado.
     """
+    cfg = cargar_config_hikvision()
+    host = host or cfg["host"]
+    port = port or cfg["port"]
+    username = username or cfg["username"]
+    password = password or cfg["password"]
     os.makedirs(carpeta_destino, exist_ok=True)
 
     ayer = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
