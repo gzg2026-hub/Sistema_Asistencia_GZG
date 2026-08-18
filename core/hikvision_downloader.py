@@ -2,7 +2,7 @@
 hikvision_downloader.py
 =======================
 Módulo de descarga de transacciones desde HikCentral Access Control / biométricos Hikvision.
-Extrae directamente las marcaciones de HikCentral y genera el Excel 1:1 idéntico al reporte web.
+Extrae directamente las marcaciones de HikCentral y genera el Excel 1:1 idéntico al reporte web de 11 columnas.
 """
 
 import os
@@ -76,7 +76,7 @@ def descargar_transacciones_hikvision(
 ) -> str:
     """
     Extrae automáticamente las marcaciones de transacciones desde HikCentral Access Control V2.4
-    utilizando Playwright en segundo plano y genera el Excel 1:1 idéntico al reporte web.
+    utilizando Playwright en segundo plano y genera el Excel 1:1 idéntico al reporte web de 11 columnas.
     """
     cfg = cargar_config_hikvision()
     host = host or cfg.get("host", "127.0.0.1")
@@ -166,14 +166,14 @@ def descargar_transacciones_hikvision(
     except Exception as e:
         print(f"[HikCentral] Error durante autodescarga: {e}")
 
-    # Generar Excel EXACTO 1:1 idéntico al reporte de HikCentral Web Client
+    # Generar Excel EXACTO 1:1 idéntico al reporte de 11 columnas de HikCentral Web Client
     wb = Workbook()
     ws = wb.active
     ws.title = "Transacciones"
 
-    # Fila 1: Encabezados oficiales idénticos a la interfaz web de HikCentral
+    # Fila 1: Encabezados oficiales de 11 columnas idénticos a la interfaz web de HikCentral
     ws.append([
-        "ID", "Nombre", "Apellido", "Departamento", "Fecha",
+        "ID", "Nombre", "Apellido", "Departamento", "Posición", "Fecha",
         "Semana", "Tiempo", "Tipo de pase de tarjeta",
         "Método de verificación", "Punto de control de asistencia"
     ])
@@ -184,6 +184,7 @@ def descargar_transacciones_hikvision(
         nombre = info.get("GivenName", "")
         apellido = info.get("FamilyName", "")
         dept = info.get("DepartmentName", "")
+        posicion = info.get("Post", "")
 
         swipe_time = r.get("SwipeTime", "")  # "2026-08-18T07:06:30-05:00"
         fecha_ev = swipe_time[:10] if len(swipe_time) >= 10 else fecha_inicio
@@ -200,13 +201,13 @@ def descargar_transacciones_hikvision(
         swipe_type_code = r.get("SwipeType", 0)
         tipo_pase = SWIPE_TYPE_MAP.get(swipe_type_code, "Indefinido")
 
-        # Mapeo exacto 1:1 de Método de verificación (VerifyType) desde JS HikCentral
+        # Mapeo exacto 1:1 de Método de verificación (VerifyType)
         verify_type_code = r.get("VerifyType", 0)
         metodo = VERIFY_TYPE_MAP.get(verify_type_code, "--")
 
         punto = r.get("AttendancePointName", "")
 
-        ws.append([dni, nombre, apellido, dept, fecha_ev, semana, hora_ev, tipo_pase, metodo, punto])
+        ws.append([dni, nombre, apellido, dept, posicion, fecha_ev, semana, hora_ev, tipo_pase, metodo, punto])
 
     try:
         wb.save(target_path)
