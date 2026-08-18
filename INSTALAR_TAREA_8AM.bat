@@ -27,12 +27,12 @@ for /f "delims=" %%i in ('where python') do set "PYTHON_EXE=%%i" & goto :found_p
 :found_python
 
 set "SCRIPT_PATH=%PROJECT_DIR%\scripts\schedule_downloader.py"
-set "TASK_NAME=GZG_Hikvision_Descarga_7AM"
+set "TASK_NAME=GZG_Hikvision_Descarga_8AM"
 
 echo  Python encontrado: %PYTHON_EXE%
 echo  Script           : %SCRIPT_PATH%
 echo  Tarea            : %TASK_NAME%
-echo  Hora programada  : 07:00 AM (diario)
+echo  Hora programada  : 08:00 AM (diario)
 echo.
 
 :: Eliminar tarea anterior si existe
@@ -43,7 +43,7 @@ schtasks /create ^
   /tn "%TASK_NAME%" ^
   /tr "\"%PYTHON_EXE%\" \"%SCRIPT_PATH%\"" ^
   /sc DAILY ^
-  /st 07:00 ^
+  /st 08:00 ^
   /ru "%USERNAME%" ^
   /rl HIGHEST ^
   /f

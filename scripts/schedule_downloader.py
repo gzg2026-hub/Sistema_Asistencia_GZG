@@ -163,17 +163,17 @@ def _iniciar_programador():
         import schedule
 
     _log("Servicio de descarga diaria iniciado.")
-    _log(f"  Horario    : todos los dias a las 07:00 AM")
+    _log(f"  Horario    : todos los dias a las 08:00 AM")
     _log(f"  Descarga   : dia ANTERIOR al de ejecucion (ayer)")
     _log(f"  Archivos   : {CARPETA_DESCARGAS}")
     _log(f"  Log        : {LOG_FILE}")
 
-    def _tarea_7am():
+    def _tarea_8am():
         fecha = _ayer()
         _log(f"Tarea programada: descargando dia anterior = {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
-    schedule.every().day.at("07:00").do(_tarea_7am)
+    schedule.every().day.at("08:00").do(_tarea_8am)
 
     while True:
         schedule.run_pending()
