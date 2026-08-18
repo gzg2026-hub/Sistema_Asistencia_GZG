@@ -28,6 +28,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Estilo CSS para garantizar que los botones de la barra lateral nunca se desborden ni corten texto
+st.markdown("""
+<style>
+section[data-testid="stSidebar"] div[data-testid="stButton"] button {
+    font-size: 0.82rem !important;
+    padding: 0.3rem 0.35rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Inicialización diferida - se ejecuta solo una vez vía cache
 
 def get_logo_base64(logo_path="assets/gzg_logo_transparent.png"):

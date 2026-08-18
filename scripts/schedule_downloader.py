@@ -1,17 +1,17 @@
 """
 schedule_downloader.py
 ======================
-Descarga automatica diaria de transacciones Hikvision a las 7:00 AM.
+Descarga automática diaria de transacciones Hikvision a las 8:00 AM.
 Descarga el DIA ANTERIOR al actual (ejemplo: si hoy es 18/08, descarga el 17/08).
 
 MODOS DE USO:
-  - Automatico (Tarea Programada Windows): ejecutar sin argumentos
+  - Automático (Tarea Programada Windows): ejecutar sin argumentos
         python schedule_downloader.py
 
-  - Manual inmediato (dia anterior):
+  - Manual inmediato (día anterior):
         python schedule_downloader.py ahora
 
-  - Manual con fecha especifica:
+  - Manual con fecha específica:
         python schedule_downloader.py manual
 
   - Manual con fecha desde argumento:
@@ -88,44 +88,54 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
     _log("=" * 60)
 
 
+def _hoy() -> str:
+    return datetime.date.today().strftime("%Y-%m-%d")
+
+
 def _ayer() -> str:
     return (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
 
 def _menu_manual():
-    """Menu interactivo para elegir la fecha a descargar manualmente."""
-    print("\n" + "=" * 55)
+    """Menú interactivo para elegir la fecha a descargar manualmente."""
+    print("\n" + "=" * 58)
     print("  DESCARGA MANUAL DE TRANSACCIONES HIKVISION - GZG")
-    print("=" * 55)
-    print(f"  Fecha actual : {datetime.date.today().strftime('%d/%m/%Y')}")
-    print(f"  Dia anterior : {_ayer()}")
-    print("=" * 55)
+    print("=" * 58)
+    print(f"  Fecha actual (HOY) : {_hoy()} ({datetime.date.today().strftime('%d/%m/%Y')})")
+    print(f"  Día anterior (AYER): {_ayer()}")
+    print("=" * 58)
     print("\n  Opciones:")
-    print("  [1] Descargar el dia de AYER")
-    print("  [2] Descargar una fecha especifica")
-    print("  [3] Descargar un rango de fechas")
-    print("  [4] Salir")
+    print("  [1] Descargar el día de HOY (Día actual)")
+    print("  [2] Descargar el día de AYER")
+    print("  [3] Descargar una fecha específica")
+    print("  [4] Descargar un rango de fechas")
+    print("  [5] Salir")
     print()
 
-    opcion = input("  Seleccione opcion (1-4): ").strip()
+    opcion = input("  Seleccione opción (1-5): ").strip()
 
     if opcion == "1":
-        fecha = _ayer()
-        print(f"\n  Descargando: {fecha}")
+        fecha = _hoy()
+        print(f"\n  Descargando HOY: {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
     elif opcion == "2":
-        fecha_str = input("  Ingrese la fecha (DD/MM/YYYY o YYYY-MM-DD): ").strip()
+        fecha = _ayer()
+        print(f"\n  Descargando AYER: {fecha}")
+        _ejecutar_descarga(fecha, fecha)
+
+    elif opcion == "3":
+        fecha_str = input("  Ingrese la fecha (DD/MM/YYYY, YYYY-MM-DD o YYYY/MM/DD): ").strip()
         fecha = _parsear_fecha(fecha_str)
         if fecha:
             print(f"\n  Descargando: {fecha}")
             _ejecutar_descarga(fecha, fecha)
         else:
-            print("  Fecha invalida. Use formato DD/MM/YYYY o YYYY-MM-DD.")
+            print("  Fecha inválida. Use formato DD/MM/YYYY o YYYY-MM-DD.")
 
-    elif opcion == "3":
-        ini_str = input("  Fecha inicio (DD/MM/YYYY o YYYY-MM-DD): ").strip()
-        fin_str = input("  Fecha fin    (DD/MM/YYYY o YYYY-MM-DD): ").strip()
+    elif opcion == "4":
+        ini_str = input("  Fecha inicio (DD/MM/YYYY, YYYY-MM-DD o YYYY/MM/DD): ").strip()
+        fin_str = input("  Fecha fin    (DD/MM/YYYY, YYYY-MM-DD o YYYY/MM/DD): ").strip()
         ini = _parsear_fecha(ini_str)
         fin = _parsear_fecha(fin_str)
         if ini and fin:
@@ -134,19 +144,20 @@ def _menu_manual():
             print(f"\n  Descargando rango: {ini} → {fin}")
             _ejecutar_descarga(ini, fin)
         else:
-            print("  Fechas invalidas.")
+            print("  Fechas inválidas.")
 
-    elif opcion == "4":
+    elif opcion == "5":
         print("  Saliendo.")
     else:
-        print("  Opcion invalida.")
+        print("  Opción inválida.")
 
     input("\n  Presione Enter para cerrar...")
 
 
 def _parsear_fecha(s: str) -> str | None:
-    """Acepta DD/MM/YYYY o YYYY-MM-DD y devuelve YYYY-MM-DD."""
-    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
+    """Acepta DD/MM/YYYY, YYYY-MM-DD, YYYY/MM/DD, DD-MM-YYYY y devuelve YYYY-MM-DD."""
+    s = str(s).strip()
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%Y/%m/%d", "%d-%m-%Y"):
         try:
             return datetime.datetime.strptime(s, fmt).strftime("%Y-%m-%d")
         except ValueError:
@@ -155,7 +166,7 @@ def _parsear_fecha(s: str) -> str | None:
 
 
 def _iniciar_programador():
-    """Servicio que espera hasta las 07:00 AM y ejecuta la descarga del dia anterior."""
+    """Servicio que espera hasta las 08:00 AM y ejecuta la descarga del día anterior."""
     try:
         import schedule
     except ImportError:
@@ -163,14 +174,14 @@ def _iniciar_programador():
         import schedule
 
     _log("Servicio de descarga diaria iniciado.")
-    _log(f"  Horario    : todos los dias a las 08:00 AM")
-    _log(f"  Descarga   : dia ANTERIOR al de ejecucion (ayer)")
+    _log(f"  Horario    : todos los días a las 08:00 AM")
+    _log(f"  Descarga   : día ANTERIOR al de ejecución (ayer)")
     _log(f"  Archivos   : {CARPETA_DESCARGAS}")
     _log(f"  Log        : {LOG_FILE}")
 
     def _tarea_8am():
         fecha = _ayer()
-        _log(f"Tarea programada: descargando dia anterior = {fecha}")
+        _log(f"Tarea programada: descargando día anterior = {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
     schedule.every().day.at("08:00").do(_tarea_8am)
@@ -186,9 +197,9 @@ if __name__ == '__main__':
 
     if not args or args[0].lower() in ("ahora", "now", "auto", "automatico"):
         # Modo por defecto / Tarea Programada de Windows:
-        # Ejecutar INMEDIATAMENTE la descarga del dia anterior y finalizar cleanly.
+        # Ejecutar INMEDIATAMENTE la descarga del día anterior y finalizar cleanly.
         fecha = _ayer()
-        _log(f"Ejecucion AUTOMATICA / INMEDIATA: descargando dia anterior = {fecha}")
+        _log(f"Ejecución AUTOMÁTICA / INMEDIATA: descargando día anterior = {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
     elif args[0].lower() in ("daemon", "service", "servicio"):
@@ -196,20 +207,20 @@ if __name__ == '__main__':
         _iniciar_programador()
 
     elif args[0].lower() == "manual":
-        # Menu interactivo para elegir fecha
+        # Menú interactivo para elegir fecha
         _menu_manual()
 
     elif len(args) == 1 and _parsear_fecha(args[0]):
-        # Fecha especifica como argumento: python schedule_downloader.py 2026-08-17
+        # Fecha específica como argumento: python schedule_downloader.py 2026-08-17
         fecha = _parsear_fecha(args[0])
-        _log(f"Ejecucion MANUAL con fecha: {fecha}")
+        _log(f"Ejecución MANUAL con fecha: {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
     elif len(args) == 2 and _parsear_fecha(args[0]) and _parsear_fecha(args[1]):
         # Rango: python schedule_downloader.py 2026-08-15 2026-08-17
         ini = _parsear_fecha(args[0])
         fin = _parsear_fecha(args[1])
-        _log(f"Ejecucion MANUAL con rango: {ini} → {fin}")
+        _log(f"Ejecución MANUAL con rango: {ini} → {fin}")
         _ejecutar_descarga(ini, fin)
 
     else:
