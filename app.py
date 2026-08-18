@@ -1560,27 +1560,51 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
 
     components.html(f"""
 <style>
-  body {{ margin: 0; padding: 0; background: transparent; font-family: 'Segoe UI', Tahoma, sans-serif; }}
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  html, body {{
+    margin: 0; padding: 0;
+    background: transparent;
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    overflow: hidden;
+  }}
+  #wf-wrap {{ padding: 4px 2px; }}
   #wf-input {{
     width: 100%; padding: 8px 12px; border-radius: 6px;
-    background-color: #111420; color: #ffffff;
+    background-color: #0d1117; color: #e8dfc0;
     border: 1.5px solid #dfa86a; outline: none;
-    font-size: 0.87rem; box-sizing: border-box; margin-bottom: 6px;
+    font-size: 0.87rem; margin-bottom: 6px;
+    caret-color: #f59e0b;
   }}
-  #wf-input:focus {{ border-color: #f59e0b; box-shadow: 0 0 8px rgba(223,168,106,0.4); }}
+  #wf-input::placeholder {{ color: #7a7a8a; }}
+  #wf-input:focus {{ border-color: #f59e0b; box-shadow: 0 0 8px rgba(223,168,106,0.35); }}
+  #wf-list {{
+    max-height: 340px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: #dfa86a #0d1117;
+  }}
+  #wf-list::-webkit-scrollbar {{ width: 5px; }}
+  #wf-list::-webkit-scrollbar-track {{ background: #0d1117; }}
+  #wf-list::-webkit-scrollbar-thumb {{ background: #dfa86a; border-radius: 4px; }}
   .wf-btn {{
     display: block; width: 100%; padding: 7px 10px; margin-bottom: 3px;
-    background: #111420; color: #cdd3f0; border: 1px solid #1e2340;
+    background: #0d1117; color: #cbc5a8;
+    border: 1px solid #1e2235;
     border-radius: 6px; text-align: left; font-size: 0.83rem; cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.12s, border-color 0.12s;
   }}
-  .wf-btn:hover {{ background: #1c2040; border-color: #dfa86a; color: #f5c97a; }}
-  .wf-btn.selected {{ background: #1e2a50; border-color: #4a7aff; color: #a8c0ff; font-weight: 600; }}
-  .wf-sep {{ border: none; border-top: 1px solid #222638; margin: 4px 0 6px 0; }}
-  #wf-list {{ max-height: 320px; overflow-y: auto; }}
+  .wf-btn:hover {{ background: #161c2e; border-color: #dfa86a; color: #f5c97a; }}
+  .wf-btn.selected {{
+    background: #1a1608; border-color: #dfa86a;
+    color: #f5c97a; font-weight: 600;
+  }}
+  .wf-sep {{ border: none; border-top: 1px solid #1e2235; margin: 4px 0 6px 0; }}
 </style>
-<input id="wf-input" type="text" placeholder="🔍 Escriba DNI o Nombre..." autofocus>
-<div id="wf-list"></div>
+<div id="wf-wrap">
+  <input id="wf-input" type="text" placeholder="🔍 Escriba DNI o Nombre..." autofocus>
+  <div id="wf-list"></div>
+</div>
 <script>
   const WORKERS = {_workers_json};
   const CURRENT = {_current_val_json};
@@ -1591,7 +1615,6 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
     list.innerHTML = '';
     WORKERS.forEach(function(w, i) {{
       if (i === 0) {{
-        // "Todo el Personal" siempre visible
         const btn = document.createElement('button');
         btn.className = 'wf-btn' + (w.val === CURRENT ? ' selected' : '');
         btn.textContent = w.label;
@@ -1602,7 +1625,8 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
         list.appendChild(sep);
         return;
       }}
-      const match = !q || w.label.toLowerCase().includes(q) || w.val.toLowerCase().includes(q);
+      const txt = w.val.toLowerCase() + ' ' + w.label.toLowerCase();
+      const match = !q || txt.includes(q);
       if (!match) return;
       const btn = document.createElement('button');
       btn.className = 'wf-btn' + (w.val === CURRENT ? ' selected' : '');
@@ -1613,22 +1637,19 @@ with st.sidebar.popover(titulo_trabajador, use_container_width=True):
   }}
 
   function select(val) {{
-    // Comunicar selección a Streamlit via query param y recargar
     const url = new URL(window.parent.location.href);
     url.searchParams.set('sel_worker', val);
-    window.parent.history.replaceState(null, '', url.toString());
-    // Forzar rerun de Streamlit cambiando la URL con el param
     window.parent.location.href = url.toString();
   }}
 
   input.addEventListener('input', function() {{
     render(this.value.toLowerCase().trim());
   }});
-  
+
   render('');
-  setTimeout(function() {{ input.focus(); }}, 100);
+  setTimeout(function() {{ input.focus(); }}, 80);
 </script>
-""", height=400, scrolling=False)
+""", height=420, scrolling=False)
 
 trabajador_seleccionado = st.session_state.get('pending_worker_val', 'TODO EL PERSONAL')
 if trabajador_seleccionado not in opciones_trabajadores:
