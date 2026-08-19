@@ -12,15 +12,13 @@ echo  IMPORTANTE: Clic derecho sobre este archivo ^> "Ejecutar como administrado
 echo.
 
 :: Verificar Python
-where python >nul 2>&1
-if %errorlevel% neq 0 (
-    echo  [ERROR] Python no encontrado en el sistema.
-    pause
-    exit /b 1
-)
-for /f "delims=" %%i in ('where python') do (
-    set "PYTHON_EXE=%%i"
-    goto :found_python
+if exist "C:\Users\GZG Minerales 2026\AppData\Local\Python\pythoncore-3.14-64\python.exe" (
+    set "PYTHON_EXE=C:\Users\GZG Minerales 2026\AppData\Local\Python\pythoncore-3.14-64\python.exe"
+) else (
+    set "PYTHON_EXE="
+    for /f "delims=" %%i in ('where python') do (
+        if not defined PYTHON_EXE set "PYTHON_EXE=%%i"
+    )
 )
 :found_python
 

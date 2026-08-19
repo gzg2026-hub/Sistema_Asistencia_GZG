@@ -38,7 +38,10 @@ os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 def _log(msg: str):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     linea = f"[{ts}] {msg}"
-    print(linea)
+    try:
+        print(linea)
+    except Exception:
+        print(linea.encode('ascii', errors='replace').decode('ascii'))
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(linea + "\n")
 
@@ -220,7 +223,7 @@ if __name__ == '__main__':
         # Rango: python schedule_downloader.py 2026-08-15 2026-08-17
         ini = _parsear_fecha(args[0])
         fin = _parsear_fecha(args[1])
-        _log(f"Ejecución MANUAL con rango: {ini} → {fin}")
+        _log(f"Ejecución MANUAL con rango: {ini} -> {fin}")
         _ejecutar_descarga(ini, fin)
 
     else:
