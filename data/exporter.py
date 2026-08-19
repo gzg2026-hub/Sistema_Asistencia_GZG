@@ -1,12 +1,26 @@
+"""
+exporter.py
+===========
+Genera el reporte consolidado de asistencia en un ÚNICO Excel de una sola pestaña
+("Asistencia y Horas Extras") con el formato ejecutivo exacto (encabezados azul marino, banner y 19 columnas).
+"""
+
 import io
 import os
 import openpyxl
+from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
 import pandas as pd
 import streamlit as st
 from datetime import datetime
 from typing import Optional, Dict
 
 BASE_EXCEL_TEMPLATE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Sistema_Asistencia_GZG_v1.0.xlsx")
+
+DIAS_SEMANA = {
+    0: "Lunes", 1: "Martes", 2: "Miércoles",
+    3: "Jueves", 4: "Viernes", 5: "Sábado", 6: "Domingo"
+}
+
 
 def format_date_ddmmyyyy(date_val) -> str:
     """Convierte cualquier representación de fecha a formato latino DD-MM-YYYY (ej. 01-08-2026)."""
@@ -28,6 +42,7 @@ def format_date_ddmmyyyy(date_val) -> str:
         pass
     return val_str
 
+
 def format_hhmm_cell(val, is_hours_float=False) -> str:
     """Convierte minutos enteros u horas flotantes a string HH:MM (ej. 11:51, 00:15)."""
     if pd.isna(val) or val is None or val == "":
@@ -46,145 +61,191 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
     except Exception:
         return "00:00"
 
+
 @st.cache_data(ttl=60, show_spinner=False)
 def exportar_asistencia_excel(
     df_trabajadores: pd.DataFrame,
     df_marcaciones: pd.DataFrame,
     df_asistencia: pd.DataFrame,
-    df_horas_extra: pd.DataFrame,
-    df_incidencias: pd.DataFrame,
+    df_horas_extra: pd.DataFrame = None,
+    df_incidencias: pd.DataFrame = None,
     template_path: str = BASE_EXCEL_TEMPLATE
 ) -> bytes:
-    """Genera un archivo Excel limpio y ultra-rápido en memoria RAM con las 5 pestañas oficiales."""
-    output = io.BytesIO()
-    
-    OFFICIAL_SCHEMAS = {
-        '01_TRABAJADORES': ['DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'AREA'],
-        '02_MARCACIONES': [
-            'FECHA', 'ID', 'Nombre', 'Apellido', 'Cargo', 'Departamento',
-            'Grupo de asistencia', 'Tiempo', 'Tipo de pase de tarjeta',
-            'Método de verificación'
-        ],
-        '03_ASISTENCIA': [
-            'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO',
-            'ENTRADA', 'SALIDA', 'HORAS TRABAJADAS (HH:MM)',
-            'TARDANZA (HH:MM)', 'SALIDA ANTICIPADA (HH:MM)', 'EXCESO JORNADA (HH:MM)',
-            'TOTAL HORAS ADICIONALES (HH:MM)', 'INCIDENCIAS', 'ESTADO ASISTENCIA', 'OBSERVACIONES'
-        ],
-        '04_HORAS_EXTRA': [
-            'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO', 'INICIO H.E.', 'FIN H.E.', 'DURACIÓN (HH:MM)', 'OBSERVACIÓN'
-        ],
-        '05_INCIDENCIAS': [
-            'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TIPO', 'HORA', 'DESCRIPCIÓN', 'SEVERIDAD', 'OBSERVACIÓN'
-        ]
-    }
+    """
+    Genera el archivo Excel procesado oficial de UNA SOLA HOJA ('Asistencia y Horas Extras')
+    con el formato ejecutivo idéntico a la plantilla empresarial (Banner azul + 19 columnas).
+    """
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Asistencia y Horas Extras"
+    ws.views.sheetView[0].showGridLines = True
 
-    target_sheets = [
-        ('01_TRABAJADORES', df_trabajadores),
-        ('02_MARCACIONES', df_marcaciones),
-        ('03_ASISTENCIA', df_asistencia),
-        ('04_HORAS_EXTRA', df_horas_extra),
-        ('05_INCIDENCIAS', df_incidencias)
+    # 1. Rango de Fechas para el banner
+    f_min = "2026-08-17"
+    f_max = "2026-08-18"
+    if df_asistencia is not None and not df_asistencia.empty and 'FECHA' in df_asistencia.columns:
+        fechas_val = df_asistencia['FECHA'].dropna().unique()
+        if len(fechas_val) > 0:
+            f_min = str(min(fechas_val))
+            f_max = str(max(fechas_val))
+
+    # Estilos profesionales openpyxl
+    fill_banner_title = PatternFill(start_color="1B365D", end_color="1B365D", fill_type="solid")
+    font_banner_title = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+
+    fill_banner_sub = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    font_banner_sub = Font(name="Calibri", size=10, italic=True, bold=True, color="1F4E78")
+
+    fill_header = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+
+    align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    align_left = Alignment(horizontal="left", vertical="center")
+
+    thin_border = Border(
+        left=Side(style='thin', color='D9D9D9'),
+        right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'),
+        bottom=Side(style='thin', color='D9D9D9')
+    )
+
+    # Banner Título (Fila 1)
+    ws.merge_cells("A1:S1")
+    ws["A1"] = "REPORTE DE ASISTENCIA Y HORAS EXTRAS PROCESADO (TURNOS DÍA Y NOCHE)"
+    ws["A1"].fill = fill_banner_title
+    ws["A1"].font = font_banner_title
+    ws["A1"].alignment = align_center
+
+    # Banner Subtítulo (Fila 2)
+    ws.merge_cells("A2:S2")
+    ws["A2"] = f"GZG Minerales | Período: {f_min} a {f_max} | Incluye Entrada, Salida, Exceso de Jornada y Horas Extras"
+    ws["A2"].fill = fill_banner_sub
+    ws["A2"].font = font_banner_sub
+    ws["A2"].alignment = align_center
+
+    # Encabezados de Columna (Fila 4)
+    headers = [
+        "DNI", "Apellidos", "Nombres", "Departamento", "Posición",
+        "Fecha Turno", "Día", "Turno", "Fecha Entrada", "Hora Entrada",
+        "Fecha Salida", "Hora Salida", "Horas Trabajadas (HH:MM)",
+        "Tardanza (HH:MM)", "Exceso Jornada (HH:MM)", "Horas Extras (HH:MM)",
+        "Método Verificación", "Tipo Registro", "Observación / Incidencias"
     ]
-    
-    from openpyxl.styles import PatternFill, Font, Alignment
 
-    header_fill = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-    header_font = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    ws.append([])  # Fila 3 vacía de separación
+    ws.append(headers)  # Fila 4
 
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        for sheet_name, df_raw in target_sheets:
-            official_headers = OFFICIAL_SCHEMAS.get(sheet_name, [])
-            if df_raw is not None and not df_raw.empty:
-                df_clean = df_raw.copy()
-                valid_cols = [c for c in official_headers if c in df_clean.columns]
-                if valid_cols:
-                    df_clean = df_clean[valid_cols]
-                df_clean.to_excel(writer, sheet_name=sheet_name, index=False)
-            else:
-                pd.DataFrame(columns=official_headers).to_excel(writer, sheet_name=sheet_name, index=False)
-            
-            # Dar formato azul pastel a los encabezados del libro de trabajo
-            ws = writer.sheets[sheet_name]
-            for cell in ws[1]:
-                cell.fill = header_fill
-                cell.font = header_font
-                cell.alignment = header_align
-            
-            # Autoajustar ancho de columnas
-            for col in ws.columns:
-                max_len = max(len(str(cell.value or '')) for cell in col)
-                col_letter = col[0].column_letter
-                ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+    for cell in ws[4]:
+        cell.fill = fill_header
+        cell.font = font_header
+        cell.alignment = align_center
 
+    # Mapeo rápido de métodos de verificación por marcación si existe df_marcaciones
+    metodos_map = {}
+    if df_marcaciones is not None and not df_marcaciones.empty:
+        dni_c = 'ID' if 'ID' in df_marcaciones.columns else 'DNI'
+        fecha_c = 'Fecha' if 'Fecha' in df_marcaciones.columns else 'FECHA'
+        met_c = 'Método de verificación' if 'Método de verificación' in df_marcaciones.columns else 'METODO'
+        if dni_c in df_marcaciones.columns and fecha_c in df_marcaciones.columns and met_c in df_marcaciones.columns:
+            for _, m_row in df_marcaciones.iterrows():
+                k = (str(m_row[dni_c]).strip(), str(m_row[fecha_c]).strip())
+                val_met = str(m_row[met_c]).strip()
+                if val_met and val_met != '--':
+                    metodos_map[k] = val_met
+
+    # Escribir filas procesadas
+    if df_asistencia is not None and not df_asistencia.empty:
+        for _, row in df_asistencia.iterrows():
+            dni = str(row.get('DNI', '')).strip()
+            apellidos = str(row.get('APELLIDOS', '')).strip()
+            nombres = str(row.get('NOMBRES', '')).strip()
+            dept = str(row.get('ÁREA', row.get('Departamento', ''))).strip()
+            posicion = str(row.get('CARGO', row.get('Posición', ''))).strip()
+            fecha_t = str(row.get('FECHA', '')).strip()
+
+            # Día de la semana
+            dia_str = ""
+            try:
+                dt_obj = datetime.strptime(fecha_t, "%Y-%m-%d")
+                dia_str = DIAS_SEMANA.get(dt_obj.weekday(), "")
+            except Exception:
+                dia_str = ""
+
+            turno = str(row.get('TURNO', 'DIA')).strip()
+            h_ent = str(row.get('ENTRADA', '')).strip() if pd.notna(row.get('ENTRADA')) else ""
+            h_sal = str(row.get('SALIDA', '')).strip() if pd.notna(row.get('SALIDA')) else ""
+
+            f_ent = fecha_t if h_ent else ""
+            f_sal = fecha_t if h_sal else ""
+
+            h_trab = format_hhmm_cell(row.get('HORAS TRABAJADAS (HH:MM)', row.get('HORAS TRABAJADAS', '00:00')), is_hours_float=True)
+            tard = format_hhmm_cell(row.get('TARDANZA (HH:MM)', row.get('TARDANZA (MIN)', '00:00')), is_hours_float=False)
+            exc = format_hhmm_cell(row.get('EXCESO JORNADA (HH:MM)', row.get('EXCESO JORNADA', '00:00')), is_hours_float=False)
+            he = format_hhmm_cell(row.get('TOTAL HORAS ADICIONALES (HH:MM)', row.get('TOTAL HORAS ADICIONALES', '00:00')), is_hours_float=False)
+
+            metodo = metodos_map.get((dni, fecha_t), "Huella dactilar")
+            incid = str(row.get('INCIDENCIAS', '')).strip()
+
+            tipo_reg = "Normal"
+            if "duplicad" in incid.lower():
+                tipo_reg = "Duplicado (Entrada)" if "entrada" in incid.lower() else "Duplicado (Salida)"
+            elif "sin registro de entrada" in incid.lower():
+                tipo_reg = "Salida sin entrada"
+
+            ws.append([
+                dni, apellidos, nombres, dept, posicion,
+                fecha_t, dia_str, turno, f_ent, h_ent,
+                f_sal, h_sal, h_trab, tard, exc, he,
+                metodo, tipo_reg, incid
+            ])
+
+            # Aplicar bordes a la nueva fila
+            current_row = ws.max_row
+            for c_idx in range(1, 20):
+                cell = ws.cell(row=current_row, column=c_idx)
+                cell.border = thin_border
+                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 19) else align_left
+
+    from openpyxl.utils import get_column_letter
+
+    # Auto-ajustar ancho de columnas
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or '')) for cell in col if cell.value)
+        col_idx = col[0].column
+        col_letter = get_column_letter(col_idx)
+        ws.column_dimensions[col_letter].width = max(max_len + 3, 11)
+
+    output = io.BytesIO()
+    wb.save(output)
     return output.getvalue()
+
 
 def guardar_excel_base(
     df_trabajadores: pd.DataFrame,
     df_marcaciones: pd.DataFrame,
     df_asistencia: pd.DataFrame,
-    df_horas_extra: pd.DataFrame,
-    df_incidencias: pd.DataFrame,
+    df_horas_extra: pd.DataFrame = None,
+    df_incidencias: pd.DataFrame = None,
     target_path: str = BASE_EXCEL_TEMPLATE
 ) -> bool:
-    """Guarda directamente los resultados en el archivo Excel base de forma totalmente segura sin corromper la estructura."""
+    """Guarda directamente el reporte procesado de una sola hoja en la carpeta raíz del proyecto."""
     excel_bytes = exportar_asistencia_excel(
         df_trabajadores, df_marcaciones, df_asistencia, df_horas_extra, df_incidencias, target_path
     )
     try:
-        if os.path.exists(target_path) and target_path.lower().endswith('.xlsm'):
-            is_xlsm = True
-            wb = openpyxl.load_workbook(target_path, keep_vba=True)
-            target_sheets = [
-                ('01_TRABAJADORES', df_trabajadores, ['DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'AREA']),
-                ('02_MARCACIONES', df_marcaciones, [
-                    'FECHA', 'ID', 'Nombre', 'Apellido', 'Cargo', 'Departamento',
-                    'Grupo de asistencia', 'Tiempo', 'Tipo de pase de tarjeta',
-                    'Método de verificación'
-                ]),
-                ('03_ASISTENCIA', df_asistencia, [
-                    'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO',
-                    'ENTRADA', 'SALIDA', 'HORAS TRABAJADAS (HH:MM)',
-                    'TARDANZA (HH:MM)', 'SALIDA ANTICIPADA (HH:MM)', 'EXCESO JORNADA (HH:MM)',
-                    'TOTAL HORAS ADICIONALES (HH:MM)', 'INCIDENCIAS', 'ESTADO ASISTENCIA', 'OBSERVACIONES'
-                ]),
-                ('04_HORAS_EXTRA', df_horas_extra, [
-                    'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO', 'INICIO H.E.', 'FIN H.E.', 'DURACIÓN (HH:MM)', 'OBSERVACIÓN'
-                ]),
-                ('05_INCIDENCIAS', df_incidencias, [
-                    'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TIPO', 'HORA', 'DESCRIPCIÓN', 'SEVERIDAD', 'OBSERVACIÓN'
-                ])
-            ]
-            for s_name, df_data, headers in target_sheets:
-                if s_name in wb.sheetnames:
-                    ws = wb[s_name]
-                    ws.delete_rows(1, ws.max_row + 1)
-                else:
-                    ws = wb.create_sheet(title=s_name)
-
-                ws.append(headers)
-                for cell in ws[1]:
-                    cell.fill = header_fill
-                    cell.font = header_font
-                    cell.alignment = header_align
-
-                if df_data is not None and not df_data.empty:
-                    valid_cols = [c for c in headers if c in df_data.columns]
-                    df_sub = df_data[valid_cols]
-                    for row in df_sub.itertuples(index=False, name=None):
-                        ws.append([str(v) if v is not None else '' for v in row])
-
-            wb.save(target_path)
-            wb.close()
-            return True
-
         with open(target_path, "wb") as f:
             f.write(excel_bytes)
         return True
     except PermissionError:
-        print(f"[Warn] No se pudo sobrescribir '{target_path}' porque el archivo está abierto en Microsoft Excel.")
-        return False
+        ts = datetime.now().strftime("%H%M%S")
+        alt_path = target_path.replace(".xlsx", f"_{ts}.xlsx")
+        try:
+            with open(alt_path, "wb") as f:
+                f.write(excel_bytes)
+            print(f"[Warn] Archivo en uso. Guardado como: '{alt_path}'")
+            return True
+        except Exception:
+            return False
     except Exception as e:
         print(f"[Error] Error al guardar Excel base: {e}")
         return False
