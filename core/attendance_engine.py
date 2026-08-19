@@ -200,10 +200,14 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
     df_marcaciones['Hora_Clean'] = df_marcaciones[time_col].apply(parse_time_val)
     
     tipo_col = 'Tipo de pase de tarjeta' if 'Tipo de pase de tarjeta' in df_marcaciones.columns else 'TIPO'
-    # Omitir filas de banner o DNI desalineado
+    # Omitir filas de banner, DNI desalineado o marcaciones Indefinidas (reintentos o verificaciones fallidas)
     df_marcaciones = df_marcaciones[
         ~df_marcaciones['DNI_STR'].str.lower().str.contains('fecha:|semana:|periodo:|desconocido|none', regex=True, na=False)
     ]
+    if tipo_col in df_marcaciones.columns:
+        df_marcaciones = df_marcaciones[
+            ~df_marcaciones[tipo_col].astype(str).str.lower().str.contains('indefinid', regex=True, na=False)
+        ]
     
     # Deduplicar marcaciones estrictamente idénticas (mismo DNI, misma fecha, misma hora y mismo tipo)
     df_marcaciones = df_marcaciones.drop_duplicates(

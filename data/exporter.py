@@ -63,7 +63,7 @@ def exportar_asistencia_excel(
         '02_MARCACIONES': [
             'FECHA', 'ID', 'Nombre', 'Apellido', 'Cargo', 'Departamento',
             'Grupo de asistencia', 'Tiempo', 'Tipo de pase de tarjeta',
-            'Método de verificación', 'Punto de control de asistencia'
+            'Método de verificación'
         ],
         '03_ASISTENCIA': [
             'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO',
@@ -141,7 +141,7 @@ def guardar_excel_base(
                 ('02_MARCACIONES', df_marcaciones, [
                     'FECHA', 'ID', 'Nombre', 'Apellido', 'Cargo', 'Departamento',
                     'Grupo de asistencia', 'Tiempo', 'Tipo de pase de tarjeta',
-                    'Método de verificación', 'Punto de control de asistencia'
+                    'Método de verificación'
                 ]),
                 ('03_ASISTENCIA', df_asistencia, [
                     'FECHA', 'DNI', 'APELLIDOS', 'NOMBRES', 'CARGO', 'ÁREA', 'TURNO',
