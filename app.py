@@ -1607,53 +1607,6 @@ if st.sidebar.button("🔍 FILTRAR", use_container_width=True, type="primary", k
     st.toast("🎯 Filtros y KPIs actualizados", icon="🔍")
     st.rerun()
 
-st.sidebar.markdown("<hr style='margin:14px 0 10px 0; border-top:1px solid #222638;'>", unsafe_allow_html=True)
-
-# FILTROS RÁPIDOS DE FECHA DE 1 CLIC (UBICADOS DEBAJO DEL BOTÓN FILTRAR)
-st.sidebar.markdown("<p class='sidebar-field-title' style='margin-bottom:6px; font-size:0.85rem; font-weight:700; color:#cbd5e1;'>⚡ Filtros Rápidos de Fecha</p>", unsafe_allow_html=True)
-
-def apply_preset_date(f_start, f_end):
-    st.session_state['pending_f_ini'] = f_start
-    st.session_state['pending_f_fin'] = f_end
-    st.session_state['applied_f_ini'] = f_start
-    st.session_state['applied_f_fin'] = f_end
-    st.session_state['last_data_update'] = datetime.now(peru_tz).strftime("%I:%M:%S %p").lower()
-    obtener_datos_db.clear()
-    st.toast(f"📅 Rango cargado: {f_start.strftime('%d/%m')} al {f_end.strftime('%d/%m')}", icon="⚡")
-    st.rerun()
-
-col_p1, col_p2 = st.sidebar.columns(2)
-with col_p1:
-    if st.button("📅 Hoy", use_container_width=True, key="btn_preset_today"):
-        apply_preset_date(curr_now.date(), curr_now.date())
-with col_p2:
-    if st.button("⏪ Ayer", use_container_width=True, key="btn_preset_yesterday"):
-        yest = curr_now.date() - timedelta(days=1)
-        apply_preset_date(yest, yest)
-
-col_p3, col_p4 = st.sidebar.columns(2)
-with col_p3:
-    if st.button("📆 Semana", use_container_width=True, key="btn_preset_week"):
-        mon = curr_now.date() - timedelta(days=curr_now.date().weekday())
-        apply_preset_date(mon, curr_now.date())
-with col_p4:
-    if st.button("🗓️ Quincena", use_container_width=True, key="btn_preset_fortnight"):
-        c_d = curr_now.date()
-        if c_d.day <= 15:
-            q_s = date(c_d.year, c_d.month, 1)
-            q_e = date(c_d.year, c_d.month, 15)
-        else:
-            q_s = date(c_d.year, c_d.month, 16)
-            if c_d.month == 12:
-                q_e = date(c_d.year, 12, 31)
-            else:
-                q_e = date(c_d.year, c_d.month + 1, 1) - timedelta(days=1)
-        apply_preset_date(q_s, q_e)
-
-if st.sidebar.button("📊 Este Mes", use_container_width=True, key="btn_preset_month"):
-    m_s = date(curr_now.date().year, curr_now.date().month, 1)
-    apply_preset_date(m_s, curr_now.date())
-
 
 
 # CARGAR DATOS DE LA BASE DE DATOS SEGÚN RANGO DE FECHAS APLICADO
