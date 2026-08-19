@@ -329,6 +329,11 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             elif ('fin' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase)) or 'fin de horas extra' in tipo_pase:
                 he_end = h
 
+        # Si la salida registrada ocurrió ANTES de la entrada en la misma fecha (ej. salida en la mañana a las 07:00 de un turno noche previo, y entrada en la tarde a las 18:31), resetear salida
+        if entrada and salida and time_to_seconds(salida) <= time_to_seconds(entrada):
+            salida = None
+            has_explicit_salida = False
+
         if he_start and he_end:
             i_sec = time_to_seconds(he_start)
             f_sec = time_to_seconds(he_end)

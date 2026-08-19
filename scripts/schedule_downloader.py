@@ -234,11 +234,12 @@ if __name__ == '__main__':
     args = sys.argv[1:]
 
     if not args or args[0].lower() in ("ahora", "now", "auto", "automatico"):
-        # Modo por defecto / Tarea Programada de Windows:
-        # Ejecutar INMEDIATAMENTE la descarga del día anterior y finalizar cleanly.
-        fecha = _ayer()
-        _log(f"Ejecución AUTOMÁTICA / INMEDIATA: descargando día anterior = {fecha}")
-        _ejecutar_descarga(fecha, fecha)
+        # Modo por defecto / Tarea Programada de Windows (a las 9:00 AM):
+        # Descarga el rango de AYER a HOY para incluir salidas matutinas de turno noche
+        ini = _ayer()
+        fin = _hoy()
+        _log(f"Ejecución AUTOMÁTICA (9:00 AM): descargando rango {ini} -> {fin} para emparejamiento completo de Turno Noche...")
+        _ejecutar_descarga(ini, fin)
 
     elif args[0].lower() in ("daemon", "service", "servicio"):
         # Modo servicio continuo 24/7 (bucle)
