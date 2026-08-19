@@ -458,14 +458,14 @@ def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str
 
     # 2. Marcaciones Raw (Orden oficial estricto: ID, Fecha, Nombre, Apellido, Cargo, Departamento...)
     query_mar = f"""
-    SELECT m.dni as ID, m.fecha as Fecha, m.nombre as Nombre, m.apellido as Apellido,
+    SELECT COALESCE(t.dni, m.dni) as ID, m.fecha as Fecha, m.nombre as Nombre, m.apellido as Apellido,
            COALESCE(NULLIF(m.cargo, ''), t.cargo, '') as Cargo,
            m.departamento as Departamento, m.grupo as 'Grupo de asistencia',
            m.tiempo as Tiempo, m.tipo_pase as 'Tipo de pase de tarjeta',
            m.metodo_verificacion as 'Método de verificación',
            m.punto_control as 'Punto de control de asistencia'
     FROM marcaciones_raw m
-    LEFT JOIN trabajadores t ON m.dni = t.dni
+    LEFT JOIN trabajadores t ON LTRIM(m.dni, '0') = LTRIM(t.dni, '0')
     {where_clause.replace('fecha', 'm.fecha') if where_clause else ''}
     ORDER BY m.fecha, m.tiempo
     """

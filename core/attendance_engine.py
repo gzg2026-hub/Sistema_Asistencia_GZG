@@ -197,9 +197,16 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
     if df_trabajadores.empty or 'DNI' not in df_trabajadores.columns:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), {}
 
-    # Limpieza de DNI
+    # Limpieza de DNI y construcción de mapa flexible que ignora ceros a la izquierda
     df_trabajadores['DNI_STR'] = df_trabajadores['DNI'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
-    workers_dict = df_trabajadores.set_index('DNI_STR').to_dict(orient='index')
+    workers_dict = {}
+    for _, tr in df_trabajadores.iterrows():
+        d_str = str(tr['DNI_STR']).strip()
+        d_clean = d_str.lstrip('0') or '0'
+        tr_info = tr.to_dict()
+        tr_info['OFFICIAL_DNI'] = d_str
+        workers_dict[d_str] = tr_info
+        workers_dict[d_clean] = tr_info
     
     if df_marcaciones.empty:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), {}
@@ -248,13 +255,17 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         if not fecha or not dni or len(fecha) != 10 or dni.lower() == 'desconocido' or 'fecha:' in dni.lower():
             continue
             
-        processed_keys.add((dni, fecha))
-        worker_info = workers_dict.get(dni, {
+        dni_clean = str(dni).strip().lstrip('0') or '0'
+        worker_info = workers_dict.get(dni) or workers_dict.get(dni_clean) or {
             'APELLIDOS': 'DESCONOCIDO',
             'NOMBRES': '',
             'CARGO': 'N/A',
             'AREA': 'N/A'
-        })
+        }
+        dni_export = worker_info.get('OFFICIAL_DNI', worker_info.get('DNI', dni))
+        processed_keys.add((dni, fecha))
+        processed_keys.add((dni_export, fecha))
+        processed_keys.add((dni_clean, fecha))
         
         valid_rows = group.dropna(subset=['Hora_Clean']).sort_values('Hora_Clean')
         times = valid_rows['Hora_Clean'].tolist()
@@ -449,7 +460,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
         rows_asistencia.append({
             'FECHA': fecha,
-            'DNI': dni,
+            'DNI': dni_export,
             'APELLIDOS': worker_info.get('APELLIDOS', ''),
             'NOMBRES': worker_info.get('NOMBRES', ''),
             'CARGO': worker_info.get('CARGO', ''),
