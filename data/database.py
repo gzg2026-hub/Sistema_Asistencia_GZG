@@ -438,6 +438,7 @@ def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str
     (df_trabajadores, df_marcaciones, df_asistencia, df_horas_extra, df_incidencias)
     """
     init_db(db_path)
+    sincronizar_desde_hcweb_downloadcenter(db_path)
     conn = get_connection(db_path)
     
     # 1. Trabajadores
@@ -642,4 +643,58 @@ def actualizar_estado_incidencia(inc_id: int, nuevo_estado: str, usuario_validad
     conn.commit()
     conn.close()
     return True
+
+
+def sincronizar_desde_hcweb_downloadcenter(db_path: str = DB_PATH):
+    """Busca automáticamente archivos de transacciones descargados por HikCentral en HCWebControlService\\Downloadcenter e inserta sus marcaciones."""
+    import glob
+    hcweb_dir = r"C:\Users\GZG Minerales 2026\HCWebControlService\Downloadcenter"
+    if not os.path.exists(hcweb_dir):
+        return
+    pattern = os.path.join(hcweb_dir, "**", "Transacciones_*.xlsx")
+    found_files = glob.glob(pattern, recursive=True)
+    if not found_files:
+        return
+    
+    found_files.sort(key=os.path.getmtime)
+    
+    for raw_excel in found_files:
+        try:
+            df_raw = pd.read_excel(raw_excel)
+            if 'Unnamed: 0' in df_raw.columns:
+                df_test = pd.read_excel(raw_excel, header=None)
+                header_idx = None
+                for i in range(min(10, len(df_test))):
+                    row_vals = [str(v).strip() for v in df_test.iloc[i].values]
+                    if 'ID' in row_vals or 'Nombre' in row_vals or 'Fecha' in row_vals:
+                        header_idx = i
+                        break
+                if header_idx is not None:
+                    df_raw = pd.read_excel(raw_excel, header=header_idx)
+            
+            col_rename = {}
+            for c in df_raw.columns:
+                c_str = str(c).strip()
+                if c_str.lower() in ['id', 'dni', 'nro persona', 'id persona']:
+                    col_rename[c] = 'ID'
+                elif c_str.lower() in ['nombre', 'nombres']:
+                    col_rename[c] = 'Nombre'
+                elif c_str.lower() in ['apellido', 'apellidos']:
+                    col_rename[c] = 'Apellido'
+                elif c_str.lower() in ['fecha']:
+                    col_rename[c] = 'Fecha'
+                elif c_str.lower() in ['tiempo', 'hora', 'hora marcacion']:
+                    col_rename[c] = 'Tiempo'
+                elif 'tipo de pase' in c_str.lower():
+                    col_rename[c] = 'Tipo de pase de tarjeta'
+                elif 'metodo' in c_str.lower() or 'método' in c_str.lower():
+                    col_rename[c] = 'Método de verificación'
+                elif 'punto de control' in c_str.lower():
+                    col_rename[c] = 'Punto de control de asistencia'
+                    
+            df_raw = df_raw.rename(columns=col_rename)
+            guardar_marcaciones_raw(df_raw, archivo_origen=raw_excel, db_path=db_path)
+        except Exception as e:
+            pass
+
 

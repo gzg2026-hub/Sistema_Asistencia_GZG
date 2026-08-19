@@ -60,8 +60,9 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
                 val = row_vals[col_idx] if col_idx < len(row_vals) else ""
                 row_dict[col_name] = val
                     
-            # Asignar la fecha extraída
-            row_dict['Fecha'] = current_date if current_date else datetime.now().strftime("%Y-%m-%d")
+            # Asignar la fecha si la fila no tiene una columna 'Fecha' explícita
+            if not row_dict.get('Fecha') or str(row_dict.get('Fecha')).strip().lower() in ['', 'none', 'nan']:
+                row_dict['Fecha'] = current_date if current_date else datetime.now().strftime("%Y-%m-%d")
             
             # Limpiar departamento (solo texto después del >)
             dept_val = str(row_dict.get('Departamento', '')).strip()
