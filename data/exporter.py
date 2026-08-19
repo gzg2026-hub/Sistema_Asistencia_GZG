@@ -2,13 +2,15 @@
 exporter.py
 ===========
 Genera el reporte consolidado de asistencia en un ÚNICO Excel de una sola pestaña
-("Asistencia y Horas Extras") con el formato ejecutivo exacto (encabezados azul marino, banner y 19 columnas).
+("Asistencia y Horas Extras") con el formato ejecutivo proporcionado (alturas de fila holgadas,
+anchos de columna legibles y proporcionales, encabezados azul marino y formato texto en DNI).
 """
 
 import io
 import os
 import openpyxl
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import pandas as pd
 import streamlit as st
 from datetime import datetime
@@ -73,7 +75,7 @@ def exportar_asistencia_excel(
 ) -> bytes:
     """
     Genera el archivo Excel procesado oficial de UNA SOLA HOJA ('Asistencia y Horas Extras')
-    con el formato ejecutivo idéntico a la plantilla empresarial (Banner azul + 19 columnas).
+    con proporciones holgadas de filas y columnas ejecutivas.
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -99,6 +101,8 @@ def exportar_asistencia_excel(
     fill_header = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
     font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
 
+    font_data = Font(name="Calibri", size=10)
+
     align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
     align_left = Alignment(horizontal="left", vertical="center")
 
@@ -110,6 +114,7 @@ def exportar_asistencia_excel(
     )
 
     # Banner Título (Fila 1)
+    ws.row_dimensions[1].height = 28
     ws.merge_cells("A1:S1")
     ws["A1"] = "REPORTE DE ASISTENCIA Y HORAS EXTRAS PROCESADO (TURNOS DÍA Y NOCHE)"
     ws["A1"].fill = fill_banner_title
@@ -117,13 +122,18 @@ def exportar_asistencia_excel(
     ws["A1"].alignment = align_center
 
     # Banner Subtítulo (Fila 2)
+    ws.row_dimensions[2].height = 20
     ws.merge_cells("A2:S2")
     ws["A2"] = f"GZG Minerales | Período: {f_min} a {f_max} | Incluye Entrada, Salida, Exceso de Jornada y Horas Extras"
     ws["A2"].fill = fill_banner_sub
     ws["A2"].font = font_banner_sub
     ws["A2"].alignment = align_center
 
+    ws.row_dimensions[3].height = 10
+    ws.append([])  # Fila 3 vacía de separación
+
     # Encabezados de Columna (Fila 4)
+    ws.row_dimensions[4].height = 28
     headers = [
         "DNI", "Apellidos", "Nombres", "Departamento", "Posición",
         "Fecha Turno", "Día", "Turno", "Fecha Entrada", "Hora Entrada",
@@ -132,7 +142,6 @@ def exportar_asistencia_excel(
         "Método Verificación", "Tipo Registro", "Observación / Incidencias"
     ]
 
-    ws.append([])  # Fila 3 vacía de separación
     ws.append(headers)  # Fila 4
 
     for cell in ws[4]:
@@ -199,21 +208,45 @@ def exportar_asistencia_excel(
                 metodo, tipo_reg, incid
             ])
 
-            # Aplicar bordes a la nueva fila
+            # Aplicar bordes, fuente y alineaciones a la nueva fila
             current_row = ws.max_row
+            ws.row_dimensions[current_row].height = 20
             for c_idx in range(1, 20):
                 cell = ws.cell(row=current_row, column=c_idx)
+                cell.font = font_data
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 19) else align_left
+                
+                # Formato de celda DNI como Texto '@'
+                if c_idx == 1:
+                    cell.number_format = '@'
 
-    from openpyxl.utils import get_column_letter
+    # Anchos de columna holgados y proporcionales
+    PROPORTIONAL_WIDTHS = {
+        1: 15,   # DNI
+        2: 26,   # Apellidos
+        3: 24,   # Nombres
+        4: 28,   # Departamento
+        5: 24,   # Posición
+        6: 15,   # Fecha Turno
+        7: 13,   # Día
+        8: 12,   # Turno
+        9: 15,   # Fecha Entrada
+        10: 14,  # Hora Entrada
+        11: 15,  # Fecha Salida
+        12: 14,  # Hora Salida
+        13: 25,  # Horas Trabajadas (HH:MM)
+        14: 18,  # Tardanza (HH:MM)
+        15: 22,  # Exceso Jornada (HH:MM)
+        16: 20,  # Horas Extras (HH:MM)
+        17: 22,  # Método Verificación
+        18: 22,  # Tipo Registro
+        19: 48   # Observación / Incidencias
+    }
 
-    # Auto-ajustar ancho de columnas
-    for col in ws.columns:
-        max_len = max(len(str(cell.value or '')) for cell in col if cell.value)
-        col_idx = col[0].column
+    for col_idx, width in PROPORTIONAL_WIDTHS.items():
         col_letter = get_column_letter(col_idx)
-        ws.column_dimensions[col_letter].width = max(max_len + 3, 11)
+        ws.column_dimensions[col_letter].width = width
 
     output = io.BytesIO()
     wb.save(output)
