@@ -122,17 +122,34 @@ def descargar_transacciones_hikvision(
             page.goto(f"{base_url}/#/", wait_until="domcontentloaded")
             time.sleep(4)
 
-            page.evaluate("document.querySelectorAll('input').forEach(i => i.removeAttribute('readonly'))")
-            user_inp = page.locator("#username, input[placeholder='Nombre de usuario']").first
-            pass_inp = page.locator("input[type='password']").first
-            login_btn = page.locator("button:has-text('Iniciar')").first
+            # Llenar credenciales en componentes Vue (Element UI) forzando eventos input/change/blur
+            page.evaluate(f"""
+                () => {{
+                    const u = document.querySelector('#username') || document.querySelector("input[placeholder='Nombre de usuario']");
+                    const p = document.querySelector('#password') || document.querySelector("input[type='password']");
+                    if (u) {{
+                        u.removeAttribute('readonly');
+                        u.focus();
+                        u.value = '{username}';
+                        u.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        u.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                        u.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+                    }}
+                    if (p) {{
+                        p.removeAttribute('readonly');
+                        p.focus();
+                        p.value = '{password}';
+                        p.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        p.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                        p.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+                    }}
+                }}
+            """)
 
-            if user_inp.count() > 0:
-                user_inp.fill(username)
-            if pass_inp.count() > 0:
-                pass_inp.fill(password)
-
-            login_btn.click()
+            time.sleep(1)
+            login_btn = page.locator(".login-btn, button:has-text('Iniciar'), button:has-text('Log In')").first
+            if login_btn.count() > 0:
+                login_btn.click()
             time.sleep(5)
 
             payload_js = json.dumps({
