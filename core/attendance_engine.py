@@ -1,4 +1,4 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from typing import Optional
 import pandas as pd
 from core.config import AttendanceConfig
@@ -243,6 +243,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
     rows_horas_extra = []
     rows_incidencias = []
     processed_keys = set()
+    consumed_swipes = set()
     
     # Filtrar solo fechas válidas ISO YYYY-MM-DD
     all_dates = [
@@ -267,7 +268,10 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         processed_keys.add((dni_export, fecha))
         processed_keys.add((dni_clean, fecha))
         
-        valid_rows = group.dropna(subset=['Hora_Clean']).sort_values('Hora_Clean')
+        # Filtrar marcaciones ya consumidas en Turno NOCHE del día anterior
+        valid_rows = group[
+            ~group.apply(lambda r: (dni_clean, fecha, r['Hora_Clean'].strftime('%H:%M') if pd.notna(r['Hora_Clean']) else '') in consumed_swipes, axis=1)
+        ].dropna(subset=['Hora_Clean']).sort_values('Hora_Clean')
         times = valid_rows['Hora_Clean'].tolist()
 
         entrada = None
@@ -354,6 +358,33 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         # Detectar Horario (DÍA vs NOCHE) usando la referencia disponible (entrada o salida)
         hora_ref = entrada if entrada is not None else salida
         horario = detectar_horario(hora_ref, is_salida_only=(entrada is None and salida is not None), config=config)
+
+        # Búsqueda de salida cruzando medianoche para Turno NOCHE (día N -> día N+1)
+        fecha_entrada = fecha
+        fecha_salida = fecha
+
+        if entrada and (salida is None or time_to_seconds(salida) <= time_to_seconds(entrada)):
+            if horario == 'NOCHE' or time_to_seconds(entrada) >= 61200: # >= 17:00
+                try:
+                    fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
+                    fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                    
+                    next_day_swipes = df_marcaciones[
+                        (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
+                        (df_marcaciones['Fecha_Clean'] == fecha_next_str)
+                    ]
+                    salida_next_rows = [
+                        r for _, r in next_day_swipes.iterrows()
+                        if 'salida' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
+                        and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) <= 43200
+                    ]
+                    if salida_next_rows:
+                        salida_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
+                        salida = salida_next_rows[0]['Hora_Clean']
+                        fecha_salida = fecha_next_str
+                        consumed_swipes.add((dni_clean, fecha_next_str, salida.strftime('%H:%M')))
+                except Exception as e:
+                    print("EXCEPTION IN NIGHT SHIFT LOOKUP:", e)
 
         # 3. Validar Marcación Faltante
         if entrada and not salida and len(times) == 1:
@@ -460,6 +491,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
         rows_asistencia.append({
             'FECHA': fecha,
+            'FECHA_ENTRADA': fecha_entrada,
+            'FECHA_SALIDA': fecha_salida,
             'DNI': dni_export,
             'APELLIDOS': worker_info.get('APELLIDOS', ''),
             'NOMBRES': worker_info.get('NOMBRES', ''),

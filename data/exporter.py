@@ -186,8 +186,8 @@ def exportar_asistencia_excel(
             h_ent = str(row.get('ENTRADA', '')).strip() if pd.notna(row.get('ENTRADA')) else ""
             h_sal = str(row.get('SALIDA', '')).strip() if pd.notna(row.get('SALIDA')) else ""
 
-            f_ent = fecha_t if h_ent else ""
-            f_sal = fecha_t if h_sal else ""
+            f_ent = str(row.get('FECHA_ENTRADA', fecha_t if h_ent else '')).strip()
+            f_sal = str(row.get('FECHA_SALIDA', fecha_t if h_sal else '')).strip()
 
             # Marcaciones H.E.
             f_ini_he = str(row.get('FECHA_INICIO_HE', '-')).strip()
