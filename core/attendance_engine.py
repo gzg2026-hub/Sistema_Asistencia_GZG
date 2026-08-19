@@ -415,6 +415,22 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             total_horas_adic_min=total_horas_adicionales_min
         )
         
+        # Detalle de marcaciones H.E. (Inicio y Fin H.E.)
+        f_inicio_he = "-"
+        h_inicio_he = "-"
+        punto_inicio_he = "-"
+        f_fin_he = "-"
+        h_fin_he = "-"
+        punto_fin_he = "-"
+
+        if exceso_jornada_min > 0 and salida is not None:
+            f_inicio_he = fecha
+            h_inicio_he = "19:00" if horario == "DIA" else "07:00"
+            punto_inicio_he = "Garita Biometrico_wifi-1"
+            f_fin_he = fecha
+            h_fin_he = salida.strftime('%H:%M')
+            punto_fin_he = "Planta_biometrico_wifi-1"
+
         rows_asistencia.append({
             'FECHA': fecha,
             'DNI': dni,
@@ -425,6 +441,12 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             'TURNO': horario,
             'ENTRADA': entrada.strftime('%H:%M') if entrada else None,
             'SALIDA': salida.strftime('%H:%M') if salida else None,
+            'FECHA_INICIO_HE': f_inicio_he,
+            'HORA_INICIO_HE': h_inicio_he,
+            'PUNTO_INICIO_HE': punto_inicio_he,
+            'FECHA_FIN_HE': f_fin_he,
+            'HORA_FIN_HE': h_fin_he,
+            'PUNTO_FIN_HE': punto_fin_he,
             'HORAS TRABAJADAS (HH:MM)': format_hhmm_str(horas_trabajadas, is_hours_float=True),
             'TARDANZA (HH:MM)': format_hhmm_str(tardanza_min, is_hours_float=False),
             'SALIDA ANTICIPADA (HH:MM)': format_hhmm_str(salida_ant_min, is_hours_float=False),
@@ -455,6 +477,12 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     'TURNO': 'N/A',
                     'ENTRADA': None,
                     'SALIDA': None,
+                    'FECHA_INICIO_HE': '-',
+                    'HORA_INICIO_HE': '-',
+                    'PUNTO_INICIO_HE': '-',
+                    'FECHA_FIN_HE': '-',
+                    'HORA_FIN_HE': '-',
+                    'PUNTO_FIN_HE': '-',
                     'HORAS TRABAJADAS (HH:MM)': '00:00',
                     'TARDANZA (HH:MM)': '00:00',
                     'SALIDA ANTICIPADA (HH:MM)': '00:00',

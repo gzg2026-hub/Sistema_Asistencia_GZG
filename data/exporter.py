@@ -2,8 +2,8 @@
 exporter.py
 ===========
 Genera el reporte consolidado de asistencia en un ÚNICO Excel de una sola pestaña
-("Asistencia y Horas Extras") con el formato ejecutivo proporcionado (alturas de fila holgadas,
-anchos de columna legibles y proporcionales, encabezados azul marino y formato texto en DNI).
+("Asistencia y Horas Extras") con el formato ejecutivo oficial completo de 25 columnas
+(incluyendo Fecha Inicio H.E., Hora Inicio H.E., Punto Inicio H.E., Fecha Fin H.E., Hora Fin H.E. y Punto Fin H.E.).
 """
 
 import io
@@ -75,7 +75,7 @@ def exportar_asistencia_excel(
 ) -> bytes:
     """
     Genera el archivo Excel procesado oficial de UNA SOLA HOJA ('Asistencia y Horas Extras')
-    con proporciones holgadas de filas y columnas ejecutivas.
+    con las 25 columnas ejecutivas completas (incluyendo marcaciones de Inicio y Fin H.E.).
     """
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -113,9 +113,9 @@ def exportar_asistencia_excel(
         bottom=Side(style='thin', color='D9D9D9')
     )
 
-    # Banner Título (Fila 1)
+    # Banner Título (Fila 1 - 25 columnas A a Y)
     ws.row_dimensions[1].height = 28
-    ws.merge_cells("A1:S1")
+    ws.merge_cells("A1:Y1")
     ws["A1"] = "REPORTE DE ASISTENCIA Y HORAS EXTRAS PROCESADO (TURNOS DÍA Y NOCHE)"
     ws["A1"].fill = fill_banner_title
     ws["A1"].font = font_banner_title
@@ -123,8 +123,8 @@ def exportar_asistencia_excel(
 
     # Banner Subtítulo (Fila 2)
     ws.row_dimensions[2].height = 20
-    ws.merge_cells("A2:S2")
-    ws["A2"] = f"GZG Minerales | Período: {f_min} a {f_max} | Incluye Entrada, Salida, Exceso de Jornada y Horas Extras"
+    ws.merge_cells("A2:Y2")
+    ws["A2"] = f"GZG Minerales | Período: {f_min} a {f_max} | Incluye Entrada, Salida, Inicio H.E. y Fin H.E."
     ws["A2"].fill = fill_banner_sub
     ws["A2"].font = font_banner_sub
     ws["A2"].alignment = align_center
@@ -132,13 +132,15 @@ def exportar_asistencia_excel(
     ws.row_dimensions[3].height = 10
     ws.append([])  # Fila 3 vacía de separación
 
-    # Encabezados de Columna (Fila 4)
+    # Encabezados de Columna (Fila 4 - 25 columnas)
     ws.row_dimensions[4].height = 28
     headers = [
         "DNI", "Apellidos", "Nombres", "Departamento", "Posición",
         "Fecha Turno", "Día", "Turno", "Fecha Entrada", "Hora Entrada",
-        "Fecha Salida", "Hora Salida", "Horas Trabajadas (HH:MM)",
-        "Tardanza (HH:MM)", "Exceso Jornada (HH:MM)", "Horas Extras (HH:MM)",
+        "Fecha Salida", "Hora Salida",
+        "Fecha Inicio H.E.", "Hora Inicio H.E.", "Punto Inicio H.E.",
+        "Fecha Fin H.E.", "Hora Fin H.E.", "Punto Fin H.E.",
+        "Horas Trabajadas (HH:MM)", "Tardanza (HH:MM)", "Exceso Jornada (HH:MM)", "Horas Extras (HH:MM)",
         "Método Verificación", "Tipo Registro", "Observación / Incidencias"
     ]
 
@@ -187,6 +189,14 @@ def exportar_asistencia_excel(
             f_ent = fecha_t if h_ent else ""
             f_sal = fecha_t if h_sal else ""
 
+            # Marcaciones H.E.
+            f_ini_he = str(row.get('FECHA_INICIO_HE', '-')).strip()
+            h_ini_he = str(row.get('HORA_INICIO_HE', '-')).strip()
+            p_ini_he = str(row.get('PUNTO_INICIO_HE', '-')).strip()
+            f_fin_he = str(row.get('FECHA_FIN_HE', '-')).strip()
+            h_fin_he = str(row.get('HORA_FIN_HE', '-')).strip()
+            p_fin_he = str(row.get('PUNTO_FIN_HE', '-')).strip()
+
             h_trab = format_hhmm_cell(row.get('HORAS TRABAJADAS (HH:MM)', row.get('HORAS TRABAJADAS', '00:00')), is_hours_float=True)
             tard = format_hhmm_cell(row.get('TARDANZA (HH:MM)', row.get('TARDANZA (MIN)', '00:00')), is_hours_float=False)
             exc = format_hhmm_cell(row.get('EXCESO JORNADA (HH:MM)', row.get('EXCESO JORNADA', '00:00')), is_hours_float=False)
@@ -204,24 +214,27 @@ def exportar_asistencia_excel(
             ws.append([
                 dni, apellidos, nombres, dept, posicion,
                 fecha_t, dia_str, turno, f_ent, h_ent,
-                f_sal, h_sal, h_trab, tard, exc, he,
+                f_sal, h_sal,
+                f_ini_he, h_ini_he, p_ini_he,
+                f_fin_he, h_fin_he, p_fin_he,
+                h_trab, tard, exc, he,
                 metodo, tipo_reg, incid
             ])
 
             # Aplicar bordes, fuente y alineaciones a la nueva fila
             current_row = ws.max_row
             ws.row_dimensions[current_row].height = 20
-            for c_idx in range(1, 20):
+            for c_idx in range(1, 26):
                 cell = ws.cell(row=current_row, column=c_idx)
                 cell.font = font_data
                 cell.border = thin_border
-                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 19) else align_left
+                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 25) else align_left
                 
                 # Formato de celda DNI como Texto '@'
                 if c_idx == 1:
                     cell.number_format = '@'
 
-    # Anchos de columna holgados y proporcionales
+    # Anchos de columna holgados y proporcionales (25 columnas)
     PROPORTIONAL_WIDTHS = {
         1: 15,   # DNI
         2: 26,   # Apellidos
@@ -235,13 +248,19 @@ def exportar_asistencia_excel(
         10: 14,  # Hora Entrada
         11: 15,  # Fecha Salida
         12: 14,  # Hora Salida
-        13: 25,  # Horas Trabajadas (HH:MM)
-        14: 18,  # Tardanza (HH:MM)
-        15: 22,  # Exceso Jornada (HH:MM)
-        16: 20,  # Horas Extras (HH:MM)
-        17: 22,  # Método Verificación
-        18: 22,  # Tipo Registro
-        19: 48   # Observación / Incidencias
+        13: 16,  # Fecha Inicio H.E.
+        14: 15,  # Hora Inicio H.E.
+        15: 25,  # Punto Inicio H.E.
+        16: 16,  # Fecha Fin H.E.
+        17: 15,  # Hora Fin H.E.
+        18: 25,  # Punto Fin H.E.
+        19: 25,  # Horas Trabajadas (HH:MM)
+        20: 18,  # Tardanza (HH:MM)
+        21: 22,  # Exceso Jornada (HH:MM)
+        22: 20,  # Horas Extras (HH:MM)
+        23: 22,  # Método Verificación
+        24: 22,  # Tipo Registro
+        25: 48   # Observación / Incidencias
     }
 
     for col_idx, width in PROPORTIONAL_WIDTHS.items():
