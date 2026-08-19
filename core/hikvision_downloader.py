@@ -16,7 +16,7 @@ from openpyxl import Workbook
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_ASISTENCIA_DIR = os.path.join(PROJECT_ROOT, "downloads", "hikvision")
+DEFAULT_ASISTENCIA_DIR = os.path.join(PROJECT_ROOT, "downloads", "data_cruda")
 
 DIAS_SEMANA = {
     0: "Lunes",

@@ -27,9 +27,13 @@ import datetime
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)
 
-# ── Carpeta de descargas ──────────────────────────────────────────────────────
-CARPETA_DESCARGAS = os.path.join(ROOT_DIR, "downloads", "hikvision")
-os.makedirs(CARPETA_DESCARGAS, exist_ok=True)
+# ── Carpetas de descargas y procesamiento ──────────────────────────────────────
+CARPETA_DATA_CRUDA = os.path.join(ROOT_DIR, "downloads", "data_cruda")
+CARPETA_DATA_PROCESADA = os.path.join(ROOT_DIR, "downloads", "data_procesada")
+CARPETA_DOWNLOADCENTER = r"C:\Users\GZG Minerales 2026\HCWebControlService\Downloadcenter"
+
+os.makedirs(CARPETA_DATA_CRUDA, exist_ok=True)
+os.makedirs(CARPETA_DATA_PROCESADA, exist_ok=True)
 
 LOG_FILE = os.path.join(ROOT_DIR, "logs", "descarga_diaria.log")
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
@@ -46,10 +50,30 @@ def _log(msg: str):
         f.write(linea + "\n")
 
 
+def _sincronizar_downloadcenter():
+    """Copia archivos de data cruda exportados manualmente en Downloadcenter hacia downloads/data_cruda."""
+    if os.path.exists(CARPETA_DOWNLOADCENTER):
+        try:
+            import shutil
+            for root_dir, dirs, files in os.walk(CARPETA_DOWNLOADCENTER):
+                for f in files:
+                    if f.endswith(".xlsx") and not f.startswith("~$"):
+                        src = os.path.join(root_dir, f)
+                        dst = os.path.join(CARPETA_DATA_CRUDA, f)
+                        if not os.path.exists(dst):
+                            shutil.copy2(src, dst)
+                            _log(f"Sincronizado archivo desde Downloadcenter: {f}")
+        except Exception as e:
+            _log(f"Aviso al sincronizar Downloadcenter: {e}")
+
+
 def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
     """Descarga, procesa y guarda las transacciones del rango de fechas dado."""
     _log("=" * 60)
     _log(f"Descargando transacciones del {fecha_inicio} al {fecha_fin}...")
+
+    # Sincronizar descargas manuales de Downloadcenter si existen
+    _sincronizar_downloadcenter()
 
     try:
         from core.hikvision_downloader import descargar_transacciones_hikvision
@@ -59,16 +83,22 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                                    guardar_asistencia_y_reportes)
         from data.exporter import guardar_excel_base
 
-        # 1. Descargar desde Hikvision
+        # 1. Descargar Data Cruda 1:1 desde Hikvision en downloads/data_cruda/
         excel_path = descargar_transacciones_hikvision(
-            carpeta_destino=CARPETA_DESCARGAS,
+            carpeta_destino=CARPETA_DATA_CRUDA,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin
         )
-        _log(f"Archivo guardado en: {excel_path}")
+        _log(f"Data Cruda guardada en: {excel_path}")
 
         # 2. Cargar datos del Excel
         df_trab, df_marc, df_he = cargar_datos_excel(excel_path)
+        
+        # Fallback a base de datos de trabajadores si el Excel crudo no incluye pestaña de trabajadores
+        if df_trab.empty:
+            from data.database import obtener_trabajadores_master
+            df_trab = obtener_trabajadores_master()
+
         _log(f"Cargados: {len(df_marc)} marcaciones, {len(df_trab)} trabajadores")
 
         if not df_marc.empty:
@@ -77,8 +107,12 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                 guardar_trabajadores(df_trab)
                 df_asis, df_he_out, df_inc, kpis = procesar_asistencia_df(df_trab, df_marc)
                 guardar_asistencia_y_reportes(df_asis, df_he_out, df_inc)
+                
+                # 3. Guardar Data Procesada (Excel de Asistencia)
                 guardar_excel_base(df_trab, df_marc, df_asis, df_he_out, df_inc)
-                _log(f"Procesamiento completado. Marcaciones: {len(df_marc)}")
+                _log(f"Procesamiento completado. Reporte procesado guardado en downloads/data_procesada/.")
+            else:
+                _log("AVISO: No se encontraron trabajadores en la base de datos para procesar asistencia.")
         else:
             _log("AVISO: No se encontraron marcaciones en el archivo.")
 
@@ -169,7 +203,7 @@ def _parsear_fecha(s: str) -> str | None:
 
 
 def _iniciar_programador():
-    """Servicio que espera hasta las 08:00 AM y ejecuta la descarga del día anterior."""
+    """Servicio que espera hasta las 09:00 AM y ejecuta la descarga del día anterior."""
     try:
         import schedule
     except ImportError:
@@ -177,17 +211,18 @@ def _iniciar_programador():
         import schedule
 
     _log("Servicio de descarga diaria iniciado.")
-    _log(f"  Horario    : todos los días a las 08:00 AM")
+    _log(f"  Horario    : todos los días a las 09:00 AM")
     _log(f"  Descarga   : día ANTERIOR al de ejecución (ayer)")
-    _log(f"  Archivos   : {CARPETA_DESCARGAS}")
+    _log(f"  Data Cruda : {CARPETA_DATA_CRUDA}")
+    _log(f"  Procesada  : {CARPETA_DATA_PROCESADA}")
     _log(f"  Log        : {LOG_FILE}")
 
-    def _tarea_8am():
+    def _tarea_9am():
         fecha = _ayer()
         _log(f"Tarea programada: descargando día anterior = {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
-    schedule.every().day.at("08:00").do(_tarea_8am)
+    schedule.every().day.at("09:00").do(_tarea_9am)
 
     while True:
         schedule.run_pending()

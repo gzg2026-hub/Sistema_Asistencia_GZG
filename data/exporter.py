@@ -276,14 +276,17 @@ def guardar_excel_base(
     df_incidencias: pd.DataFrame = None,
     target_path: str = BASE_EXCEL_TEMPLATE
 ) -> bool:
-    """Guarda directamente el reporte procesado de una sola hoja en la carpeta raíz del proyecto."""
+    """Guarda el reporte procesado en la raíz y en downloads/data_procesada."""
     excel_bytes = exportar_asistencia_excel(
         df_trabajadores, df_marcaciones, df_asistencia, df_horas_extra, df_incidencias, target_path
     )
+    
+    # 1. Guardar en carpeta raíz
+    success = False
     try:
         with open(target_path, "wb") as f:
             f.write(excel_bytes)
-        return True
+        success = True
     except PermissionError:
         ts = datetime.now().strftime("%H%M%S")
         alt_path = target_path.replace(".xlsx", f"_{ts}.xlsx")
@@ -291,9 +294,36 @@ def guardar_excel_base(
             with open(alt_path, "wb") as f:
                 f.write(excel_bytes)
             print(f"[Warn] Archivo en uso. Guardado como: '{alt_path}'")
-            return True
+            success = True
         except Exception:
-            return False
+            pass
     except Exception as e:
         print(f"[Error] Error al guardar Excel base: {e}")
-        return False
+
+    # 2. Guardar copia en downloads/data_procesada/
+    try:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        carpeta_proc = os.path.join(project_root, "downloads", "data_procesada")
+        os.makedirs(carpeta_proc, exist_ok=True)
+        
+        fecha_str = datetime.now().strftime("%Y-%m-%d")
+        if not df_asistencia.empty and "FECHA_ENTRADA" in df_asistencia.columns:
+            fechas = df_asistencia["FECHA_ENTRADA"].dropna().unique()
+            if len(fechas) > 0:
+                fecha_str = str(fechas[0])
+                
+        proc_filename = f"Reporte_Asistencia_GZG_{fecha_str}.xlsx"
+        proc_path = os.path.join(carpeta_proc, proc_filename)
+        
+        try:
+            with open(proc_path, "wb") as f:
+                f.write(excel_bytes)
+        except PermissionError:
+            ts = datetime.now().strftime("%H%M%S")
+            proc_path_ts = os.path.join(carpeta_proc, f"Reporte_Asistencia_GZG_{fecha_str}_{ts}.xlsx")
+            with open(proc_path_ts, "wb") as f:
+                f.write(excel_bytes)
+    except Exception as e:
+        print(f"[Warn] No se pudo guardar copia en data_procesada: {e}")
+
+    return success
