@@ -291,9 +291,11 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 'SEVERIDAD': 'BAJA', 'OBSERVACIÓN': ''
             })
 
-        # 2. Detectar entrada y salida principal
+        # 2. Detectar entrada, salida principal y marcaciones explícitas de Horas Extra
         has_explicit_entrada = False
         has_explicit_salida = False
+        he_start = None
+        he_end = None
 
         for _, r in valid_rows.iterrows():
             tipo_pase = str(r.get(tipo_col, '')).strip().lower()
@@ -308,28 +310,29 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 if salida is None or h > salida:
                     salida = h
             elif 'inicio' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase):
-                current_he_start = h
-            elif ('fin' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase)) or ('salida' in tipo_pase and current_he_start is not None):
-                if current_he_start is not None:
-                    i_sec = time_to_seconds(current_he_start)
-                    f_sec = time_to_seconds(h)
-                    dur_block_min = (f_sec - i_sec) // 60 if f_sec >= i_sec else ((86400 - i_sec) + f_sec) // 60
-                    if dur_block_min > 0:
-                        he_explicita_total_min += dur_block_min
-                        horario_tmp = detectar_horario(entrada or salida, config)
-                        rows_horas_extra.append({
-                            'FECHA': fecha, 'DNI': dni, 'APELLIDOS': worker_info.get('APELLIDOS', ''),
-                            'NOMBRES': worker_info.get('NOMBRES', ''),
-                            'CARGO': worker_info.get('CARGO', ''),
-                            'ÁREA': worker_info.get('AREA', worker_info.get('ÁREA', '')),
-                            'TURNO': horario_tmp,
-                            'INICIO H.E.': current_he_start.strftime('%H:%M'),
-                            'FIN H.E.': h.strftime('%H:%M'),
-                            'DURACIÓN (HH:MM)': format_hhmm_str(dur_block_min, is_hours_float=False),
-                            'DURACIÓN': dur_block_min,
-                            'OBSERVACIÓN': 'Horas extra marcadas en biométrico'
-                        })
-                    current_he_start = None
+                he_start = h
+            elif 'fin' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase):
+                he_end = h
+
+        if he_start and he_end:
+            i_sec = time_to_seconds(he_start)
+            f_sec = time_to_seconds(he_end)
+            dur_block_min = (f_sec - i_sec) // 60 if f_sec >= i_sec else ((86400 - i_sec) + f_sec) // 60
+            if dur_block_min > 0:
+                he_explicita_total_min += dur_block_min
+                horario_tmp = detectar_horario(entrada or salida, is_salida_only=(entrada is None and salida is not None), config=config)
+                rows_horas_extra.append({
+                    'FECHA': fecha, 'DNI': dni, 'APELLIDOS': worker_info.get('APELLIDOS', ''),
+                    'NOMBRES': worker_info.get('NOMBRES', ''),
+                    'CARGO': worker_info.get('CARGO', ''),
+                    'ÁREA': worker_info.get('AREA', worker_info.get('ÁREA', '')),
+                    'TURNO': horario_tmp,
+                    'INICIO H.E.': he_start.strftime('%H:%M'),
+                    'FIN H.E.': he_end.strftime('%H:%M'),
+                    'DURACIÓN (HH:MM)': format_hhmm_str(dur_block_min, is_hours_float=False),
+                    'DURACIÓN': dur_block_min,
+                    'OBSERVACIÓN': 'Horas extra marcadas en biométrico'
+                })
 
         # Fallback SOLO si no hay pases explícitos (marcaciones genéricas)
         if not has_explicit_entrada and not has_explicit_salida and len(times) > 0:
@@ -438,21 +441,11 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             total_horas_adic_min=total_horas_adicionales_min
         )
         
-        # Detalle de marcaciones H.E. (Inicio y Fin H.E.)
-        f_inicio_he = "-"
-        h_inicio_he = "-"
-        punto_inicio_he = "-"
-        f_fin_he = "-"
-        h_fin_he = "-"
-        punto_fin_he = "-"
-
-        if exceso_jornada_min > 0 and salida is not None:
-            f_inicio_he = fecha
-            h_inicio_he = "19:00" if horario == "DIA" else "07:00"
-            punto_inicio_he = "Garita Biometrico_wifi-1"
-            f_fin_he = fecha
-            h_fin_he = salida.strftime('%H:%M')
-            punto_fin_he = "Planta_biometrico_wifi-1"
+        # Detalle de marcaciones H.E. (Inicio y Fin H.E. provienen EXCLUSIVAMENTE de marcaciones explícitas del biométrico)
+        f_inicio_he = fecha if he_start else "-"
+        h_inicio_he = he_start.strftime('%H:%M') if he_start else "-"
+        f_fin_he = fecha if he_end else "-"
+        h_fin_he = he_end.strftime('%H:%M') if he_end else "-"
 
         rows_asistencia.append({
             'FECHA': fecha,
@@ -466,10 +459,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             'SALIDA': salida.strftime('%H:%M') if salida else None,
             'FECHA_INICIO_HE': f_inicio_he,
             'HORA_INICIO_HE': h_inicio_he,
-            'PUNTO_INICIO_HE': punto_inicio_he,
             'FECHA_FIN_HE': f_fin_he,
             'HORA_FIN_HE': h_fin_he,
-            'PUNTO_FIN_HE': punto_fin_he,
             'HORAS TRABAJADAS (HH:MM)': format_hhmm_str(horas_trabajadas, is_hours_float=True),
             'TARDANZA (HH:MM)': format_hhmm_str(tardanza_min, is_hours_float=False),
             'SALIDA ANTICIPADA (HH:MM)': format_hhmm_str(salida_ant_min, is_hours_float=False),
@@ -502,10 +493,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     'SALIDA': None,
                     'FECHA_INICIO_HE': '-',
                     'HORA_INICIO_HE': '-',
-                    'PUNTO_INICIO_HE': '-',
                     'FECHA_FIN_HE': '-',
                     'HORA_FIN_HE': '-',
-                    'PUNTO_FIN_HE': '-',
                     'HORAS TRABAJADAS (HH:MM)': '00:00',
                     'TARDANZA (HH:MM)': '00:00',
                     'SALIDA ANTICIPADA (HH:MM)': '00:00',
