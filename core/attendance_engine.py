@@ -26,20 +26,25 @@ def time_to_seconds(t: time) -> int:
         return 0
     return t.hour * 3600 + t.minute * 60 + t.second
 
-def detectar_horario(hora_entrada: time, config: AttendanceConfig) -> str:
+def detectar_horario(hora_ref: time, is_salida_only: bool = False, config: AttendanceConfig = None) -> str:
     """Detecta si el horario corresponde a TURNO DÍA (07:00 - 19:00) o NOCHE (19:00 - 07:00)."""
-    if hora_entrada is None:
-        return "DIA" # Por defecto si no hay entrada
-    
-    h_sec = time_to_seconds(hora_entrada)
-    start_dia = time_to_seconds(config.hora_inicio_dia) # 07:00 = 25200s
-    end_dia = time_to_seconds(config.hora_fin_dia)       # 19:00 = 68400s
-    
-    # 05:00 a 16:59 se considera inicio de Turno Día
-    if 5 * 3600 <= h_sec < 17 * 3600:
+    if hora_ref is None:
         return "DIA"
+    
+    h_sec = time_to_seconds(hora_ref)
+    
+    if is_salida_only:
+        # Si la marcación es solo salida, entre las 11:00 y 23:59 corresponde al fin de TURNO DÍA
+        if 11 * 3600 <= h_sec <= 23 * 3600 + 59 * 60:
+            return "DIA"
+        else:
+            return "NOCHE"
     else:
-        return "NOCHE"
+        # Si la referencia es hora de entrada (05:00 a 16:59 es Turno Día)
+        if 5 * 3600 <= h_sec < 17 * 3600:
+            return "DIA"
+        else:
+            return "NOCHE"
 
 def calcular_tardanza(horario: str, hora_entrada: time, config: AttendanceConfig) -> int:
     """
@@ -287,14 +292,19 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             })
 
         # 2. Detectar entrada y salida principal
+        has_explicit_entrada = False
+        has_explicit_salida = False
+
         for _, r in valid_rows.iterrows():
             tipo_pase = str(r.get(tipo_col, '')).strip().lower()
             h = r['Hora_Clean']
             
             if 'entrada' in tipo_pase and not ('horas extra' in tipo_pase or 'he' in tipo_pase):
+                has_explicit_entrada = True
                 if entrada is None:
                     entrada = h
             elif 'salida' in tipo_pase and not ('horas extra' in tipo_pase or 'he' in tipo_pase):
+                has_explicit_salida = True
                 if salida is None or h > salida:
                     salida = h
             elif 'inicio' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase):
@@ -306,7 +316,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     dur_block_min = (f_sec - i_sec) // 60 if f_sec >= i_sec else ((86400 - i_sec) + f_sec) // 60
                     if dur_block_min > 0:
                         he_explicita_total_min += dur_block_min
-                        horario_tmp = detectar_horario(entrada, config) if entrada else "DIA"
+                        horario_tmp = detectar_horario(entrada or salida, config)
                         rows_horas_extra.append({
                             'FECHA': fecha, 'DNI': dni, 'APELLIDOS': worker_info.get('APELLIDOS', ''),
                             'NOMBRES': worker_info.get('NOMBRES', ''),
@@ -321,14 +331,15 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         })
                     current_he_start = None
 
-        # Fallback si solo hay marcaciones genéricas
-        if entrada is None and len(times) > 0:
+        # Fallback SOLO si no hay pases explícitos (marcaciones genéricas)
+        if not has_explicit_entrada and not has_explicit_salida and len(times) > 0:
             entrada = times[0]
-        if salida is None and len(times) > 1:
-            salida = times[-1]
+            if len(times) > 1:
+                salida = times[-1]
 
-        # Detectar Horario (DÍA vs NOCHE)
-        horario = detectar_horario(entrada, config)
+        # Detectar Horario (DÍA vs NOCHE) usando la referencia disponible (entrada o salida)
+        hora_ref = entrada if entrada is not None else salida
+        horario = detectar_horario(hora_ref, is_salida_only=(entrada is None and salida is not None), config=config)
 
         # 3. Validar Marcación Faltante
         if entrada and not salida and len(times) == 1:
@@ -341,6 +352,18 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 'TIPO': 'SALIDA',
                 'HORA': entrada.strftime('%H:%M'),
                 'DESCRIPCIÓN': f"Marcación de entrada registrada a las {entrada.strftime('%H:%M')} sin marcación de salida",
+                'SEVERIDAD': 'ALTA', 'OBSERVACIÓN': ''
+            })
+        elif not entrada and salida:
+            incidencias_list.append(f"Salida sin registro de entrada previa ({salida.strftime('%H:%M')})")
+            rows_incidencias.append({
+                'FECHA': fecha, 'DNI': dni, 'APELLIDOS': worker_info.get('APELLIDOS', ''),
+                'NOMBRES': worker_info.get('NOMBRES', ''),
+                'CARGO': worker_info.get('CARGO', ''),
+                'ÁREA': worker_info.get('AREA', worker_info.get('ÁREA', '')),
+                'TIPO': 'ENTRADA',
+                'HORA': salida.strftime('%H:%M'),
+                'DESCRIPCIÓN': f"Salida registrada a las {salida.strftime('%H:%M')} sin registro de entrada previa",
                 'SEVERIDAD': 'ALTA', 'OBSERVACIÓN': ''
             })
 
@@ -374,8 +397,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 'SEVERIDAD': 'MEDIA', 'OBSERVACIÓN': ''
             })
 
-        # 6. Calcular Exceso de Jornada
-        exceso_jornada_min = calcular_exceso_jornada(horario, salida, config)
+        # 6. Calcular Exceso de Jornada (Solo si hubo entrada registrada)
+        exceso_jornada_min = calcular_exceso_jornada(horario, salida, config) if entrada is not None else 0
 
         # 7. Validar Límite de Exceso de Jornada (> 60 min)
         if exceso_jornada_min > config.max_exceso_jornada_min:
