@@ -314,21 +314,6 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             elif ('fin' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase)) or 'fin de horas extra' in tipo_pase:
                 he_end = h
 
-        # Fallback inteligente: si existen marcaciones posteriores a la salida principal (ej. 19:48 y 23:48)
-        if he_start is None or he_end is None:
-            extra_swipes = [
-                r['Hora_Clean'] for _, r in valid_rows.iterrows()
-                if salida is not None and r['Hora_Clean'] > salida and r['Hora_Clean'] != entrada
-            ]
-            if len(extra_swipes) >= 2:
-                if he_start is None:
-                    he_start = extra_swipes[0]
-                if he_end is None:
-                    he_end = extra_swipes[-1]
-            elif len(extra_swipes) == 1:
-                if he_start is None:
-                    he_start = extra_swipes[0]
-
         if he_start and he_end:
             i_sec = time_to_seconds(he_start)
             f_sec = time_to_seconds(he_end)
