@@ -137,11 +137,21 @@ def parse_time_val(val) -> Optional[time]:
         return None
     if isinstance(val, time):
         return val
+    if isinstance(val, datetime):
+        return val.time()
     val_str = str(val).strip()
+    if ' ' in val_str:
+        val_str = val_str.split(' ')[-1].strip()
+    elif 'T' in val_str:
+        val_str = val_str.split('T')[-1].strip()
+        
     parts = val_str.split(':')
     if len(parts) >= 2:
         try:
-            return time(int(parts[0]), int(parts[1]), int(parts[2]) if len(parts) > 2 else 0)
+            h = int(parts[0])
+            m = int(parts[1])
+            s = int(parts[2].split('.')[0]) if len(parts) > 2 else 0
+            return time(h, m, s)
         except Exception:
             return None
     return None
