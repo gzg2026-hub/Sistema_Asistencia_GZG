@@ -41,6 +41,10 @@ VERIFY_TYPE_MAP = {
 SWIPE_TYPE_MAP = {
     1: "Registro de entrada",
     2: "Registrar salida",
+    3: "Inicio de descansos",
+    4: "Fin de descansos",
+    5: "Inicio de horas extra",
+    6: "Fin de horas extra",
     0: "Indefinido"
 }
 
