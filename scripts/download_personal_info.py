@@ -204,9 +204,9 @@ def procesar_y_exportar_padron(excel_raw_path: str):
     thin_gray = Side(border_style="thin", color="D3D3D3")
     thin_border = Border(left=thin_gray, right=thin_gray, top=thin_gray, bottom=thin_gray)
 
-    # Banner Título (Fila 1)
+    # Banner Título (Fila 1 - 6 columnas)
     ws.row_dimensions[1].height = 32
-    ws.merge_cells("A1:H1")
+    ws.merge_cells("A1:F1")
     ws["A1"] = "PADRÓN OFICIAL DE TRABAJADORES Y PERSONAL REGISTRADO"
     ws["A1"].fill = fill_banner_title
     ws["A1"].font = font_banner_title
@@ -214,7 +214,7 @@ def procesar_y_exportar_padron(excel_raw_path: str):
 
     # Banner Subtítulo (Fila 2)
     ws.row_dimensions[2].height = 20
-    ws.merge_cells("A2:H2")
+    ws.merge_cells("A2:F2")
     ws["A2"] = f"GZG Minerales | Fecha de Actualización: {datetime.date.today().strftime('%Y-%m-%d')} | Fuente: Biométrico HikCentral"
     ws["A2"].fill = fill_banner_sub
     ws["A2"].font = font_banner_sub
@@ -223,11 +223,11 @@ def procesar_y_exportar_padron(excel_raw_path: str):
     ws.row_dimensions[3].height = 10
     ws.append([])  # Fila 3 vacía
 
-    # Encabezados (Fila 4)
+    # Encabezados (Fila 4 - 6 columnas)
     ws.row_dimensions[4].height = 28
     headers = [
         "DNI", "Apellidos", "Nombres", "Departamento / Área",
-        "Posición / Cargo", "Fecha Inicio Efectivo", "Fecha Fin Efectivo", "Estado en Sistema"
+        "Posición / Cargo", "Estado en Sistema"
     ]
     ws.append(headers)
 
@@ -242,27 +242,34 @@ def procesar_y_exportar_padron(excel_raw_path: str):
         ws.row_dimensions[current_row].height = 20
         row_vals = [
             r['DNI'], r['APELLIDOS'], r['NOMBRES'], r['AREA'],
-            r['CARGO'], r['FECHA_INICIO'], r['FECHA_FIN'], "Activo"
+            r['CARGO'], "Activo"
         ]
         ws.append(row_vals)
 
-        for col_idx in range(1, 9):
+        for col_idx in range(1, 7):
             cell = ws.cell(row=current_row, column=col_idx)
             cell.font = font_data
             cell.border = thin_border
-            cell.alignment = align_center if col_idx in (1, 6, 7, 8) else align_left
+            cell.alignment = align_center if col_idx in (1, 6) else align_left
             if current_row % 2 == 0:
                 cell.fill = fill_row_even
             if col_idx == 1:
                 cell.number_format = '@'
 
-    # Anchos de columna
-    widths = {1: 16, 2: 28, 3: 26, 4: 28, 5: 26, 6: 22, 7: 22, 8: 18}
+    # Anchos de columna (6 columnas)
+    widths = {1: 16, 2: 28, 3: 26, 4: 28, 5: 26, 6: 18}
     for col_idx, width in widths.items():
         ws.column_dimensions[get_column_letter(col_idx)].width = width
 
     out_path = os.path.join(CARPETA_DATA_PROCESADA, "Padron_Trabajadores_GZG.xlsx")
-    wb.save(out_path)
+    try:
+        wb.save(out_path)
+    except PermissionError:
+        timestamp_str = datetime.datetime.now().strftime("%H%M%S")
+        out_path = os.path.join(CARPETA_DATA_PROCESADA, f"Padron_Trabajadores_GZG_{timestamp_str}.xlsx")
+        wb.save(out_path)
+        print(f"[Warn] Archivo en uso. Guardado como: {out_path}")
+
     print(f"[OK] Reporte elegante de personal guardado en: {out_path}")
     return out_path
 
