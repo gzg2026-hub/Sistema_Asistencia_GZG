@@ -219,7 +219,12 @@ def exportar_asistencia_excel(
                 metodo, tipo_reg, incid
             ])
 
-            # Aplicar bordes, fuente y alineaciones a la nueva fila
+            # Colores pastel de sombreado
+            fill_jornada_parcial = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid") # Amarillo Pastel
+            fill_cambio_turno = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")    # Azul Pastel
+            fill_incidencia = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")      # Durazno Pastel
+
+            # Aplicar bordes, fuente, alineaciones y sombreado a la nueva fila
             current_row = ws.max_row
             ws.row_dimensions[current_row].height = 20
             for c_idx in range(1, 24):
@@ -228,6 +233,15 @@ def exportar_asistencia_excel(
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 23) else align_left
                 
+                # Resaltado con colores pastel según observación/incidencia
+                incid_low = incid.lower()
+                if "jornada parcial" in incid_low or "medio día" in incid_low:
+                    cell.fill = fill_jornada_parcial
+                elif "cambio de turno" in incid_low or "relevo" in incid_low:
+                    cell.fill = fill_cambio_turno
+                elif "falta marcación de salida" in incid_low or "sin registro de entrada" in incid_low:
+                    cell.fill = fill_incidencia
+
                 # Formato de celda DNI como Texto '@'
                 if c_idx == 1:
                     cell.number_format = '@'
