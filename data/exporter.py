@@ -123,7 +123,7 @@ def exportar_asistencia_excel(
 
     # Banner Subtítulo (Fila 2)
     ws.row_dimensions[2].height = 20
-    ws.merge_cells("A2:W2")
+    ws.merge_cells("A2:V2")
     ws["A2"] = f"GZG Minerales | Período: {f_min} a {f_max} | Incluye Entrada, Salida, Inicio H.E. y Fin H.E."
     ws["A2"].fill = fill_banner_sub
     ws["A2"].font = font_banner_sub
@@ -132,7 +132,7 @@ def exportar_asistencia_excel(
     ws.row_dimensions[3].height = 10
     ws.append([])  # Fila 3 vacía de separación
 
-    # Encabezados de Columna (Fila 4 - 23 columnas sin punto de control)
+    # Encabezados de Columna (Fila 4 - 22 columnas)
     ws.row_dimensions[4].height = 28
     headers = [
         "DNI", "Apellidos", "Nombres", "Departamento", "Posición",
@@ -141,7 +141,7 @@ def exportar_asistencia_excel(
         "Fecha Inicio H.E.", "Hora Inicio H.E.",
         "Fecha Fin H.E.", "Hora Fin H.E.",
         "Horas Trabajadas (HH:MM)", "Tardanza (HH:MM)", "Exceso Jornada (HH:MM)", "Horas Extras (HH:MM)",
-        "Método Verificación", "Tipo Registro", "Observación / Incidencias"
+        "Tipo Registro", "Observación / Incidencias"
     ]
 
     ws.append(headers)  # Fila 4
@@ -150,19 +150,6 @@ def exportar_asistencia_excel(
         cell.fill = fill_header
         cell.font = font_header
         cell.alignment = align_center
-
-    # Mapeo rápido de métodos de verificación por marcación si existe df_marcaciones
-    metodos_map = {}
-    if df_marcaciones is not None and not df_marcaciones.empty:
-        dni_c = 'ID' if 'ID' in df_marcaciones.columns else 'DNI'
-        fecha_c = 'Fecha' if 'Fecha' in df_marcaciones.columns else 'FECHA'
-        met_c = 'Método de verificación' if 'Método de verificación' in df_marcaciones.columns else 'METODO'
-        if dni_c in df_marcaciones.columns and fecha_c in df_marcaciones.columns and met_c in df_marcaciones.columns:
-            for _, m_row in df_marcaciones.iterrows():
-                k = (str(m_row[dni_c]).strip(), str(m_row[fecha_c]).strip())
-                val_met = str(m_row[met_c]).strip()
-                if val_met and val_met != '--':
-                    metodos_map[k] = val_met
 
     # Escribir filas procesadas
     if df_asistencia is not None and not df_asistencia.empty:
@@ -200,7 +187,6 @@ def exportar_asistencia_excel(
             exc = format_hhmm_cell(row.get('EXCESO JORNADA (HH:MM)', row.get('EXCESO JORNADA', '00:00')), is_hours_float=False)
             he = format_hhmm_cell(row.get('TOTAL HORAS ADICIONALES (HH:MM)', row.get('TOTAL HORAS ADICIONALES', '00:00')), is_hours_float=False)
 
-            metodo = metodos_map.get((dni, fecha_t), "Huella dactilar")
             incid = str(row.get('INCIDENCIAS', '')).strip()
 
             tipo_reg = "Normal"
@@ -216,7 +202,7 @@ def exportar_asistencia_excel(
                 f_ini_he, h_ini_he,
                 f_fin_he, h_fin_he,
                 h_trab, tard, exc, he,
-                metodo, tipo_reg, incid
+                tipo_reg, incid
             ])
 
             # Colores pastel de sombreado
@@ -227,11 +213,11 @@ def exportar_asistencia_excel(
             # Aplicar bordes, fuente, alineaciones y sombreado a la nueva fila
             current_row = ws.max_row
             ws.row_dimensions[current_row].height = 20
-            for c_idx in range(1, 24):
+            for c_idx in range(1, 23):
                 cell = ws.cell(row=current_row, column=c_idx)
                 cell.font = font_data
                 cell.border = thin_border
-                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 23) else align_left
+                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 22) else align_left
                 
                 # Resaltado con colores pastel según observación/incidencia
                 incid_low = incid.lower()
@@ -246,7 +232,7 @@ def exportar_asistencia_excel(
                 if c_idx == 1:
                     cell.number_format = '@'
 
-    # Anchos de columna holgados y proporcionales (23 columnas)
+    # Anchos de columna holgados y proporcionales (22 columnas)
     PROPORTIONAL_WIDTHS = {
         1: 15,   # DNI
         2: 26,   # Apellidos
@@ -268,9 +254,8 @@ def exportar_asistencia_excel(
         18: 18,  # Tardanza (HH:MM)
         19: 22,  # Exceso Jornada (HH:MM)
         20: 20,  # Horas Extras (HH:MM)
-        21: 22,  # Método Verificación
-        22: 22,  # Tipo Registro
-        23: 48   # Observación / Incidencias
+        21: 22,  # Tipo Registro
+        22: 48   # Observación / Incidencias
     }
 
     for col_idx, width in PROPORTIONAL_WIDTHS.items():
