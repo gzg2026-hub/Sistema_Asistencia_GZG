@@ -274,21 +274,28 @@ def procesar_y_exportar_padron(excel_raw_path: str):
     for col_idx, width in widths.items():
         ws.column_dimensions[get_column_letter(col_idx)].width = width
 
-    out_path = os.path.join(CARPETA_DATA_PROCESADA, "Padron_Trabajadores_GZG.xlsx")
+    # El padrón se guarda EXCLUSIVAMENTE en la carpeta raíz del proyecto
     root_path = os.path.join(ROOT_DIR, "Padron_Trabajadores_GZG.xlsx")
+    old_data_proc_path = os.path.join(CARPETA_DATA_PROCESADA, "Padron_Trabajadores_GZG.xlsx")
+    
+    # Intentar eliminar del directorio data_procesada si existiera
+    if os.path.exists(old_data_proc_path):
+        try:
+            os.remove(old_data_proc_path)
+            print(f"[OK] Eliminado Padrón antiguo de data_procesada: {old_data_proc_path}")
+        except Exception as e:
+            print(f"[Warn] No se pudo borrar de data_procesada (en uso): {e}")
+
     try:
-        wb.save(out_path)
-        import shutil
-        shutil.copy2(out_path, root_path)
-        print(f"[OK] Padrón copiado a la raíz del proyecto: {root_path}")
+        wb.save(root_path)
+        print(f"[OK] Padrón Oficial guardado en la raíz del proyecto: {root_path}")
     except PermissionError:
         timestamp_str = datetime.datetime.now().strftime("%H%M%S")
-        out_path = os.path.join(CARPETA_DATA_PROCESADA, f"Padron_Trabajadores_GZG_{timestamp_str}.xlsx")
-        wb.save(out_path)
-        print(f"[Warn] Archivo en uso. Guardado como: {out_path}")
+        root_path = os.path.join(ROOT_DIR, f"Padron_Trabajadores_GZG_{timestamp_str}.xlsx")
+        wb.save(root_path)
+        print(f"[Warn] Archivo en uso. Guardado en la raíz como: {root_path}")
 
-    print(f"[OK] Reporte elegante de personal guardado en: {out_path}")
-    return out_path
+    return root_path
 
 
 if __name__ == "__main__":
