@@ -154,7 +154,7 @@ def exportar_asistencia_excel(
     ws.append(headers)  # Fila 4
 
     for c_idx, cell in enumerate(ws[4], 1):
-        if c_idx in (17, 18, 19, 20): # Las 4 columnas de cálculo (Horas de Turno, Exceso de Turno, Horas Extras, Total de Horas Adicionales)
+        if c_idx >= 17:  # Columnas 17 a 23 (Q a W: Horas de Turno, Exceso de Turno, Horas Extras, Total de Horas Adicionales, Tardanza, Tipo Registro, Observación / Incidencias)
             cell.fill = fill_header_calc
             cell.font = font_header_calc
         else:
