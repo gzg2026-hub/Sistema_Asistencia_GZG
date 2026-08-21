@@ -545,23 +545,23 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             # 4. Calcular Tardanza (Punto 3: Sin tardanza falsa en Media Jornada)
             tardanza_min = calcular_tardanza(horario, entrada, config, es_media_jornada=es_media_jornada)
             if tardanza_min > 0:
-                incidencias_list.append(f"Tardanza ({tardanza_min} min)")
+                incidencias_list.append(f"Tardanza ({format_hhmm_str(tardanza_min, is_hours_float=False)})")
 
-            # 5. Calcular Salida Anticipada
+            # 5. Calcular Salida Anticipada (formato HH:MM)
             salida_ant_min = calcular_salida_anticipada(horario, salida, entrada, config)
             if salida_ant_min > 0 and not es_media_jornada:
-                incidencias_list.append(f"Salida anticipada ({salida_ant_min} min)")
+                incidencias_list.append(f"Salida anticipada ({format_hhmm_str(salida_ant_min, is_hours_float=False)})")
 
-            # 6. Exceso de Jornada (Punto 2)
+            # 6. Exceso de Jornada (formato HH:MM)
             exceso_jornada_min = calcular_exceso_jornada(horario, salida, entrada, config) if entrada is not None else 0
             if exceso_jornada_min > config.max_exceso_jornada_min:
-                incidencias_list.append(f"Exceso de jornada ({exceso_jornada_min} min)")
+                incidencias_list.append(f"Exceso de jornada ({format_hhmm_str(exceso_jornada_min, is_hours_float=False)})")
 
             total_horas_adicionales_min = exceso_jornada_min + he_explicita_total_min
 
-            # Punto 4: Si hay Horas Extras en Columna T, colocar observación explícita
-            if total_horas_adicionales_min > 0:
-                incidencias_list.append(f"Horas extras ({format_hhmm_str(total_horas_adicionales_min, is_hours_float=False)})")
+            # Comentario de Horas Extras EXCLUSIVO para marcaciones explícitas con los botones del biométrico (format HH:MM)
+            if he_explicita_total_min > 0:
+                incidencias_list.append(f"Horas extras ({format_hhmm_str(he_explicita_total_min, is_hours_float=False)})")
             
             incidencias_str = ", ".join(incidencias_list) if incidencias_list else ""
             
