@@ -102,9 +102,14 @@ def exportar_asistencia_excel(
     font_banner_sub = Font(name="Calibri", size=10, italic=True, bold=True, color="1F4E78")
 
     fill_header = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-    fill_header_calc_3 = PatternFill(start_color="2F5597", end_color="2F5597", fill_type="solid")   # Primeras 3 columnas de cálculo (Horas de Turno, Exceso de Turno, Horas Extras)
-    fill_header_calc_tot = PatternFill(start_color="C65911", end_color="C65911", fill_type="solid") # Última columna de cálculo (Total de Horas Adicionales)
     font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+
+    # Estilos ejecutivos pastel para columnas de cálculo (Fila 4)
+    fill_header_calc_3 = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")     # Azul Hielo Pastel (Horas de Turno, Exceso de Turno, Horas Extras)
+    font_header_calc_3 = Font(name="Calibri", size=10, bold=True, color="1F4E78")                    # Texto Azul Marino Oscuro
+
+    fill_header_calc_tot = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")   # Dorado/Crema Pastel (Total de Horas Adicionales)
+    font_header_calc_tot = Font(name="Calibri", size=10, bold=True, color="833C0C")                  # Texto Marrón / Bronce Oscuro
 
     font_data = Font(name="Calibri", size=10)
 
@@ -154,11 +159,13 @@ def exportar_asistencia_excel(
     for c_idx, cell in enumerate(ws[4], 1):
         if c_idx in (17, 18, 19):   # Primeras 3 columnas de cálculo (Horas de Turno, Exceso de Turno, Horas Extras)
             cell.fill = fill_header_calc_3
+            cell.font = font_header_calc_3
         elif c_idx == 20:            # Última columna de cálculo (Total de Horas Adicionales)
             cell.fill = fill_header_calc_tot
+            cell.font = font_header_calc_tot
         else:
             cell.fill = fill_header
-        cell.font = font_header
+            cell.font = font_header
         cell.alignment = align_center
 
     # Escribir filas procesadas
