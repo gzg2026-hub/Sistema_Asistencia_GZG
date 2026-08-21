@@ -13,7 +13,6 @@ from data.exporter import exportar_asistencia_excel
 raw_dir = os.path.join(PROJECT_ROOT, "downloads", "data_cruda")
 raw_files = [os.path.join(raw_dir, f) for f in os.listdir(raw_dir) if f.endswith(".xlsx") and not f.startswith("~$")]
 
-# Encontrar el archivo crudo más reciente que tenga datos
 valid_raw_file = None
 for rf in sorted(raw_files, key=os.path.getmtime, reverse=True):
     df_temp = pd.read_excel(rf)
@@ -43,6 +42,15 @@ fecha_inicio = "2026-08-17"
 fecha_hoy = datetime.datetime.now().strftime("%Y-%m-%d")
 ts_str = datetime.datetime.now().strftime("%H%M%S")
 
+root_excel_path = os.path.join(PROJECT_ROOT, f"Reporte_Asistencia_GZG_{fecha_inicio}_al_{fecha_hoy}.xlsx")
+try:
+    with open(root_excel_path, "wb") as f:
+        f.write(excel_bytes)
+except PermissionError:
+    root_excel_path = os.path.join(PROJECT_ROOT, f"Reporte_Asistencia_GZG_{fecha_inicio}_al_{fecha_hoy}_{ts_str}.xlsx")
+    with open(root_excel_path, "wb") as f:
+        f.write(excel_bytes)
+
 carpeta_proc = os.path.join(PROJECT_ROOT, "downloads", "data_procesada")
 proc_excel_path = os.path.join(carpeta_proc, f"Reporte_Asistencia_GZG_{fecha_inicio}_al_{fecha_hoy}_{ts_str}.xlsx")
 with open(proc_excel_path, "wb") as f:
@@ -52,4 +60,4 @@ conn.close()
 
 print(f"=== PROCESAMIENTO COMPLETADO EXITOSAMENTE ===")
 print(f"Filas de asistencia procesadas: {len(df_asist)}")
-print(f"Reporte procesado guardado en: {proc_excel_path}")
+print(f"Reporte guardado en carpeta raíz: {root_excel_path}")
