@@ -593,9 +593,9 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 if exceso_jornada_min_reporte >= 30:
                     incidencias_list.append(f"Exceso de Jornada ({format_hhmm_str(exceso_jornada_min_reporte, is_hours_float=False)})")
 
-                # 3. Jornada Parcial (Punto 3: Cambio de guardia (Medio día) (hh:mm))
+                # 3. Jornada Parcial (Medio día) (hh:mm) en Observación
                 if es_media_jornada:
-                    incidencias_list.append(f"Cambio de guardia (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
+                    incidencias_list.append(f"Jornada parcial (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
 
                 # 4. Salida Anticipada
                 if salida_ant_min > 0 and not es_media_jornada:
@@ -631,7 +631,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 elif entrada and not salida:
                     tipo_registro = "Salida pendiente"
                 elif es_media_jornada:
-                    tipo_registro = "Jornada parcial"
+                    tipo_registro = "Cambio de guardia"
                 elif es_cambio_guardia:
                     tipo_registro = "Cambio de guardia"
                 elif salida_ant_min > 0:
