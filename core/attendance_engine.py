@@ -51,22 +51,20 @@ def detectar_horario(hora_ref: time, is_salida_only: bool = False, config: Atten
 def calcular_tardanza(horario: str, hora_entrada: time, config: AttendanceConfig, es_media_jornada: bool = False) -> int:
     """
     Tardanza se calcula en minutos pasados los 15 minutos de tolerancia.
-    Si es media jornada / jornada parcial, se calcula respecto a 07:00 o 13:00 según corresponda.
+    Mapea correctamente las entradas de relevo (05:00, 17:00) y media jornada tarde (13:00).
     """
     if hora_entrada is None:
         return 0
     
     ent_sec = time_to_seconds(hora_entrada)
 
-    if es_media_jornada:
-        if ent_sec <= 13 * 3600 + 15 * 60: # Entrada para media jornada de la tarde (13:00)
-            hora_prog = time(13, 0) if ent_sec >= 11 * 3600 else time(7, 0)
-        else:
-            hora_prog = time(13, 0)
-    elif 4 * 3600 <= ent_sec <= 6 * 3600: # Cambio de guardia 05:00
+    # Evaluar horario programado de inicio según el rango de marcación real
+    if 4 * 3600 <= ent_sec <= 6 * 3600: # Relevo 05:00 AM
         hora_prog = time(5, 0)
-    elif 16 * 3600 <= ent_sec <= 18 * 3600: # Cambio de guardia 17:00
+    elif 16 * 3600 <= ent_sec <= 18 * 3600: # Relevo 17:00 PM (Caso Manuel Bermeo 16:54 PM)
         hora_prog = time(17, 0)
+    elif es_media_jornada and 11 * 3600 <= ent_sec <= 14 * 3600: # Media jornada tarde 13:00
+        hora_prog = time(13, 0)
     else:
         hora_prog = time(7, 0) if horario == "DIA" else time(19, 0)
 

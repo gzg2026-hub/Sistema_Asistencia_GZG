@@ -243,7 +243,7 @@ def exportar_asistencia_excel(
                 comb_check = (tipo_reg + " " + incid).lower()
                 if "jornada parcial" in comb_check or "medio día" in comb_check or "media jornada" in comb_check or "cambio de guardia" in comb_check or "relevo" in comb_check:
                     cell.fill = fill_cambio_turno
-                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check:
+                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "salida anticipada" in comb_check:
                     cell.fill = fill_incidencia
 
                 # Formato de celda DNI como Texto '@'
