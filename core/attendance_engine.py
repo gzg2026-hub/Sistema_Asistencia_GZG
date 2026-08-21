@@ -373,21 +373,24 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             he_explicita_total_min = 0
             incidencias_list = []
 
-            # 1. Detectar entradas múltiples / duplicadas dentro del mismo bloque
+            # 1. Detectar entradas múltiples / duplicadas dentro del mismo bloque (Solo en intervalos cortos de <= 15 min)
             entradas_rows = [
                 r['Hora_Clean'] for _, r in current_block.iterrows()
                 if 'entrada' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
             ]
+            if entradas_rows:
+                entradas_rows.sort(key=lambda t: time_to_seconds(t))
         
-            if not entradas_rows and len(times) > 1:
-                first_sec = time_to_seconds(times[0])
-                entradas_rows = [t for t in times if 0 <= (time_to_seconds(t) - first_sec) <= 1800 and t != times[-1]]
-
             tiene_entrada_duplicada = False
             hora_entrada_duplicada_str = ""
             if len(entradas_rows) > 1:
-                tiene_entrada_duplicada = True
-                hora_entrada_duplicada_str = ", ".join([t.strftime('%H:%M') for t in entradas_rows[1:]])
+                duplicadas_cercanas = [
+                    t for t in entradas_rows[1:] 
+                    if 0 < (time_to_seconds(t) - time_to_seconds(entradas_rows[0])) <= 900 # <= 15 minutos
+                ]
+                if duplicadas_cercanas:
+                    tiene_entrada_duplicada = True
+                    hora_entrada_duplicada_str = ", ".join([t.strftime('%H:%M') for t in duplicadas_cercanas])
 
             # 2. Detectar entrada, salida principal y marcaciones de Horas Extra
             has_explicit_entrada = False
@@ -575,13 +578,13 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             if exceso_jornada_min_reporte >= 30:
                 incidencias_list.append(f"Exceso de jornada ({format_hhmm_str(exceso_jornada_min_reporte, is_hours_float=False)})")
 
-            # 3. Jornada Parcial (Formato exacto pedido: Jornada Parcial (hh:mm))
+            # 3. Jornada Parcial (Punto 2: Formato exacto pedido: Jornada parcial (Medio día) (hh:mm))
             if es_media_jornada:
-                incidencias_list.append(f"Jornada Parcial ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
+                incidencias_list.append(f"Jornada parcial (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
 
-            # 4. Cambio de Guardia / Relevo
+            # 4. Cambio de Guardia (Punto 1: Solo la palabra Cambio de guardia, sin relevo)
             if es_cambio_guardia:
-                incidencias_list.append("Cambio de guardia / Relevo cuadrilla")
+                incidencias_list.append("Cambio de guardia")
 
             # 5. Salida Anticipada
             if salida_ant_min > 0 and not es_media_jornada:
@@ -591,7 +594,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             if marcacion_faltante_str:
                 incidencias_list.append(marcacion_faltante_str)
 
-            # 7. Entrada Duplicada (al final antes de tardanza)
+            # 7. Entrada Duplicada (al final antes de tardanza, solo si es intervalo corto)
             if tiene_entrada_duplicada and hora_entrada_duplicada_str:
                 incidencias_list.append(f"Entrada duplicada ({hora_entrada_duplicada_str})")
 
@@ -618,9 +621,9 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             elif entrada and not salida:
                 tipo_registro = "Salida pendiente"
             elif es_media_jornada:
-                tipo_registro = "Jornada parcial (Medio día)"
+                tipo_registro = "Jornada parcial"
             elif es_cambio_guardia:
-                tipo_registro = "Cambio de guardia / Relevo"
+                tipo_registro = "Cambio de guardia"
             elif salida_ant_min > 0:
                 tipo_registro = "Salida anticipada"
             else:
