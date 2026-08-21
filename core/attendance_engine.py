@@ -589,13 +589,13 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 if he_explicita_total_min > 0:
                     incidencias_list.append(f"Horas extras ({format_hhmm_str(he_explicita_total_min, is_hours_float=False)})")
 
-                # 2. Exceso de jornada (si es >= 30 min)
+                # 2. Exceso de Jornada (si es >= 30 min)
                 if exceso_jornada_min_reporte >= 30:
-                    incidencias_list.append(f"Exceso de jornada ({format_hhmm_str(exceso_jornada_min_reporte, is_hours_float=False)})")
+                    incidencias_list.append(f"Exceso de Jornada ({format_hhmm_str(exceso_jornada_min_reporte, is_hours_float=False)})")
 
-                # 3. Jornada Parcial
+                # 3. Jornada Parcial (Punto 3: Cambio de guardia (Medio día) (hh:mm))
                 if es_media_jornada:
-                    incidencias_list.append(f"Jornada parcial (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
+                    incidencias_list.append(f"Cambio de guardia (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
 
                 # 4. Salida Anticipada
                 if salida_ant_min > 0 and not es_media_jornada:
@@ -621,12 +621,11 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 has_exceso = exceso_jornada_min_reporte >= 30
                 has_he = he_explicita_total_min > 0
 
-                if has_exceso and has_he:
-                    tipo_registro = "Exceso de Jornada/Horas Extras"
-                elif has_exceso:
-                    tipo_registro = "Exceso de jornada"
-                elif has_he:
+                # Punto 2: Si tiene exceso de jornada y horas extras a la vez, solo considerar Horas extras
+                if has_he:
                     tipo_registro = "Horas extras"
+                elif has_exceso:
+                    tipo_registro = "Exceso de Jornada"
                 elif not entrada and salida:
                     tipo_registro = "Entrada pendiente"
                 elif entrada and not salida:
