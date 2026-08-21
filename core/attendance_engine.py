@@ -498,16 +498,26 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     except Exception as e:
                         pass
 
-            # Cálculo de horas trabajadas REALES entre la marcación de entrada y la marcación de salida
+            # Cálculo de horas trabajadas (si marca antes de las 07:00/19:00 o 05:00/17:00, considerar inicio oficial de turno)
             horas_trabajadas = 0.0
             if entrada and salida:
                 e_sec = time_to_seconds(entrada)
                 s_sec = time_to_seconds(salida)
 
-                if fecha_salida != fecha_entrada or s_sec < e_sec:
-                    dur_sec = (86400 - e_sec) + s_sec
+                e_effective_sec = e_sec
+                if 6 * 3600 <= e_sec < 7 * 3600: # Entró antes de las 07:00 AM para Turno Día
+                    e_effective_sec = 7 * 3600
+                elif 18 * 3600 <= e_sec < 19 * 3600: # Entró antes de las 19:00 PM para Turno Noche
+                    e_effective_sec = 19 * 3600
+                elif 4 * 3600 <= e_sec < 5 * 3600: # Relevo 05:00 AM
+                    e_effective_sec = 5 * 3600
+                elif 16 * 3600 <= e_sec < 17 * 3600: # Relevo 17:00 PM
+                    e_effective_sec = 17 * 3600
+
+                if fecha_salida != fecha_entrada or s_sec < e_effective_sec:
+                    dur_sec = (86400 - e_effective_sec) + s_sec
                 else:
-                    dur_sec = s_sec - e_sec
+                    dur_sec = s_sec - e_effective_sec
                 horas_trabajadas = round(dur_sec / 3600.0, 2)
 
             # Identificar Media Jornada / Jornada Parcial (Punto 3 & Punto 5)
