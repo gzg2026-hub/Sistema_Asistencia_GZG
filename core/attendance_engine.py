@@ -582,9 +582,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             if es_media_jornada:
                 incidencias_list.append(f"Jornada parcial (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
 
-            # 4. Cambio de Guardia (Punto 1: Solo la palabra Cambio de guardia, sin relevo)
-            if es_cambio_guardia:
-                incidencias_list.append("Cambio de guardia")
+            # 4. Cambio de Guardia (Se omitirá en Observación porque ya figura en Tipo Registro - Columna U)
+            # (Solamente figurarán en Observación si existen incidencias adicionales como tardanzas o HE)
 
             # 5. Salida Anticipada
             if salida_ant_min > 0 and not es_media_jornada:
