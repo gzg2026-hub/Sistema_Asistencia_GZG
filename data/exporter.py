@@ -25,21 +25,21 @@ DIAS_SEMANA = {
 
 
 def format_date_ddmmyyyy(date_val) -> str:
-    """Convierte cualquier representación de fecha a formato latino DD-MM-YYYY (ej. 01-08-2026)."""
-    if pd.isna(date_val) or date_val is None or date_val == "":
-        return ""
+    """Convierte cualquier representación de fecha a formato DD/MM/YYYY (ej. 18/08/2026)."""
+    if pd.isna(date_val) or date_val is None or date_val == "" or str(date_val).strip() == "-":
+        return "-" if str(date_val).strip() == "-" else ""
     val_str = str(date_val).strip().split(' ')[0]
     try:
         if '-' in val_str:
             parts = val_str.split('-')
-            if len(parts[0]) == 4:  # YYYY-MM-DD -> DD-MM-YYYY
-                return f"{parts[2]:0>2}-{parts[1]:0>2}-{parts[0]}"
+            if len(parts[0]) == 4:  # YYYY-MM-DD -> DD/MM/YYYY
+                return f"{int(parts[2]):02d}/{int(parts[1]):02d}/{parts[0]}"
             elif len(parts[2]) == 4:  # DD-MM-YYYY
-                return f"{parts[0]:0>2}-{parts[1]:0>2}-{parts[2]}"
+                return f"{int(parts[0]):02d}/{int(parts[1]):02d}/{parts[2]}"
         elif '/' in val_str:
             parts = val_str.split('/')
             if len(parts[2]) == 4:  # DD/MM/YYYY
-                return f"{parts[0]:0>2}-{parts[1]:0>2}-{parts[2]}"
+                return f"{int(parts[0]):02d}/{int(parts[1]):02d}/{parts[2]}"
     except Exception:
         pass
     return val_str
@@ -62,6 +62,9 @@ def format_hhmm_cell(val, is_hours_float=False) -> str:
         return f"{h:02d}:{m:02d}"
     except Exception:
         return "00:00"
+
+# ... (resto de funciones)
+
 
 
 @st.cache_data(ttl=60, show_spinner=False)
@@ -187,20 +190,21 @@ def exportar_asistencia_excel(
             exc = format_hhmm_cell(row.get('EXCESO JORNADA (HH:MM)', row.get('EXCESO JORNADA', '00:00')), is_hours_float=False)
             he = format_hhmm_cell(row.get('TOTAL HORAS ADICIONALES (HH:MM)', row.get('TOTAL HORAS ADICIONALES', '00:00')), is_hours_float=False)
 
-            incid = str(row.get('INCIDENCIAS', '')).strip()
+            fecha_t_formatted = format_date_ddmmyyyy(fecha_t)
+            f_ent_formatted = format_date_ddmmyyyy(f_ent)
+            f_sal_formatted = format_date_ddmmyyyy(f_sal)
+            f_ini_he_formatted = format_date_ddmmyyyy(f_ini_he)
+            f_fin_he_formatted = format_date_ddmmyyyy(f_fin_he)
 
-            tipo_reg = "Normal"
-            if "duplicad" in incid.lower():
-                tipo_reg = "Duplicado (Entrada)" if "entrada" in incid.lower() else "Duplicado (Salida)"
-            elif "sin registro de entrada" in incid.lower():
-                tipo_reg = "Salida sin entrada"
+            incid = str(row.get('INCIDENCIAS', '')).strip()
+            tipo_reg = str(row.get('TIPO_REGISTRO', 'Normal')).strip()
 
             ws.append([
                 dni, apellidos, nombres, dept, posicion,
-                fecha_t, dia_str, turno, f_ent, h_ent,
-                f_sal, h_sal,
-                f_ini_he, h_ini_he,
-                f_fin_he, h_fin_he,
+                fecha_t_formatted, dia_str, turno, f_ent_formatted, h_ent,
+                f_sal_formatted, h_sal,
+                f_ini_he_formatted, h_ini_he,
+                f_fin_he_formatted, h_fin_he,
                 h_trab, tard, exc, he,
                 tipo_reg, incid
             ])
@@ -219,13 +223,13 @@ def exportar_asistencia_excel(
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 22) else align_left
                 
-                # Resaltado con colores pastel según observación/incidencia
-                incid_low = incid.lower()
-                if "jornada parcial" in incid_low or "medio día" in incid_low:
+                # Resaltado con colores pastel según tipo de registro u observación
+                comb_check = (tipo_reg + " " + incid).lower()
+                if "jornada parcial" in comb_check or "medio día" in comb_check:
                     cell.fill = fill_jornada_parcial
-                elif "cambio de turno" in incid_low or "relevo" in incid_low:
+                elif "cambio de guardia" in comb_check or "relevo" in comb_check:
                     cell.fill = fill_cambio_turno
-                elif "falta marcación de salida" in incid_low or "sin registro de entrada" in incid_low:
+                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "corrección" in comb_check:
                     cell.fill = fill_incidencia
 
                 # Formato de celda DNI como Texto '@'
