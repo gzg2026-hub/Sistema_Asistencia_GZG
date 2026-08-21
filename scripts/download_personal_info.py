@@ -163,6 +163,19 @@ def procesar_y_exportar_padron(excel_raw_path: str):
     df['FECHA_INICIO'] = df.get('FECHA_INICIO', '').fillna('').astype(str).str.strip()
     df['FECHA_FIN'] = df.get('FECHA_FIN', '').fillna('').astype(str).str.strip()
 
+    # Asegurar la presencia de JOSE ORLANDO MONCADA REJAS (DNI 46181231) si no vino en el export de personal
+    if '46181231' not in df['DNI'].values:
+        df_moncada = pd.DataFrame([{
+            'DNI': '46181231',
+            'APELLIDOS': 'MONCADA REJAS',
+            'NOMBRES': 'JOSE ORLANDO',
+            'AREA': 'Oper&Mtto',
+            'CARGO': 'Operativo',
+            'FECHA_INICIO': '',
+            'FECHA_FIN': ''
+        }])
+        df = pd.concat([df, df_moncada], ignore_index=True)
+
     df.sort_values(by=['APELLIDOS', 'NOMBRES'], inplace=True)
 
     # 1. Actualizar Base de Datos SQLite
@@ -262,8 +275,12 @@ def procesar_y_exportar_padron(excel_raw_path: str):
         ws.column_dimensions[get_column_letter(col_idx)].width = width
 
     out_path = os.path.join(CARPETA_DATA_PROCESADA, "Padron_Trabajadores_GZG.xlsx")
+    root_path = os.path.join(ROOT_DIR, "Padron_Trabajadores_GZG.xlsx")
     try:
         wb.save(out_path)
+        import shutil
+        shutil.copy2(out_path, root_path)
+        print(f"[OK] Padrón copiado a la raíz del proyecto: {root_path}")
     except PermissionError:
         timestamp_str = datetime.datetime.now().strftime("%H%M%S")
         out_path = os.path.join(CARPETA_DATA_PROCESADA, f"Padron_Trabajadores_GZG_{timestamp_str}.xlsx")

@@ -223,13 +223,11 @@ def exportar_asistencia_excel(
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 22) else align_left
                 
-                # Resaltado con colores pastel según tipo de registro u observación
+                # Resaltado con colores pastel según tipo de registro u observación (Punto 10: Cambio de guardia, relevo o media jornada usan el mismo color pastel)
                 comb_check = (tipo_reg + " " + incid).lower()
-                if "jornada parcial" in comb_check or "medio día" in comb_check:
-                    cell.fill = fill_jornada_parcial
-                elif "cambio de guardia" in comb_check or "relevo" in comb_check:
+                if "jornada parcial" in comb_check or "medio día" in comb_check or "media jornada" in comb_check or "cambio de guardia" in comb_check or "relevo" in comb_check:
                     cell.fill = fill_cambio_turno
-                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "corrección" in comb_check:
+                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check:
                     cell.fill = fill_incidencia
 
                 # Formato de celda DNI como Texto '@'
