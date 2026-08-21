@@ -126,7 +126,7 @@ def exportar_asistencia_excel(
 
     # Banner Subtítulo (Fila 2)
     ws.row_dimensions[2].height = 20
-    ws.merge_cells("A2:V2")
+    ws.merge_cells("A2:W2")
     ws["A2"] = f"GZG Minerales | Período: {f_min} a {f_max} | Incluye Entrada, Salida, Inicio H.E. y Fin H.E."
     ws["A2"].fill = fill_banner_sub
     ws["A2"].font = font_banner_sub
@@ -135,16 +135,16 @@ def exportar_asistencia_excel(
     ws.row_dimensions[3].height = 10
     ws.append([])  # Fila 3 vacía de separación
 
-    # Encabezados de Columna (Fila 4 - 22 columnas)
+    # Encabezados de Columna (Fila 4 - 23 columnas: A a W)
     ws.row_dimensions[4].height = 28
     headers = [
         "DNI", "Apellidos", "Nombres", "Departamento", "Posición",
         "Fecha Turno", "Día", "Turno", "Fecha Entrada", "Hora Entrada",
         "Fecha Salida", "Hora Salida",
-        "Fecha Inicio H.E.", "Hora Inicio H.E.",
-        "Fecha Fin H.E.", "Hora Fin H.E.",
-        "Horas Trabajadas (hh:mm)", "Tardanza (hh:mm)", "Exceso Jornada (hh:mm)", "Horas Extras Totales (hh:mm)",
-        "Tipo Registro", "Observación / Incidencias"
+        "Fecha Inicio H.E.", "Inicio H.E.",
+        "Fecha Fin H.E.", "Fin H.E.",
+        "Horas de Turno", "Exceso de Turno", "Horas Extras", "Total de Horas Adicionales",
+        "Tardanza", "Tipo Registro", "Observación / Incidencias"
     ]
 
     ws.append(headers)  # Fila 4
@@ -189,22 +189,24 @@ def exportar_asistencia_excel(
             f_fin_he = str(row.get('FECHA_FIN_HE', '-')).strip()
             h_fin_he = str(row.get('HORA_FIN_HE', '-')).strip()
 
-            # Función flexible para extraer valores por nombres aproximados de columna (Punto 2)
+            # Función flexible para extraer valores por nombres aproximados de columna
             def get_row_val(row_obj, *keys):
                 for k in keys:
                     if k in row_obj and pd.notna(row_obj[k]):
                         return row_obj[k]
                 return '00:00'
 
-            val_trab = get_row_val(row, 'HORAS TRABAJADAS (hh:mm)', 'HORAS TRABAJADAS (HH:MM)', 'HORAS TRABAJADAS')
-            val_tard = get_row_val(row, 'TARDANZA (hh:mm)', 'TARDANZA (HH:MM)', 'TARDANZA (MIN)')
-            val_exc = get_row_val(row, 'EXCESO JORNADA (hh:mm)', 'EXCESO JORNADA (HH:MM)', 'EXCESO JORNADA')
-            val_he = get_row_val(row, 'HORAS EXTRAS TOTALES (hh:mm)', 'TOTAL HORAS ADICIONALES (hh:mm)', 'TOTAL HORAS ADICIONALES', 'HORAS EXTRAS (HH:MM)')
+            val_h_turno = get_row_val(row, 'HORAS DE TURNO (HH:MM)', 'HORAS DE TURNO (hh:mm)', 'HORAS TRABAJADAS (HH:MM)', 'HORAS TRABAJADAS')
+            val_exc_turno = get_row_val(row, 'EXCESO DE TURNO (HH:MM)', 'EXCESO DE TURNO (hh:mm)', 'EXCESO JORNADA (HH:MM)', 'EXCESO JORNADA')
+            val_he_explicita = get_row_val(row, 'HORAS EXTRAS (HH:MM)', 'HORAS EXTRAS (hh:mm)', 'HORAS EXTRAS')
+            val_tot_adic = get_row_val(row, 'TOTAL DE HORAS ADICIONALES (HH:MM)', 'TOTAL DE HORAS ADICIONALES (hh:mm)', 'TOTAL HORAS ADICIONALES', 'HORAS EXTRAS TOTALES (hh:mm)')
+            val_tard = get_row_val(row, 'TARDANZA (HH:MM)', 'TARDANZA (hh:mm)', 'TARDANZA (MIN)')
 
-            h_trab = format_hhmm_cell(val_trab, is_hours_float=True)
+            h_turno = format_hhmm_cell(val_h_turno, is_hours_float=True)
+            exc_turno = format_hhmm_cell(val_exc_turno, is_hours_float=False)
+            he_explicita = format_hhmm_cell(val_he_explicita, is_hours_float=False)
+            tot_adic = format_hhmm_cell(val_tot_adic, is_hours_float=False)
             tard = format_hhmm_cell(val_tard, is_hours_float=False)
-            exc = format_hhmm_cell(val_exc, is_hours_float=False)
-            he = format_hhmm_cell(val_he, is_hours_float=False)
 
             fecha_t_formatted = format_date_ddmmyyyy(fecha_t)
             f_ent_formatted = format_date_ddmmyyyy(f_ent)
@@ -217,12 +219,13 @@ def exportar_asistencia_excel(
 
             ws.append([
                 dni, apellidos, nombres, dept, posicion,
-                fecha_t_formatted, dia_str, turno, f_ent_formatted, h_ent,
+                fecha_t_formatted, dia_str, turno,
+                f_ent_formatted, h_ent,
                 f_sal_formatted, h_sal,
                 f_ini_he_formatted, h_ini_he,
                 f_fin_he_formatted, h_fin_he,
-                h_trab, tard, exc, he,
-                tipo_reg, incid
+                h_turno, exc_turno, he_explicita, tot_adic,
+                tard, tipo_reg, incid
             ])
 
             # Colores pastel de sombreado
@@ -230,14 +233,14 @@ def exportar_asistencia_excel(
             fill_cambio_turno = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")    # Azul Pastel
             fill_incidencia = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")      # Durazno Pastel
 
-            # Aplicar bordes, fuente, alineaciones y sombreado a la nueva fila
+            # Aplicar bordes, fuente, alineaciones y sombreado a la nueva fila (23 columnas: A a W)
             current_row = ws.max_row
             ws.row_dimensions[current_row].height = 20
-            for c_idx in range(1, 23):
+            for c_idx in range(1, 24):
                 cell = ws.cell(row=current_row, column=c_idx)
                 cell.font = font_data
                 cell.border = thin_border
-                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 22) else align_left
+                cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 23) else align_left
                 
                 # Resaltado con colores pastel según tipo de registro u observación (Jornada parcial = Azul pastel, Incidencias/Pendientes = Durazno pastel)
                 comb_check = (tipo_reg + " " + incid).lower()
@@ -250,7 +253,7 @@ def exportar_asistencia_excel(
                 if c_idx == 1:
                     cell.number_format = '@'
 
-    # Anchos de columna holgados y proporcionales (22 columnas)
+    # Anchos de columna holgados y proporcionales (23 columnas: A a W)
     PROPORTIONAL_WIDTHS = {
         1: 15,   # DNI
         2: 26,   # Apellidos
@@ -265,15 +268,16 @@ def exportar_asistencia_excel(
         11: 15,  # Fecha Salida
         12: 14,  # Hora Salida
         13: 16,  # Fecha Inicio H.E.
-        14: 15,  # Hora Inicio H.E.
+        14: 15,  # Inicio H.E.
         15: 16,  # Fecha Fin H.E.
-        16: 15,  # Hora Fin H.E.
-        17: 25,  # Horas Trabajadas (HH:MM)
-        18: 18,  # Tardanza (HH:MM)
-        19: 22,  # Exceso Jornada (HH:MM)
-        20: 20,  # Horas Extras (HH:MM)
-        21: 22,  # Tipo Registro
-        22: 48   # Observación / Incidencias
+        16: 15,  # Fin H.E.
+        17: 20,  # Horas de Turno
+        18: 20,  # Exceso de Turno
+        19: 18,  # Horas Extras
+        20: 25,  # Total de Horas Adicionales
+        21: 16,  # Tardanza
+        22: 22,  # Tipo Registro
+        23: 50   # Observación / Incidencias
     }
 
     for col_idx, width in PROPORTIONAL_WIDTHS.items():
