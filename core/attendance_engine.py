@@ -507,15 +507,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 e_sec = time_to_seconds(entrada)
                 s_sec = time_to_seconds(salida)
 
+                # Usar marcación REAL de entrada (sin forzar inicio oficial) para calcular el tiempo total transcurrido
                 e_effective_sec = e_sec
-                if 6 * 3600 <= e_sec < 7 * 3600:
-                    e_effective_sec = 7 * 3600
-                elif 18 * 3600 <= e_sec < 19 * 3600:
-                    e_effective_sec = 19 * 3600
-                elif 4 * 3600 <= e_sec < 5 * 3600:
-                    e_effective_sec = 5 * 3600
-                elif 16 * 3600 <= e_sec < 17 * 3600:
-                    e_effective_sec = 17 * 3600
 
                 if fecha_salida != fecha_entrada or s_sec < e_effective_sec:
                     dur_sec = (86400 - e_effective_sec) + s_sec
