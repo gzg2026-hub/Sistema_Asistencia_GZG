@@ -179,6 +179,10 @@ def exportar_asistencia_excel(
             f_ent = str(row.get('FECHA_ENTRADA', fecha_t if h_ent else '')).strip()
             f_sal = str(row.get('FECHA_SALIDA', fecha_t if h_sal else '')).strip()
 
+            # Regla Punto 9: Eliminar filas cuando la doble columna I (Fecha Entrada) y K (Fecha Salida) sean NAN o vacías
+            if (not f_ent or f_ent.lower() in ('nan', 'none', '', '-')) and (not f_sal or f_sal.lower() in ('nan', 'none', '', '-')) and not h_ent and not h_sal:
+                continue
+
             # Marcaciones H.E.
             f_ini_he = str(row.get('FECHA_INICIO_HE', '-')).strip()
             h_ini_he = str(row.get('HORA_INICIO_HE', '-')).strip()
