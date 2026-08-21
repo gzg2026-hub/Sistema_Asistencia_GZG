@@ -241,7 +241,7 @@ def exportar_asistencia_excel(
             fill_cambio_turno = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")    # Azul Pastel
             fill_incidencia = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")      # Durazno Pastel
 
-            # Aplicar bordes, fuente, alineaciones y sombreado a la nueva fila (23 columnas: A a W)
+            # Aplicar bordes, fuente, alineaciones a la nueva fila (23 columnas: A a W)
             current_row = ws.max_row
             ws.row_dimensions[current_row].height = 20
             for c_idx in range(1, 24):
@@ -250,10 +250,11 @@ def exportar_asistencia_excel(
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 23) else align_left
                 
-                # Resaltado con colores pastel según tipo de registro u observación (Jornada parcial = Azul pastel, Incidencias/Pendientes = Durazno pastel)
+                # Resaltado pastel exclusivamente para incidencias/pendencias (Pendiente, Falta, Sin registro, Salida anticipada).
+                # Cambio de guardia / Jornada parcial queda SIN RELLENO (sin sombreado).
                 comb_check = (tipo_reg + " " + incid).lower()
-                if "jornada parcial" in comb_check or "medio día" in comb_check or "media jornada" in comb_check:
-                    cell.fill = fill_cambio_turno
+                if "cambio de guardia" in comb_check or tipo_reg.lower() == "cambio de guardia":
+                    pass # Sin relleno para Cambio de guardia
                 elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "salida anticipada" in comb_check:
                     cell.fill = fill_incidencia
 
