@@ -9,7 +9,7 @@ class AttendanceConfig:
         hora_fin_noche: time = time(7, 0),
         tolerancia_entrada_min: int = 15,
         tolerancia_salida_min: int = 10,
-        max_exceso_jornada_min: int = 60,
+        max_exceso_jornada_min: int = 30, # Umbral mínimo de 30 min para considerar y mostrar exceso de jornada
         horas_minimas: float = 12.0,
         jornada_estandar_horas: float = 12.0
     ):

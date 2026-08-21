@@ -385,9 +385,11 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 first_sec = time_to_seconds(times[0])
                 entradas_rows = [t for t in times if 0 <= (time_to_seconds(t) - first_sec) <= 1800 and t != times[-1]]
 
+            tiene_entrada_duplicada = False
+            hora_entrada_duplicada_str = ""
             if len(entradas_rows) > 1:
-                h_dup_str = ", ".join([t.strftime('%H:%M') for t in entradas_rows[1:]])
-                incidencias_list.append(f"Entrada duplicada ({h_dup_str})")
+                tiene_entrada_duplicada = True
+                hora_entrada_duplicada_str = ", ".join([t.strftime('%H:%M') for t in entradas_rows[1:]])
 
             # 2. Detectar entrada, salida principal y marcaciones de Horas Extra
             has_explicit_entrada = False
@@ -556,24 +558,21 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     incidencias_list.append("Cambio de guardia / Relevo cuadrilla")
 
             # 3. Validar Marcación Faltante
+            marcacion_faltante_str = ""
             if entrada and not salida and len(times) == 1:
-                incidencias_list.append("Falta marcación de salida")
+                marcacion_faltante_str = "Falta marcación de salida"
             elif not entrada and salida:
-                incidencias_list.append(f"Salida sin registro de entrada previa ({salida.strftime('%H:%M')})")
+                marcacion_faltante_str = f"Salida sin registro de entrada previa ({salida.strftime('%H:%M')})"
 
             # 4. Calcular Tardanza
             tardanza_min = calcular_tardanza(horario, entrada, config, es_media_jornada=es_media_jornada)
-            if tardanza_min > 0:
-                incidencias_list.append(f"Tardanza ({format_hhmm_str(tardanza_min, is_hours_float=False)})")
 
-            # 5. Calcular Salida Anticipada (Punto 5: Sin salida anticipada falsa en cambio de guardia)
+            # 5. Calcular Salida Anticipada (Sin salida anticipada en cambio de guardia)
             salida_ant_min = calcular_salida_anticipada(horario, salida, entrada, config)
             if es_cambio_guardia:
                 salida_ant_min = 0
-            elif salida_ant_min > 0 and not es_media_jornada:
-                incidencias_list.append(f"Salida anticipada ({format_hhmm_str(salida_ant_min, is_hours_float=False)})")
 
-            # 6. Exceso de Jornada (Punto 3 & Punto 7: Horas trabajadas menos 12h, 0 en cambio de guardia)
+            # 6. Exceso de Jornada (Umbral mínimo de 30 min para considerar exceso)
             if es_cambio_guardia or es_media_jornada:
                 exceso_jornada_min = 0
             elif horas_trabajadas > 12.0:
@@ -581,15 +580,47 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             else:
                 exceso_jornada_min = 0
 
-            if exceso_jornada_min > config.max_exceso_jornada_min:
-                incidencias_list.append(f"Exceso de jornada ({format_hhmm_str(exceso_jornada_min, is_hours_float=False)})")
+            # Forzar umbral de 30 min para exceso de jornada
+            if exceso_jornada_min < 30:
+                exceso_jornada_min_reporte = 0
+            else:
+                exceso_jornada_min_reporte = exceso_jornada_min
 
             total_horas_adicionales_min = exceso_jornada_min + he_explicita_total_min
 
-            # Comentario de Horas Extras EXCLUSIVO para marcaciones explícitas con los botones del biométrico (format HH:MM)
+            # CONSTRUCCIÓN ORDENADA DE LA COLUMNA OBSERVACIÓN / INCIDENCIAS (PUNTO DE PRIORIDAD)
+            # 1. Horas extras explícitas (botones biométrico) - PRIMERO
             if he_explicita_total_min > 0:
                 incidencias_list.append(f"Horas extras ({format_hhmm_str(he_explicita_total_min, is_hours_float=False)})")
-            
+
+            # 2. Exceso de jornada (si es >= 30 min)
+            if exceso_jornada_min_reporte >= 30:
+                incidencias_list.append(f"Exceso de jornada ({format_hhmm_str(exceso_jornada_min_reporte, is_hours_float=False)})")
+
+            # 3. Jornada Parcial
+            if es_media_jornada:
+                incidencias_list.append(f"Jornada Parcial (Trabajo 6h - Medio Día: {horas_trabajadas}h)")
+
+            # 4. Cambio de Guardia / Relevo
+            if es_cambio_guardia:
+                incidencias_list.append("Cambio de guardia / Relevo cuadrilla")
+
+            # 5. Salida Anticipada
+            if salida_ant_min > 0 and not es_media_jornada:
+                incidencias_list.append(f"Salida anticipada ({format_hhmm_str(salida_ant_min, is_hours_float=False)})")
+
+            # 6. Marcación Faltante
+            if marcacion_faltante_str:
+                incidencias_list.append(marcacion_faltante_str)
+
+            # 7. Entrada Duplicada (al final antes de tardanza)
+            if tiene_entrada_duplicada and hora_entrada_duplicada_str:
+                incidencias_list.append(f"Entrada duplicada ({hora_entrada_duplicada_str})")
+
+            # 8. Tardanza (AL ÚLTIMO)
+            if tardanza_min > 0:
+                incidencias_list.append(f"Tardanza ({format_hhmm_str(tardanza_min, is_hours_float=False)})")
+
             incidencias_str = ", ".join(incidencias_list) if incidencias_list else ""
             
             # Clasificación de Tipo Registro (Columna U)
