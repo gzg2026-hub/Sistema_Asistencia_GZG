@@ -1,9 +1,13 @@
 import openpyxl
 
-wb = openpyxl.load_workbook(r"c:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\downloads\hikvision\Transacciones_2026-08-17_2026-08-17_162521.xlsx")
+report_path = r"c:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\Reporte_Asistencia_GZG_2026-08-17_al_2026-08-21.xlsx"
+wb = openpyxl.load_workbook(report_path)
 ws = wb.active
 
-for cell in ws[1]:
-    fill_color = cell.fill.start_color.rgb if cell.fill else "None"
-    font_color = cell.font.color.rgb if cell.font and cell.font.color else "None"
-    print(f"Cell {cell.coordinate}: Header='{cell.value}' | Fill={fill_color} | FontColor={font_color} | Bold={cell.font.bold}")
+print(f"=== VERIFICACION DE COLORES DE ENCABEZADO EN FILA 4 EN {report_path} ===")
+
+for col_idx in range(1, 24):
+    cell = ws.cell(row=4, column=col_idx)
+    header_name = cell.value
+    fill_color = cell.fill.start_color.rgb if cell.fill and cell.fill.start_color else "None"
+    print(f"  Col {col_idx:2d} ({openpyxl.utils.get_column_letter(col_idx)}): '{header_name}' -> RGB Fill: {fill_color}")
