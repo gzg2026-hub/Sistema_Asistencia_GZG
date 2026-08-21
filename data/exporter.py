@@ -143,7 +143,7 @@ def exportar_asistencia_excel(
         "Fecha Salida", "Hora Salida",
         "Fecha Inicio H.E.", "Hora Inicio H.E.",
         "Fecha Fin H.E.", "Hora Fin H.E.",
-        "Horas Trabajadas (HH:MM)", "Tardanza (HH:MM)", "Exceso Jornada (HH:MM)", "Horas Extras (HH:MM)",
+        "Horas Trabajadas (hh:mm)", "Tardanza (hh:mm)", "Exceso Jornada (hh:mm)", "Horas Extras Totales (hh:mm)",
         "Tipo Registro", "Observación / Incidencias"
     ]
 
@@ -189,10 +189,22 @@ def exportar_asistencia_excel(
             f_fin_he = str(row.get('FECHA_FIN_HE', '-')).strip()
             h_fin_he = str(row.get('HORA_FIN_HE', '-')).strip()
 
-            h_trab = format_hhmm_cell(row.get('HORAS TRABAJADAS (HH:MM)', row.get('HORAS TRABAJADAS', '00:00')), is_hours_float=True)
-            tard = format_hhmm_cell(row.get('TARDANZA (HH:MM)', row.get('TARDANZA (MIN)', '00:00')), is_hours_float=False)
-            exc = format_hhmm_cell(row.get('EXCESO JORNADA (HH:MM)', row.get('EXCESO JORNADA', '00:00')), is_hours_float=False)
-            he = format_hhmm_cell(row.get('TOTAL HORAS ADICIONALES (HH:MM)', row.get('TOTAL HORAS ADICIONALES', '00:00')), is_hours_float=False)
+            # Función flexible para extraer valores por nombres aproximados de columna (Punto 2)
+            def get_row_val(row_obj, *keys):
+                for k in keys:
+                    if k in row_obj and pd.notna(row_obj[k]):
+                        return row_obj[k]
+                return '00:00'
+
+            val_trab = get_row_val(row, 'HORAS TRABAJADAS (hh:mm)', 'HORAS TRABAJADAS (HH:MM)', 'HORAS TRABAJADAS')
+            val_tard = get_row_val(row, 'TARDANZA (hh:mm)', 'TARDANZA (HH:MM)', 'TARDANZA (MIN)')
+            val_exc = get_row_val(row, 'EXCESO JORNADA (hh:mm)', 'EXCESO JORNADA (HH:MM)', 'EXCESO JORNADA')
+            val_he = get_row_val(row, 'HORAS EXTRAS TOTALES (hh:mm)', 'TOTAL HORAS ADICIONALES (hh:mm)', 'TOTAL HORAS ADICIONALES', 'HORAS EXTRAS (HH:MM)')
+
+            h_trab = format_hhmm_cell(val_trab, is_hours_float=True)
+            tard = format_hhmm_cell(val_tard, is_hours_float=False)
+            exc = format_hhmm_cell(val_exc, is_hours_float=False)
+            he = format_hhmm_cell(val_he, is_hours_float=False)
 
             fecha_t_formatted = format_date_ddmmyyyy(fecha_t)
             f_ent_formatted = format_date_ddmmyyyy(f_ent)

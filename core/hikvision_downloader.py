@@ -200,7 +200,7 @@ def descargar_transacciones_hikvision(
     header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     headers = [
-        "ID", "Nombre", "Apellido", "Departamento", "Posición", "Fecha",
+        "ID", "Apellido", "Nombre", "Departamento", "Posición", "Fecha",
         "Semana", "Tiempo", "Tipo de pase de tarjeta",
         "Método de verificación", "Punto de control de asistencia"
     ]
@@ -239,14 +239,17 @@ def descargar_transacciones_hikvision(
         verify_type_code = r.get("VerifyType", 0)
         metodo = VERIFY_TYPE_MAP.get(verify_type_code, "--")
 
-        punto = r.get("AttendancePointName", "")
+        door = r.get("DoorName", "Planta_biometrico_wifi-1")
 
-        ws.append([dni, nombre, apellido, dept, posicion, fecha_ev, semana, hora_ev, tipo_pase, metodo, punto])
+        ws.append([
+            dni, apellido, nombre, dept, posicion, fecha_ev,
+            semana, hora_ev, tipo_pase, metodo, door
+        ])
 
     # Auto-ajustar ancho de columnas
     for col in ws.columns:
         max_len = max(len(str(cell.value or '')) for cell in col)
-        col_letter = cell.column_letter
+        col_letter = col[0].column_letter
         ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
 
     try:
