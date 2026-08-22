@@ -1,0 +1,15 @@
+2026/08/20-20:20:51.583 64cc Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_es.tradingview.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/20-20:20:51.586 64cc Recovering log #7
+2026/08/20-20:20:51.588 64cc Reusing old log C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_es.tradingview.com_0.indexeddb.leveldb/000007.log 
+2026/08/20-20:24:11.187 64cc Level-0 table #12: started
+2026/08/20-20:24:11.190 64cc Level-0 table #12: 5622 bytes OK
+2026/08/20-20:24:11.194 64cc Delete type=0 #7
+2026/08/20-20:24:11.194 64cc Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2026/08/20-20:24:11.195 64cc Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x02\x02 \x03\x00\x00\x00\x00\x00\x00"@\x00\x03\x00\x00\x00\x00\x00\x00D@' @ 1163 : 1
+2026/08/20-20:24:11.195 64cc Compacting 1@1 + 1@2 files
+2026/08/20-20:24:11.197 64cc Generated table #13@1: 242 keys, 5968 bytes
+2026/08/20-20:24:11.197 64cc Compacted 1@1 + 1@2 files => 5968 bytes
+2026/08/20-20:24:11.199 64cc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/08/20-20:24:11.200 64cc Delete type=2 #9
+2026/08/20-20:24:11.200 64cc Delete type=2 #12
+2026/08/20-20:24:11.200 64cc Manual compaction at level-1 from '\x00\x02\x02 \x03\x00\x00\x00\x00\x00\x00"@\x00\x03\x00\x00\x00\x00\x00\x00D@' @ 1163 : 1 .. (end); will stop at (end)

@@ -1,0 +1,15 @@
+2026/08/21-07:52:46.227 6908 Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_chatgpt.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/21-07:52:46.228 6908 Recovering log #11
+2026/08/21-07:52:46.228 6908 Reusing old log C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_chatgpt.com_0.indexeddb.leveldb/000011.log 
+2026/08/21-07:52:52.063 6908 Level-0 table #16: started
+2026/08/21-07:52:52.066 6908 Level-0 table #16: 190 bytes OK
+2026/08/21-07:52:52.067 6908 Delete type=0 #11
+2026/08/21-07:52:52.067 6908 Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2026/08/21-07:52:52.068 6908 Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x00\x00\x00\x06' @ 150 : 1
+2026/08/21-07:52:52.068 6908 Compacting 1@1 + 1@2 files
+2026/08/21-07:52:52.070 6908 Generated table #17@1: 41 keys, 38975 bytes
+2026/08/21-07:52:52.070 6908 Compacted 1@1 + 1@2 files => 38975 bytes
+2026/08/21-07:52:52.072 6908 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/08/21-07:52:52.073 6908 Delete type=2 #13
+2026/08/21-07:52:52.073 6908 Delete type=2 #16
+2026/08/21-07:52:52.073 6908 Manual compaction at level-1 from '\x00\x00\x00\x00\x06' @ 150 : 1 .. (end); will stop at (end)

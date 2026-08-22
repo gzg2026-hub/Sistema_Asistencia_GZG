@@ -1,0 +1,6 @@
+2026/08/10-21:20:31.619 3b4 Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_wetransfer.com_0.indexeddb.leveldb since it was missing.
+2026/08/10-21:20:31.628 3b4 Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_wetransfer.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/10-21:48:16.323 567c Level-0 table #5: started
+2026/08/10-21:48:16.339 567c Level-0 table #5: 443108 bytes OK
+2026/08/10-21:48:16.342 567c Delete type=0 #3
+2026/08/10-21:48:16.342 567c Manual compaction at level-0 from (begin) .. (end); will stop at (end)

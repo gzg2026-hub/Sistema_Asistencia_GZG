@@ -1,0 +1,18 @@
+2026/08/22-10:25:40.788 6908 Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_docs.google.com_0.indexeddb.leveldb since it was missing.
+2026/08/22-10:25:40.794 6908 Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_docs.google.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/22-10:31:42.849 6488 Level-0 table #5: started
+2026/08/22-10:31:42.854 6488 Level-0 table #5: 66773 bytes OK
+2026/08/22-10:31:42.858 6488 Delete type=0 #3
+2026/08/22-10:31:42.859 6908 Manual compaction at level-0 from '\x00\x03\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x04\x00\x00\x00' @ 0 : 0; will stop at (end)
+2026/08/22-10:57:13.239 6908 Level-0 table #7: started
+2026/08/22-10:57:13.262 6908 Level-0 table #7: 217564 bytes OK
+2026/08/22-10:57:13.267 6908 Delete type=0 #4
+2026/08/22-10:57:13.267 6908 Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2026/08/22-10:57:13.267 6908 Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x04\x04\x02\x01\x17\x001\x001\x005\x003\x001\x009\x004\x000\x003\x007\x005\x006\x001\x003\x003\x000\x009\x008\x008\x004\x000\x00:\x003' @ 1334 : 1
+2026/08/22-10:57:13.267 6908 Compacting 1@1 + 1@2 files
+2026/08/22-10:57:13.275 6908 Generated table #8@1: 828 keys, 131306 bytes
+2026/08/22-10:57:13.275 6908 Compacted 1@1 + 1@2 files => 131306 bytes
+2026/08/22-10:57:13.288 6908 compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/08/22-10:57:13.289 6908 Delete type=2 #5
+2026/08/22-10:57:13.289 6908 Delete type=2 #7
+2026/08/22-10:57:13.290 64cc Manual compaction at level-1 from '\x00\x04\x04\x02\x01\x17\x001\x001\x005\x003\x001\x009\x004\x000\x003\x007\x005\x006\x001\x003\x003\x000\x009\x008\x008\x004\x000\x00:\x003' @ 1334 : 1 .. (end); will stop at (end)

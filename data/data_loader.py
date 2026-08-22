@@ -134,3 +134,50 @@ def cargar_datos_excel(excel_source) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Dat
         df_marcaciones = parse_hikvision_transaction_file(excel_source)
 
     return df_trabajadores, df_marcaciones, df_horas_extra
+
+
+def fusionar_y_deduplicar_data_cruda(df_nuevo: pd.DataFrame, ruta_maestro: str) -> pd.DataFrame:
+    """
+    Fusiona df_nuevo con la data cruda acumulada existente en ruta_maestro,
+    garantizando cero marcaciones faltantes y cero marcaciones duplicadas por llave única:
+    [ID/DNI + Fecha + Tiempo/Hora + Punto de control de asistencia]
+    """
+    import os
+    if df_nuevo is None or df_nuevo.empty:
+        if os.path.exists(ruta_maestro):
+            return parse_hikvision_transaction_file(ruta_maestro)
+        return pd.DataFrame()
+
+    df_existente = pd.DataFrame()
+    if os.path.exists(ruta_maestro):
+        df_existente = parse_hikvision_transaction_file(ruta_maestro)
+
+    if df_existente.empty:
+        df_combined = df_nuevo.copy()
+    else:
+        df_combined = pd.concat([df_existente, df_nuevo], ignore_index=True)
+
+    # Identificar columnas clave para deduplicar
+    cols = df_combined.columns.tolist()
+    col_id = [c for c in cols if 'ID' in c or 'DNI' in c or 'Persona' in c]
+    col_fecha = [c for c in cols if 'Fecha' in c]
+    col_tiempo = [c for c in cols if 'Tiempo' in c or 'Hora' in c]
+    col_punto = [c for c in cols if 'Punto' in c or 'Dispositivo' in c]
+
+    subset_keys = []
+    if col_id: subset_keys.append(col_id[0])
+    if col_fecha: subset_keys.append(col_fecha[0])
+    if col_tiempo: subset_keys.append(col_tiempo[0])
+    if col_punto: subset_keys.append(col_punto[0])
+
+    if subset_keys:
+        df_combined = df_combined.drop_duplicates(subset=subset_keys, keep='last')
+
+    # Ordenar por fecha y tiempo cronológicamente
+    if col_fecha and col_tiempo:
+        try:
+            df_combined = df_combined.sort_values(by=[col_fecha[0], col_tiempo[0]], ascending=[True, True])
+        except Exception:
+            pass
+
+    return df_combined

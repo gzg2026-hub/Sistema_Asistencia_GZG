@@ -1,0 +1,6 @@
+2026/08/16-21:21:34.681 64cc Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_curly-zebra-wv9qg9vqgvr62gp4r.github.dev_0.indexeddb.leveldb since it was missing.
+2026/08/16-21:21:34.691 64cc Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_curly-zebra-wv9qg9vqgvr62gp4r.github.dev_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/16-22:25:41.175 6488 Level-0 table #5: started
+2026/08/16-22:25:41.221 6488 Level-0 table #5: 901196 bytes OK
+2026/08/16-22:25:41.224 6488 Delete type=0 #3
+2026/08/16-22:25:41.224 6488 Manual compaction at level-0 from (begin) .. (end); will stop at (end)

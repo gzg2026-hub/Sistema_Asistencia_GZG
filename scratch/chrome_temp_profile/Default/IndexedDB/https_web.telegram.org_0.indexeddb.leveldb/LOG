@@ -1,0 +1,6 @@
+2026/08/14-11:59:20.538 1474 Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_web.telegram.org_0.indexeddb.leveldb since it was missing.
+2026/08/14-11:59:20.549 1474 Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_web.telegram.org_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/14-11:59:24.945 155c Level-0 table #5: started
+2026/08/14-11:59:24.948 155c Level-0 table #5: 23108 bytes OK
+2026/08/14-11:59:24.953 155c Delete type=0 #3
+2026/08/14-11:59:24.954 155c Manual compaction at level-0 from '\x00\x05\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x06\x00\x00\x00' @ 0 : 0; will stop at (end)

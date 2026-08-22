@@ -1,0 +1,15 @@
+2026/08/16-16:48:17.356 6908 Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_www.youtube.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/16-16:48:17.356 6908 Recovering log #9
+2026/08/16-16:48:17.374 6908 Reusing old log C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_www.youtube.com_0.indexeddb.leveldb/000009.log 
+2026/08/16-16:49:18.720 64cc Level-0 table #15: started
+2026/08/16-16:49:18.738 64cc Level-0 table #15: 1577294 bytes OK
+2026/08/16-16:49:18.742 64cc Delete type=0 #9
+2026/08/16-16:49:18.743 64cc Manual compaction at level-0 from (begin) .. (end); will stop at (end)
+2026/08/16-16:49:18.743 64cc Manual compaction at level-1 from (begin) .. (end); will stop at '\x00\x0a\x01\x02\x01\x16\x00a\x00p\x00p\x00l\x00i\x00c\x00a\x00t\x00i\x00o\x00n\x00_\x00s\x00e\x00r\x00v\x00e\x00r\x00_\x00k\x00e\x00y' @ 8445 : 1
+2026/08/16-16:49:18.744 64cc Compacting 1@1 + 1@2 files
+2026/08/16-16:49:18.755 64cc Generated table #16@1: 535 keys, 118674 bytes
+2026/08/16-16:49:18.755 64cc Compacted 1@1 + 1@2 files => 118674 bytes
+2026/08/16-16:49:18.756 64cc compacted to: files[ 0 0 1 0 0 0 0 ]
+2026/08/16-16:49:18.756 64cc Delete type=2 #12
+2026/08/16-16:49:18.756 64cc Delete type=2 #15
+2026/08/16-16:49:18.757 64cc Manual compaction at level-1 from '\x00\x0a\x01\x02\x01\x16\x00a\x00p\x00p\x00l\x00i\x00c\x00a\x00t\x00i\x00o\x00n\x00_\x00s\x00e\x00r\x00v\x00e\x00r\x00_\x00k\x00e\x00y' @ 8445 : 1 .. (end); will stop at (end)

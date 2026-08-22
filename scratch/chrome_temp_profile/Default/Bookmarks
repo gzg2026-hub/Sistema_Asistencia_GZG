@@ -1,0 +1,112 @@
+{
+   "checksum": "1c47f1d07ef506577207893e7462bc46",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13430797200315014",
+            "date_last_used": "13431748850146414",
+            "guid": "00922419-b3c2-4b5a-9261-0c8741f58a9b",
+            "id": "5",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "TV",
+            "type": "url",
+            "url": "https://es.tradingview.com/chart/tgookGrt/"
+         }, {
+            "date_added": "13430809635242317",
+            "date_last_used": "13431534177859598",
+            "guid": "1be548be-6148-4f9c-a51b-dd43b4227a37",
+            "id": "6",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "Omada Cloud",
+            "type": "url",
+            "url": "https://use1-omada-cloud.tplinkcloud.com/#/cloudAccessManager"
+         }, {
+            "children": [ {
+               "date_added": "13430895258167196",
+               "date_last_used": "13431376415993000",
+               "guid": "4c4eea15-b3da-4137-82c1-dd43d5e61f60",
+               "id": "10",
+               "meta_info": {
+                  "power_bookmark_meta": ""
+               },
+               "name": "DeepSeek",
+               "type": "url",
+               "url": "https://chat.deepseek.com/"
+            } ],
+            "date_added": "13430894764148928",
+            "date_last_used": "0",
+            "date_modified": "13430931851067654",
+            "guid": "a48415db-a578-4c6b-a6df-76bd92e8cbda",
+            "id": "8",
+            "name": "IA",
+            "type": "folder"
+         }, {
+            "date_added": "13430931851067654",
+            "date_last_used": "13431453018768810",
+            "guid": "d8642625-7ffc-4d75-bb62-5f300c616729",
+            "id": "11",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "DeepL Translate",
+            "type": "url",
+            "url": "https://www.deepl.com/es/translator"
+         }, {
+            "date_added": "13431199659831289",
+            "date_last_used": "13431575297777997",
+            "guid": "0b51733d-d166-49de-a0ab-9c3f9e11e15b",
+            "id": "13",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "GZG Minerales - Control de Asistencia",
+            "type": "url",
+            "url": "http://localhost:8501/"
+         }, {
+            "date_added": "13431199684594933",
+            "date_last_used": "13431545114579572",
+            "guid": "435f07b2-bc68-445f-b7f7-775ff13ab411",
+            "id": "14",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "GZG Minerales - Control de Asistencia",
+            "type": "url",
+            "url": "http://192.168.1.239:8501/"
+         } ],
+         "date_added": "13430779467328564",
+         "date_last_used": "0",
+         "date_modified": "13431199684594933",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Barra de favoritos",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13430779467328564",
+         "date_last_used": "0",
+         "date_modified": "13430797200315014",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Otros favoritos",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13430779467328564",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Favoritos del dispositivo",
+         "type": "folder"
+      }
+   },
+   "sync_metadata": "Cm8KTwiIgQISSSAAkgE2CjQKDmNocm9tZV9zeW5jX2JtEgU1MSFibRoSCbbyN0GCWQYAEbbyN0GCWQYAKWhFOUGCWQYA6gELCKuGntQGENCU7BMSACoYV01wWkZSMHNUSWFaUndTd1lucG5KZz09SAMS6wEIChLmAQocd2Zzb1gvc0IvbXlLdEs4OVQ3Yk5jOU1UNkVNPRJmWjpBRHF0QVp4NEpsdlZkcGl2VGlXS0xNd3FBVU5nZ01xd2gzcGNZOE5iaE9zWi8zT2RsMHVkTWtHd3RTVU5Ld01IeHR1Rit0RWR0ZkJZMUVtOExEQUZSZWZjcU1XVVdmcEdsUT09GAAgBCgEMOjUtKfbl5YDOLeEnfj+M0DuuZ34/jNKHDR2b2tsSUJVYUxoRnZmREdTeVlSMTE5eWl3cz1aHiIcd0JBWmpiN1NTWmU0V3JFLzNEdzVibXFpVjNjPWXllsc4EusBCAYS5gEKHFlOMm51MGpZY3FEZzZibkdQQW1ySjNibG9kOD0SZlo6QURxdEFaeDRKbHZWZHBpdlRpV0tMTXdxQVVOZ1NkRzBQNTVtZkVJYU51c2pPQVBnQlFQVXcyb0xiM0JHa2xsMzVlN21taExKcldEcFJnbWcxNFBTZXBjUEFzSkd4TnpicHc9PRgAIAMoAzCnhvWrnJWWAzitg7PP/jNAoMSzz/4zShwrOExPZG5HblNialZPcDYyYytWM3ZRbFJaVG89Wh4iHG9QTFhwS2hzekJGcVZsRUtpdldwSXZmakJQTT1lOmlu6BKrAQgBEqYBChx5eEovNmZ2a2VjcjdrcDVFUXpCNHRXTHBkYkU9Ek5aOkFEcXRBWno0Z2ZFNHdDbzJ3WDJMbGVzcm1OcWJFanVERW4xUUdVVEZYUUpqTzQ2dlZRQTIxc2xFUTU2cHkxeUw2bW5vZE5xaldvSm4YACAAKAAwgOXg75GUlgM4AEAAShxhUkNXTGdoRjliNUlucUtJRHZ1Si9qdlFrRmM9WgBlAAAAABLrAQgFEuYBChxMamxZK0xZVzVRQ2ZKaWNvRUlyVGFpTjBLajg9EmZaOkFEcXRBWng0Smx2VmRwaXZUaVdLTE13cUFVTmdlOWZrT285akpHbXNCT3FTZUJGRzVmbERSQWJjZ0tiWStESmh4SFhjS1JheWNVUUVYQjBSR1pxQ2ZQK25uWlYvbXZWZWxRPT0YACAEKAQwidOEge6UlgM4wIe8yf4zQOayvMn+M0occkhYa3BTZUU4RlMxWUFFR0hwWEpqS3B0K3JjPVoeIhxPcUhqbXhLQjhvVmI4K094cFRGL0tzS2VtenM9Zd9RspISwwEIAxK+AQocbmpnRHU4OGVDcnZYcDg2cEQ3ZkhHY3FGcDg4PRJmWjpBRHF0QVp3ZjlOajB4UnRIVWVOWWVkNjBJN0d1OVErcGhOVEFJMlJ3NmJoV2Q3WXRqb2wwbjQ3aWJ6U2gxVHhWTjNZRXN6YWF0cjhCY3FCOTlpTEgvclFGNGUxU2hEUkdiQT09GAAgACgAMIDl4O+RlJYDOABAAEoceXpOQjAxY241NEE3Y1JVMHVUKy9QZ21UdFVvPVoAZQAAAAAS7AEICxLnAQocWk81Vkg4TWsyNnY5NDJyRXNveFp0cWl1U0NjPRJmWjpBRHF0QVp4NEpsdlZkcGl2VGlXS0xNd3FBVU5ncHRkNkkvZ1JySkxmdzVNQlRrZy9aS1F6dnA5TUh0NTJyQzFBRkFuVnV0TVZMSWJmQ3M5eGtRVnJ4TGRRRE04WmVnYTF5Zz09GAAgBCgEML6P89HjmJYDOMC+1on/M0DZideJ/zNKHEdqWHpIVitmemlNRkhhdHVHTHg0UHlqblJhTT1aHyId23dCcjJDaGZGa2MxRml4YUMxdWdramc3aTYzWT1l2oJQ7BLDAQgCEr4BChxZY1NUb252RVNQd3FDczRMMmNyVmh2NjhMOTg9EmZaOkFEcXRBWndFVWJRKzVLTzBobi9LQjRPSitLNEl3ODJ4TW1OeFZaUlpnaUdXRHcwWmRqWHBheFgraWE1VDc3MU04WmVqaWZYVnlQdTZrZ0ZqMU5NVm9scUpyQzU0ZzBYT1hRPT0YACAAKAAwgOXg75GUlgM4AEAAShxvUFZraHdCUmJWNjVLQ1dSMitJT05IV29PdTg9WgBlAAAAABLsAQgIEucBChx5ZEgrZmZNc1F1TktqZkExcGgwRmM0dTE1U009EmZaOkFEcXRBWng0Smx2VmRwaXZUaVdLTE13cUFVTmc5bDY1Q3R6Ri8wZ3VORXVvMWs1bWhPbCtwUThnMEZaUFhBTlI5Rm5DNVJmOW0zTkJKRTJnRUxneTRWejVsK2tjNStMS2FBPT0YACABKAEwl4eXudmXlgM4+/D+9/4zQPvw/vf+M0occVlzQzdzeHI2MkpidCtUZ0FvN2hrWGR4Nk9nPVofIh23YWZhUDYydzk2TUhzVUFiS2VZaUJRR3JwZW84PWUAAAAAEuwBCA0S5wEKHDBybVk3RE1qeElycVA2M0ZXMUxhak9qYmxuUT0SZlo6QURxdEFaeDRKbHZWZHBpdlRpV0tMTXdxQVVOZzZlOW9vb3ZHTnU5dGFvSWM1d05Wd0NtR3ovZlJwVi9LM2dtT2dZdXd5cTgyNFVISDZLd1AyRkJmZjgxS09tVEVTN2J6Mnc9PRgAIGMoYzC19f3Yjq2WAzi+nrCJgDRApsTv1oE0ShxGd2Z6NXhWbmZmTEdiSDN2NERMR2ZGdldJRnM9Wh8iHe15WE5mZnNkS2lvQklpRW9tY2d6cTZEWEYvMGs9ZSY4vQAS7AEIDhLnAQocYWRXUmhiR0w3akNRTit3QmRDNmJVdWgzSjBjPRJmWjpBRHF0QVp4NEpsdlZkcGl2VGlXS0xNd3FBVU5nWHhRaUlpbmw5ajJuVUc5Yzlvc3JVNVBCMkhud3Jia2c3TjZRWXJIQ1ZTTEtZQUdqYTJ0YmNyekMxY3dKVTA4ZVltOEU1Zz09GAAgCigKMIrXybG9q5YDOPPfsYmANED5o4q8gTRKHHBKSUZMNUNTdXVxTHBxZVl0VkZLOVVnd2RYVT1aHyId9m1GQmZDenEyMmY1RllObWpoMjMzc3V4OGkvaz1lCNmZGDABOAA=",
+   "version": 1
+}

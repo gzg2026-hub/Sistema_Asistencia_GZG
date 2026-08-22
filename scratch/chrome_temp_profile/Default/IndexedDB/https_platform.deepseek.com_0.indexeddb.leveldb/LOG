@@ -1,0 +1,6 @@
+2026/08/11-00:04:28.148 2090 Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_platform.deepseek.com_0.indexeddb.leveldb since it was missing.
+2026/08/11-00:04:28.159 2090 Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_platform.deepseek.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/11-00:04:36.391 2090 Level-0 table #5: started
+2026/08/11-00:04:36.398 2090 Level-0 table #5: 1645 bytes OK
+2026/08/11-00:04:36.403 2090 Delete type=0 #3
+2026/08/11-00:04:36.403 2090 Manual compaction at level-0 from '\x00\x01\x00\x00\x00' @ 72057594037927935 : 1 .. '\x00\x02\x00\x00\x00' @ 0 : 0; will stop at (end)

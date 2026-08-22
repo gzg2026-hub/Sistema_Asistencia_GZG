@@ -77,40 +77,87 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
 
     try:
         from core.hikvision_downloader import descargar_transacciones_hikvision
-        from data.data_loader import cargar_datos_excel
+        from data.data_loader import cargar_datos_excel, fusionar_y_deduplicar_data_cruda
         from core.attendance_engine import procesar_asistencia_df
         from data.database import (guardar_trabajadores, guardar_marcaciones_raw,
                                    guardar_asistencia_y_reportes)
-        from data.exporter import guardar_excel_base
+        from data.exporter import guardar_excel_base, exportar_asistencia_excel
+        from scripts.gdrive_uploader import subir_archivo_a_gdrive
 
         # 1. Descargar Data Cruda 1:1 desde Hikvision en downloads/data_cruda/
-        excel_path = descargar_transacciones_hikvision(
+        excel_path_nuevo = descargar_transacciones_hikvision(
             carpeta_destino=CARPETA_DATA_CRUDA,
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin
         )
-        _log(f"Data Cruda guardada en: {excel_path}")
+        _log(f"Data Cruda descargada en: {excel_path_nuevo}")
 
-        # 2. Cargar datos del Excel
-        df_trab, df_marc, df_he = cargar_datos_excel(excel_path)
+        # 2. Cargar y Fusionar en el Archivo Maestro de Data Cruda sin Duplicados ni Faltantes
+        df_trab_nuevo, df_marc_nuevo, df_he_nuevo = cargar_datos_excel(excel_path_nuevo)
         
+        ruta_maestro_raw = os.path.join(CARPETA_DATA_CRUDA, "Transacciones_Acumuladas.xlsx")
+        df_marc_master = fusionar_y_deduplicar_data_cruda(df_marc_nuevo, ruta_maestro_raw)
+
         # Fallback a base de datos de trabajadores si el Excel crudo no incluye pestaña de trabajadores
+        df_trab = df_trab_nuevo
         if df_trab.empty:
             from data.database import obtener_trabajadores_master
             df_trab = obtener_trabajadores_master()
 
-        _log(f"Cargados: {len(df_marc)} marcaciones, {len(df_trab)} trabajadores")
+        _log(f"Data Cruda Maestro Acumulada: {len(df_marc_master)} marcaciones limpias sin duplicados, {len(df_trab)} trabajadores")
 
-        if not df_marc.empty:
-            guardar_marcaciones_raw(df_marc, archivo_origen=excel_path)
+        if not df_marc_master.empty:
+            # Guardar el Archivo Maestro de Data Cruda en Excel
+            try:
+                import openpyxl
+                wb_m = openpyxl.Workbook()
+                ws_m = wb_m.active
+                ws_m.title = "Transacciones"
+                cols_m = df_marc_master.columns.tolist()
+                ws_m.append(cols_m)
+                for r_m in df_marc_master.itertuples(index=False):
+                    ws_m.append(list(r_m))
+                wb_m.save(ruta_maestro_raw)
+                _log(f"Archivo Maestro Data Cruda guardado en: {ruta_maestro_raw}")
+            except Exception as e_m:
+                _log(f"Aviso guardando maestro data cruda: {e_m}")
+
+            # Subir Data Cruda Maestro a Google Drive
+            subir_archivo_a_gdrive(ruta_maestro_raw, subfolder_name="Data_Cruda")
+
+            guardar_marcaciones_raw(df_marc_master, archivo_origen=ruta_maestro_raw)
             if not df_trab.empty:
                 guardar_trabajadores(df_trab)
-                df_asis, df_he_out, df_inc, kpis = procesar_asistencia_df(df_trab, df_marc)
+                df_asis, df_he_out, df_inc, kpis = procesar_asistencia_df(df_trab, df_marc_master)
                 guardar_asistencia_y_reportes(df_asis, df_he_out, df_inc)
                 
-                # 3. Guardar Data Procesada (Excel de Asistencia)
-                guardar_excel_base(df_trab, df_marc, df_asis, df_he_out, df_inc)
-                _log(f"Procesamiento completado. Reporte procesado guardado en downloads/data_procesada/.")
+                # 3. Guardar Reporte Consolidado Período Completo en la raíz y en data_procesada
+                guardar_excel_base(df_trab, df_marc_master, df_asis, df_he_out, df_inc)
+                _log(f"Procesamiento consolidado completado. Guardado en carpeta raíz y downloads/data_procesada/.")
+
+                # 4. Generar y Subir Archivos Procesados Diarios por Fecha Cerrada (Día Anterior)
+                carp_diario = os.path.join(CARPETA_DATA_PROCESADA, "diario")
+                os.makedirs(carp_diario, exist_ok=True)
+
+                hoy_str = datetime.date.today().strftime("%Y-%m-%d")
+                if 'FECHA' in df_asis.columns:
+                    fechas_unicas = sorted([str(f) for f in df_asis['FECHA'].dropna().unique()])
+                    for f_dia in fechas_unicas:
+                        # Si la fecha es anterior a hoy (día cerrado), generar y subir archivo diario
+                        df_asis_dia = df_asis[df_asis['FECHA'].astype(str) == f_dia]
+                        if not df_asis_dia.empty:
+                            file_name_dia = f"Reporte_Asistencia_GZG_{f_dia}.xlsx"
+                            file_path_dia = os.path.join(carp_diario, file_name_dia)
+
+                            # Generar bytes de Excel
+                            excel_bytes = exportar_asistencia_excel(df_trab, df_marc_master, df_asis_dia, df_he_out, df_inc)
+                            with open(file_path_dia, "wb") as f_out:
+                                f_out.write(excel_bytes)
+                            _log(f"Reporte diario procesado generado para {f_dia} -> {file_path_dia}")
+
+                            # Subir a Google Drive solo los días cerrados (anteriores a hoy) o el consolidado
+                            if f_dia < hoy_str:
+                                subir_archivo_a_gdrive(file_path_dia, subfolder_name="Data_Procesada")
             else:
                 _log("AVISO: No se encontraron trabajadores en la base de datos para procesar asistencia.")
         else:

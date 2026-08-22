@@ -1,0 +1,6 @@
+2026/08/18-16:54:26.060 64cc Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\WebStorage\44\IndexedDB\indexeddb.leveldb since it was missing.
+2026/08/18-16:54:26.092 64cc Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\WebStorage\44\IndexedDB\indexeddb.leveldb/MANIFEST-000001
+2026/08/18-16:54:28.127 64cc Level-0 table #5: started
+2026/08/18-16:54:28.130 64cc Level-0 table #5: 397 bytes OK
+2026/08/18-16:54:28.133 64cc Delete type=0 #3
+2026/08/18-16:54:28.134 64cc Manual compaction at level-0 from (begin) .. (end); will stop at (end)

@@ -1,0 +1,40 @@
+2026/08/22-10:25:32.515 64cc Creating DB C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_drive.google.com_0.indexeddb.leveldb since it was missing.
+2026/08/22-10:25:32.524 64cc Reusing MANIFEST C:\Users\GZG Minerales 2026\AppData\Local\Google\Chrome\User Data\Default\IndexedDB\https_drive.google.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/22-10:31:21.527 64cc Level-0 table #5: started
+2026/08/22-10:31:21.555 64cc Level-0 table #5: 1958583 bytes OK
+2026/08/22-10:31:21.557 64cc Delete type=0 #3
+2026/08/22-10:31:21.626 64cc Level-0 table #7: started
+2026/08/22-10:31:21.646 64cc Level-0 table #7: 1665661 bytes OK
+2026/08/22-10:31:21.649 64cc Delete type=0 #4
+2026/08/22-10:31:21.652 64cc Compacting 1@1 + 1@2 files
+2026/08/22-10:31:21.685 64cc Generated table #8@1: 9882 keys, 2153928 bytes
+2026/08/22-10:31:21.702 64cc Generated table #9@1: 3664 keys, 1006768 bytes
+2026/08/22-10:31:21.702 64cc Compacted 1@1 + 1@2 files => 3160696 bytes
+2026/08/22-10:31:21.704 64cc compacted to: files[ 0 0 2 0 0 0 0 ]
+2026/08/22-10:31:21.705 64cc Delete type=2 #5
+2026/08/22-10:31:21.705 64cc Delete type=2 #7
+2026/08/22-10:31:21.712 64cc Level-0 table #11: started
+2026/08/22-10:31:21.734 64cc Level-0 table #11: 1734205 bytes OK
+2026/08/22-10:31:21.736 64cc Delete type=0 #6
+2026/08/22-10:31:21.739 64cc Compacting 1@1 + 2@2 files
+2026/08/22-10:31:21.780 64cc Generated table #12@1: 13563 keys, 2144114 bytes
+2026/08/22-10:31:21.809 64cc Generated table #13@1: 2202 keys, 2118627 bytes
+2026/08/22-10:31:21.822 64cc Generated table #14@1: 4401 keys, 616369 bytes
+2026/08/22-10:31:21.822 64cc Compacted 1@1 + 2@2 files => 4879110 bytes
+2026/08/22-10:31:21.823 64cc compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/08/22-10:31:21.824 64cc Delete type=2 #8
+2026/08/22-10:31:21.824 64cc Delete type=2 #9
+2026/08/22-10:31:21.824 64cc Delete type=2 #11
+2026/08/22-10:31:48.462 64cc Level-0 table #16: started
+2026/08/22-10:31:48.484 64cc Level-0 table #16: 1679233 bytes OK
+2026/08/22-10:31:48.485 64cc Delete type=0 #10
+2026/08/22-10:45:35.787 64cc Compacting 1@1 + 3@2 files
+2026/08/22-10:45:35.828 64cc Generated table #17@1: 1653 keys, 2123785 bytes
+2026/08/22-10:45:35.854 64cc Generated table #18@1: 1990 keys, 2123977 bytes
+2026/08/22-10:45:35.877 64cc Generated table #19@1: 6349 keys, 1654052 bytes
+2026/08/22-10:45:35.877 64cc Compacted 1@1 + 3@2 files => 5901814 bytes
+2026/08/22-10:45:35.879 64cc compacted to: files[ 0 0 3 0 0 0 0 ]
+2026/08/22-10:45:35.880 64cc Delete type=2 #12
+2026/08/22-10:45:35.880 64cc Delete type=2 #13
+2026/08/22-10:45:35.880 64cc Delete type=2 #14
+2026/08/22-10:45:35.880 64cc Delete type=2 #16
