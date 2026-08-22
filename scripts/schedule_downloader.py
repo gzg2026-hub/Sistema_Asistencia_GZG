@@ -135,7 +135,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                 guardar_excel_base(df_trab, df_marc_master, df_asis, df_he_out, df_inc)
                 _log(f"Procesamiento consolidado completado. Guardado en carpeta raíz y downloads/data_procesada/.")
 
-                # 4. Generar y Subir Archivos Procesados Diarios por Fecha Cerrada (Día Anterior)
+                # 4. Generar y Subir Archivos Procesados Diarios SOLO para Días Completados (Anteriores a HOY)
                 carp_diario = os.path.join(CARPETA_DATA_PROCESADA, "diario")
                 os.makedirs(carp_diario, exist_ok=True)
 
@@ -143,21 +143,32 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                 if 'FECHA' in df_asis.columns:
                     fechas_unicas = sorted([str(f) for f in df_asis['FECHA'].dropna().unique()])
                     for f_dia in fechas_unicas:
-                        # Si la fecha es anterior a hoy (día cerrado), generar y subir archivo diario
-                        df_asis_dia = df_asis[df_asis['FECHA'].astype(str) == f_dia]
-                        if not df_asis_dia.empty:
-                            file_name_dia = f"Reporte_Asistencia_GZG_{f_dia}.xlsx"
-                            file_path_dia = os.path.join(carp_diario, file_name_dia)
+                        # Estrictamente SOLO días cerrados/completados (anteriores a hoy)
+                        if f_dia < hoy_str:
+                            df_asis_dia = df_asis[df_asis['FECHA'].astype(str) == f_dia]
+                            if not df_asis_dia.empty:
+                                file_name_dia = f"Reporte_Asistencia_GZG_{f_dia}.xlsx"
+                                file_path_dia = os.path.join(carp_diario, file_name_dia)
 
-                            # Generar bytes de Excel
-                            excel_bytes = exportar_asistencia_excel(df_trab, df_marc_master, df_asis_dia, df_he_out, df_inc)
-                            with open(file_path_dia, "wb") as f_out:
-                                f_out.write(excel_bytes)
-                            _log(f"Reporte diario procesado generado para {f_dia} -> {file_path_dia}")
+                                # Generar bytes de Excel diario completado
+                                excel_bytes = exportar_asistencia_excel(df_trab, df_marc_master, df_asis_dia, df_he_out, df_inc)
+                                with open(file_path_dia, "wb") as f_out:
+                                    f_out.write(excel_bytes)
+                                _log(f"Reporte diario completado generado para {f_dia} -> {file_path_dia}")
 
-                            # Subir a Google Drive solo los días cerrados (anteriores a hoy) o el consolidado
-                            if f_dia < hoy_str:
+                                # Subir a Google Drive solo los días cerrados
                                 subir_archivo_a_gdrive(file_path_dia, subfolder_name="Data_Procesada")
+                        else:
+                            _log(f"Día actual {f_dia} en curso: NO se genera reporte diario incompleto (se mantiene acumulado en Data Cruda).")
+
+                # Limpieza de archivo temporal de descarga raw para conservar SOLO Transacciones_Acumuladas.xlsx en data_cruda
+                try:
+                    if os.path.exists(excel_path_nuevo) and os.path.abspath(excel_path_nuevo) != os.path.abspath(ruta_maestro_raw):
+                        os.remove(excel_path_nuevo)
+                        _log(f"Limpieza de descarga temporal completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
+                except Exception as e_clean:
+                    _log(f"Aviso al limpiar temporal raw: {e_clean}")
+
             else:
                 _log("AVISO: No se encontraron trabajadores en la base de datos para procesar asistencia.")
         else:
