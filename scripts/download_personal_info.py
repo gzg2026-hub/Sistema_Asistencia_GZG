@@ -290,10 +290,13 @@ def procesar_y_exportar_padron(excel_raw_path: str):
         wb.save(root_path)
         print(f"[OK] Padrón Oficial guardado en la raíz del proyecto: {root_path}")
     except PermissionError:
-        timestamp_str = datetime.datetime.now().strftime("%H%M%S")
-        root_path = os.path.join(ROOT_DIR, f"Padron_Trabajadores_GZG_{timestamp_str}.xlsx")
-        wb.save(root_path)
-        print(f"[Warn] Archivo en uso. Guardado en la raíz como: {root_path}")
+        import time
+        time.sleep(1)
+        try:
+            wb.save(root_path)
+            print(f"[OK] Padrón Oficial guardado en la raíz del proyecto: {root_path}")
+        except Exception as e:
+            print(f"[Error] No se pudo sobrescribir Padron_Trabajadores_GZG.xlsx (Asegúrese de cerrar Excel si está abierto): {e}")
 
     return root_path
 
