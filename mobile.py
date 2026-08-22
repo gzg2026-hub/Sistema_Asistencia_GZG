@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import os
 import sys
+import base64
 
 # Asegurar importaciones del proyecto
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
