@@ -106,6 +106,23 @@ def render_mobile_approvals():
         transition: all 0.2s !important;
     }
     
+    /* Ocultar elementos pesados de escritorio en vista móvil */
+    div[data-testid="stNotification"] {
+        display: none !important;
+    }
+    
+    /* Adaptar botones de pestañas móviles */
+    div[data-baseweb="tab-list"] button {
+        font-size: 14px !important;
+        padding: 8px 12px !important;
+    }
+
+    /* Reducir espacio superior en celular */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 2rem !important;
+    }
+
     /* Badges de Estado */
     .badge-approved {
         background-color: rgba(39, 174, 96, 0.15);
