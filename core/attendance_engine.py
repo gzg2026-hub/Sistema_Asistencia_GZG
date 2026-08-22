@@ -502,8 +502,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         pass
 
             cargo_val = str(worker_info.get('CARGO', worker_info.get('Posición', ''))).strip().lower()
-            area_val = str(worker_info.get('AREA', worker_info.get('ÁREA', worker_info.get('Departamento', '')))).strip().lower()
-            es_mantenimiento = ("mantenimiento" in cargo_val) or ("mantenimiento" in area_val) or ("maquinaria" in cargo_val)
+            # Estricto: Solo aplica si el cargo/posición contiene exactamente 'Mantenimiento' (como Josmell, Edin, Franco, etc.)
+            es_mantenimiento = "mantenimiento" in cargo_val
 
             # Cálculo de horas trabajadas (Regla Mantenimiento 06:25 AM vs Candado General 07:00/19:00)
             horas_trabajadas = 0.0
