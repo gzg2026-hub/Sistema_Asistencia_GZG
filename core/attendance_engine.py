@@ -638,6 +638,23 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 # Desduplicar manteniendo el orden de prioridad
                 incidencias_list = list(dict.fromkeys(incidencias_list))
                 incidencias_str = ", ".join(incidencias_list) if incidencias_list else ""
+
+                # Poblar tabla detallada de incidencias
+                for inc_item in incidencias_list:
+                    sev = 'ALTA' if ('omitid' in inc_item.lower() or 'pendiente' in inc_item.lower()) else ('MEDIA' if 'tardanza' in inc_item.lower() else 'BAJA')
+                    rows_incidencias.append({
+                        'FECHA': fecha,
+                        'DNI': dni_export,
+                        'APELLIDOS': worker_info.get('APELLIDOS', ''),
+                        'NOMBRES': worker_info.get('NOMBRES', ''),
+                        'CARGO': worker_info.get('CARGO', ''),
+                        'ÁREA': worker_info.get('AREA', worker_info.get('ÁREA', '')),
+                        'TIPO': 'ASISTENCIA',
+                        'HORA': entrada.strftime('%H:%M') if entrada else (salida.strftime('%H:%M') if salida else '-'),
+                        'DESCRIPCIÓN': inc_item,
+                        'SEVERIDAD': sev,
+                        'OBSERVACIÓN': ''
+                    })
                 
                 # Clasificación de Tipo Registro (Columna U)
                 has_exceso = exceso_jornada_min_reporte >= 30
