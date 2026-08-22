@@ -147,14 +147,14 @@ def exportar_asistencia_excel(
         "Fecha Salida", "Hora Salida",
         "Fecha Inicio H.E.", "Inicio H.E.",
         "Fecha Fin H.E.", "Fin H.E.",
-        "Horas de Turno", "Exceso de Turno", "Horas Extras", "Total de Horas Adicionales",
-        "Tardanza", "Tipo Registro", "Observación / Incidencias"
+        "Horas de Turno", "Tardanza", "Exceso de Turno", "Horas Extras",
+        "Total de Horas Adicionales", "Tipo Registro", "Observación / Incidencias"
     ]
 
     ws.append(headers)  # Fila 4
 
     for c_idx, cell in enumerate(ws[4], 1):
-        if 17 <= c_idx <= 21:  # Columnas 17 a 21 (Q a U: Horas de Turno, Exceso de Turno, Horas Extras, Total de Horas Adicionales, Tardanza)
+        if 17 <= c_idx <= 21:  # Columnas 17 a 21 (Q a U: Horas de Turno, Tardanza, Exceso de Turno, Horas Extras, Total de Horas Adicionales)
             cell.fill = fill_header_calc
             cell.font = font_header_calc
         else:
@@ -232,8 +232,8 @@ def exportar_asistencia_excel(
                 f_sal_formatted, h_sal,
                 f_ini_he_formatted, h_ini_he,
                 f_fin_he_formatted, h_fin_he,
-                h_turno, exc_turno, he_explicita, tot_adic,
-                tard, tipo_reg, incid
+                h_turno, tard, exc_turno, he_explicita, tot_adic,
+                tipo_reg, incid
             ])
 
             # Colores pastel de sombreado
