@@ -118,15 +118,58 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
             # Guardar el Archivo Maestro de Data Cruda en Excel
             try:
                 import openpyxl
+                from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+                from openpyxl.utils import get_column_letter
+
                 wb_m = openpyxl.Workbook()
                 ws_m = wb_m.active
                 ws_m.title = "Transacciones"
+                ws_m.views.sheetView[0].showGridLines = True
+                ws_m.freeze_panes = "A2"
+
+                fill_h = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+                font_h = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
+                font_d = Font(name="Calibri", size=11, bold=False, color="000000")
+                align_h = Alignment(horizontal="center", vertical="center", wrap_text=True)
+                align_c = Alignment(horizontal="center", vertical="center")
+                align_l = Alignment(horizontal="left", vertical="center")
+                thin_gray = Side(border_style="thin", color="D3D3D3")
+                thin_border = Border(left=thin_gray, right=thin_gray, top=thin_gray, bottom=thin_gray)
+
                 cols_m = df_marc_master.columns.tolist()
                 ws_m.append(cols_m)
-                for r_m in df_marc_master.itertuples(index=False):
+                ws_m.row_dimensions[1].height = 28
+
+                for cell in ws_m[1]:
+                    cell.fill = fill_h
+                    cell.font = font_h
+                    cell.alignment = align_h
+                    cell.border = thin_border
+
+                for r_idx, r_m in enumerate(df_marc_master.itertuples(index=False), start=2):
                     ws_m.append(list(r_m))
+                    ws_m.row_dimensions[r_idx].height = 20
+                    for c_idx in range(1, len(cols_m) + 1):
+                        cell = ws_m.cell(row=r_idx, column=c_idx)
+                        cell.font = font_d
+                        cell.border = thin_border
+                        if c_idx in (1, 8, 10):
+                            cell.alignment = align_c
+                            cell.number_format = '@'
+                        else:
+                            cell.alignment = align_l
+
+                for c_idx in range(1, len(cols_m) + 1):
+                    col_letter = get_column_letter(c_idx)
+                    max_len = 0
+                    for r_idx in range(1, min(ws_m.max_row + 1, 100)):
+                        v = ws_m.cell(row=r_idx, column=c_idx).value
+                        if v is not None:
+                            max_len = max(max_len, len(str(v)))
+                    ws_m.column_dimensions[col_letter].width = max(max_len + 4, 12)
+
                 wb_m.save(ruta_maestro_raw)
-                _log(f"Archivo Maestro Data Cruda guardado en: {ruta_maestro_raw}")
+                _log(f"Archivo Maestro Data Cruda guardado con formato corporativo en: {ruta_maestro_raw}")
             except Exception as e_m:
                 _log(f"Aviso guardando maestro data cruda: {e_m}")
 
