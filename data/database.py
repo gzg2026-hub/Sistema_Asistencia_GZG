@@ -127,6 +127,37 @@ def init_db(db_path: str = DB_PATH):
     )
     """)
 
+    # 7. Tabla APROBACIONES para MVP Móvil (Horas Extras, Excesos de Jornada e Incidencias)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS aprobaciones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        dni TEXT NOT NULL,
+        apellidos TEXT,
+        nombres TEXT,
+        cargo TEXT,
+        area TEXT,
+        entrada TEXT,
+        salida TEXT,
+        horas_trabajadas REAL,
+        jornada_trabajada_hhmm TEXT,
+        horas_extras_min INTEGER DEFAULT 0,
+        exceso_jornada_min INTEGER DEFAULT 0,
+        horas_extras_hhmm TEXT,
+        exceso_jornada_hhmm TEXT,
+        motivo TEXT DEFAULT 'Trabajo operativo adicional en turno',
+        observacion_trabajador TEXT,
+        estado TEXT NOT NULL DEFAULT 'PENDIENTE',
+        aprobado_por TEXT,
+        fecha_aprobacion TIMESTAMP,
+        comentario_supervisor TEXT,
+        adjuntos TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(fecha, dni) ON CONFLICT IGNORE
+    )
+    """)
+
     # Migración segura de columnas de validación en horas_extra e incidencias
     cols_he = [row[1] for row in cursor.execute("PRAGMA table_info(horas_extra)").fetchall()]
     if 'estado_validacion' not in cols_he:
@@ -696,5 +727,105 @@ def sincronizar_desde_hcweb_downloadcenter(db_path: str = DB_PATH):
             guardar_marcaciones_raw(df_raw, archivo_origen=raw_excel, db_path=db_path)
         except Exception as e:
             pass
+
+
+def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
+    """Poblar solicitudes de aprobación desde la tabla asistencia para HE y Exceso de Jornada."""
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    
+    # 1. Asegurar tabla creada
+    init_db(db_path)
+    
+    # 2. Leer registros de asistencia con Exceso o Horas Extras
+    cursor.execute("""
+        SELECT fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
+               horas_trabajadas, exceso_jornada_min, total_horas_adicionales_min,
+               observaciones
+        FROM asistencia
+        WHERE exceso_jornada_min > 0 OR total_horas_adicionales_min > 0 OR tardanza_min > 0
+    """)
+    rows = cursor.fetchall()
+    
+    for r in rows:
+        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs = r
+        
+        # Formatear HH:MM
+        exceso_min = exceso_min or 0
+        total_adic_min = total_adic_min or 0
+        he_min = total_adic_min - exceso_min if total_adic_min > exceso_min else 0
+        
+        def _to_hhmm(minutos):
+            if not minutos or minutos <= 0:
+                return "0h 00m"
+            h = minutos // 60
+            m = minutos % 60
+            return f"{h}h {m:02d}m"
+        
+        def _htrab_to_hhmm(val):
+            if not val:
+                return "0h 00m"
+            h = int(val)
+            m = int(round((val - h) * 60))
+            return f"{h}h {m:02d}m"
+        
+        jornada_str = _htrab_to_hhmm(h_trab)
+        he_str = _to_hhmm(he_min)
+        exceso_str = _to_hhmm(exceso_min)
+        
+        cursor.execute("""
+            INSERT OR IGNORE INTO aprobaciones (
+                fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
+                horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
+                horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
+            h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str, obs or ''
+        ))
+        
+    conn.commit()
+    conn.close()
+
+
+def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_PATH) -> pd.DataFrame:
+    """Obtener DataFrame de solicitudes de aprobación."""
+    sincronizar_aprobaciones_desde_asistencia(db_path)
+    conn = get_connection(db_path)
+    
+    query = "SELECT * FROM aprobaciones"
+    params = []
+    if estado_filter and estado_filter.upper() != 'TODAS':
+        query += " WHERE estado = ?"
+        params.append(estado_filter.upper())
+        
+    query += " ORDER BY fecha DESC, id DESC"
+    df = pd.read_sql_query(query, conn, params=params)
+    conn.close()
+    return df
+
+
+def actualizar_estado_aprobacion(id_solicitud: int, nuevo_estado: str, aprobado_por: str, comentario: str = "", db_path: str = DB_PATH) -> bool:
+    """Actualizar estado de aprobación (APROBADO / RECHAZADO) en SQLite."""
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET estado = ?,
+                aprobado_por = ?,
+                comentario_supervisor = ?,
+                fecha_aprobacion = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (nuevo_estado.upper(), aprobado_por, comentario, id_solicitud))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        conn.close()
+        print(f"Error actualizando aprobación: {e}")
+        return False
+
 
 

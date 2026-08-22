@@ -20,6 +20,7 @@ from core.auth import (
     init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password
 )
 from scripts.generate_test_transactions import generar_lote_pruebas
+from views.mobile_approvals import render_mobile_approvals
 
 st.set_page_config(
     page_title="GZG Minerales - Control de Asistencia",
@@ -1700,7 +1701,8 @@ st.markdown("---")
 # NAVEGACIÓN PRINCIPAL POR SECCIONES Y PESTAÑAS (ST.TABS)
 opciones_pestanas = [
     "📊 Dashboard Analítico",
-    "✅ Bandeja de Aprobaciones (HE / Incidencias)"
+    "✅ Bandeja de Aprobaciones (HE / Incidencias)",
+    "📱 Módulo Móvil PWA (Aprobaciones)"
 ]
 if current_user and current_user.get('rol') == 'ADMINISTRACION':
     opciones_pestanas.append("👥 Gestión de Usuarios")
@@ -1708,7 +1710,8 @@ if current_user and current_user.get('rol') == 'ADMINISTRACION':
 pestanas_objs = st.tabs(opciones_pestanas)
 tab_dash = pestanas_objs[0]
 tab_bandeja = pestanas_objs[1]
-tab_usuarios = pestanas_objs[2] if len(pestanas_objs) > 2 else None
+tab_mobile = pestanas_objs[2]
+tab_usuarios = pestanas_objs[3] if len(pestanas_objs) > 3 else None
 
 # PESTAÑA 1: DASHBOARD ANALÍTICO
 with tab_dash:
@@ -2255,9 +2258,12 @@ with tab_bandeja:
                         st.toast(f"✅ Incidencia #{selected_inc_id} marcada como {nuevo_est_inc}", icon="💾")
                         st.rerun()
             else:
-                st.info("No hay incidencias en este filtro.")
-        else:
-            st.info("Sin incidencias registradas para mostrar.")
+                st.info("Sin incidencias registradas para mostrar.")
+
+# PESTAÑA MÓVIL PWA: APROBACIONES DE HORAS EXTRAS E INCIDENCIAS
+if tab_mobile:
+    with tab_mobile:
+        render_mobile_approvals()
 
 # PESTAÑA 3: GESTIÓN DE USUARIOS (SOLO ADMIN)
 if tab_usuarios:
