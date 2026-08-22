@@ -15,6 +15,20 @@ def render_mobile_approvals():
         color: #FFFFFF !important;
     }
     
+    /* Ocultar elementos de escritorio que deforman la vista en celulares */
+    @media screen and (max-width: 768px) {
+        .header-container,
+        div[data-testid="stSidebarCollapsedControl"],
+        div[data-testid="stSidebar"] {
+            display: none !important;
+        }
+        .main .block-container {
+            padding: 0.5rem 0.25rem !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+    
     /* Contenedor simulador celular */
     .mobile-header {
         background: linear-gradient(185deg, #1D212A 0%, #121418 100%);
@@ -22,6 +36,7 @@ def render_mobile_approvals():
         border-bottom: 1px solid #2A2F3D;
         margin-bottom: 20px;
         border-radius: 12px;
+        width: 100% !important;
     }
     
     .gzg-logo-text {
