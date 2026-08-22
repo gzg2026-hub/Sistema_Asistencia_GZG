@@ -47,31 +47,6 @@ section[data-testid="stSidebar"] div[data-testid="stButton"] button p {
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
-
-/* RESPONSIVO MÓVIL AUTOMÁTICO (< 768px): Ocultar elementos de escritorio y adaptar 100% ancho */
-@media screen and (max-width: 768px) {
-    div[data-testid="stNotification"],
-    div[data-testid="stDecoration"],
-    header[data-testid="stHeader"] {
-        display: none !important;
-    }
-    .main .block-container {
-        padding: 0.25rem 0.5rem !important;
-        max-width: 100% !important;
-        width: 100% !important;
-    }
-    div[data-baseweb="tab-list"] {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        width: 100% !important;
-    }
-    div[data-baseweb="tab-list"] button {
-        flex: 1 1 auto !important;
-        font-size: 13px !important;
-        padding: 8px 6px !important;
-        text-align: center !important;
-    }
-}
 </style>
 """, unsafe_allow_html=True)
 

@@ -17,9 +17,7 @@ def render_mobile_approvals():
     
     /* Ocultar elementos de escritorio que deforman la vista en celulares */
     @media screen and (max-width: 768px) {
-        .header-container,
-        div[data-testid="stSidebarCollapsedControl"],
-        div[data-testid="stSidebar"] {
+        .header-container {
             display: none !important;
         }
         .main .block-container {
