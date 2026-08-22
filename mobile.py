@@ -39,11 +39,15 @@ def get_logo_base64():
 logo_b64 = get_logo_base64()
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
 
-# Inyectar metas para icono de App Móvil (PWA Favicon)
+# Inyectar metas para icono y nombre de App Móvil PWA
 st.markdown("""
 <head>
+    <meta name="apple-mobile-web-app-title" content="GZG Minerales">
+    <meta name="application-name" content="GZG Minerales">
+    <meta name="theme-color" content="#F58220">
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/assets/gzg_logo.png">
     <link rel="shortcut icon" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/assets/gzg_logo.png">
+    <link rel="manifest" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/manifest.json">
 </head>
 """, unsafe_allow_html=True)
 
