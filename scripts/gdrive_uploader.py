@@ -38,14 +38,17 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
 
     # 1. Intentar por Google Drive Desktop Local Sync Folder si existe
     gdrive_sync_dirs = [
+        r"G:\.shortcut-targets-by-id\1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU\AGOSTO",
+        r"G:\.shortcut-targets-by-id\1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU",
+        r"G:\Mi unidad\AGOSTO",
         r"G:\Mi unidad\ASISTENCIA\AGOSTO",
-        r"G:\Shared drives\ASISTENCIA\AGOSTO",
         r"G:\Compartidos conmigo\AGOSTO",
         os.path.expanduser(r"~\Google Drive\ASISTENCIA\AGOSTO"),
     ]
 
     for sync_dir in gdrive_sync_dirs:
-        target_dir = os.path.join(sync_dir, subfolder_name) if subfolder_name else sync_dir
+        # Colocar los archivos DIRECTAMENTE en la carpeta AGOSTO (sin subcarpetas adicionales)
+        target_dir = sync_dir
         if os.path.exists(sync_dir):
             try:
                 os.makedirs(target_dir, exist_ok=True)
