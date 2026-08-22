@@ -502,8 +502,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         pass
 
             cargo_val = str(worker_info.get('CARGO', worker_info.get('Posición', ''))).strip().lower()
-            # Estricto: Solo aplica si la posición / cargo es exactamente 'Mantenimiento' (se ignora departamento u oper&mtto)
-            es_mantenimiento = "mantenimiento" in cargo_val
+            area_val = str(worker_info.get('AREA', worker_info.get('ÁREA', worker_info.get('Departamento', '')))).strip().lower()
+            es_mantenimiento = ("mantenimiento" in cargo_val) or ("mantenimiento" in area_val) or ("maquinaria" in cargo_val)
 
             # Cálculo de horas trabajadas (Regla Mantenimiento 06:25 AM vs Candado General 07:00/19:00)
             horas_trabajadas = 0.0
@@ -733,7 +733,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 'TIPO_REGISTRO': tipo_registro,
                 'INCIDENCIAS': incidencias_str,
                 'ESTADO ASISTENCIA': estado,
-                'OBSERVACIONES': ''
+                'OBSERVACIONES': 'Abastecer petróleo / Recoger personal / Varios' if (es_mantenimiento and entrada and time_to_seconds(entrada) < 6 * 3600 + 25 * 60) else ''
             })
 
     # Procesar FALTAS para trabajadores no registrados en las fechas del dataset
