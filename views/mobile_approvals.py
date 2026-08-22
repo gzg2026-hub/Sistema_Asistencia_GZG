@@ -135,7 +135,7 @@ def render_mobile_approvals():
         font-weight: bold;
     }
     </style>
-    """, unsafe_style_html=True)
+    """, unsafe_allow_html=True)
     
     # 2. Header Superior GZG
     st.markdown("""
@@ -150,7 +150,7 @@ def render_mobile_approvals():
             </div>
         </div>
     </div>
-    """, unsafe_style_html=True)
+    """, unsafe_allow_html=True)
     
     # 3. Usuario actual
     username = st.session_state.get('username', 'Supervisor')
@@ -182,16 +182,16 @@ def render_mobile_approvals():
                 <div style="font-size: 26px; font-weight: 800;">{len(df_pendientes)}</div>
                 <div style="font-size: 12px; opacity: 0.9;">Pendientes de aprobación</div>
             </div>
-            """, unsafe_style_html=True)
+            """, unsafe_allow_html=True)
         with col_kpi2:
             st.markdown(f"""
             <div class="kpi-card-alert">
                 <div style="font-size: 26px; font-weight: 800; color: #F58220;">{len(df_aprobadas_mes)}</div>
                 <div style="font-size: 12px; color: #9A9EA7;">Aprobadas este mes</div>
             </div>
-            """, unsafe_style_html=True)
+            """, unsafe_allow_html=True)
             
-        st.markdown("<br>", unsafe_style_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.subheader("Pendientes de aprobación")
         
         if df_pendientes.empty:
@@ -216,7 +216,7 @@ def render_mobile_approvals():
                     - ⏰ **Horas extras**: <b style="color: #F58220;">{he_hhmm}</b>
                     - ⚠️ **Exceso de jornada**: <b style="color: #E67E22;">{exceso_hhmm}</b>
                     - 📝 **Motivo**: {motivo}
-                    """, unsafe_style_html=True)
+                    """, unsafe_allow_html=True)
                     
                     if obs_trabajador:
                         st.info(f"💬 **Observación**: {obs_trabajador}")
@@ -284,7 +284,7 @@ def render_mobile_approvals():
                         Por: {aprobador} {f'| {f_aprob}' if f_aprob else ''}
                     </div>
                 </div>
-                """, unsafe_style_html=True)
+                """, unsafe_allow_html=True)
 
     # ---------------------------------------------------------
     # TAB 3: DASHBOARD Y ESTADÍSTICAS
