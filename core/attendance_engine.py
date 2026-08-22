@@ -501,21 +501,44 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     except Exception as e:
                         pass
 
-            # Cálculo de horas trabajadas (Punto 1: Lógica General para todos los trabajadores)
+            cargo_val = str(worker_info.get('CARGO', '')).strip().lower()
+            area_val = str(worker_info.get('AREA', worker_info.get('ÁREA', ''))).strip().lower()
+            dept_val = str(worker_info.get('DEPARTAMENTO', worker_info.get('Departamento', ''))).strip().lower()
+            es_mantenimiento = "mantenimiento" in cargo_val or "mantenimiento" in area_val or "mtto" in cargo_val or "mtto" in area_val or "mantenimiento" in dept_val or "mtto" in dept_val
+
+            # Cálculo de horas trabajadas (Regla Mantenimiento 06:25 AM vs Candado General 07:00/19:00)
             horas_trabajadas = 0.0
             if entrada and salida:
                 e_sec = time_to_seconds(entrada)
                 s_sec = time_to_seconds(salida)
 
                 e_effective_sec = e_sec
-                if 6 * 3600 <= e_sec < 7 * 3600:
-                    e_effective_sec = 7 * 3600
-                elif 18 * 3600 <= e_sec < 19 * 3600:
-                    e_effective_sec = 19 * 3600
-                elif 4 * 3600 <= e_sec < 5 * 3600:
-                    e_effective_sec = 5 * 3600
-                elif 16 * 3600 <= e_sec < 17 * 3600:
-                    e_effective_sec = 17 * 3600
+
+                if es_mantenimiento:
+                    # Mantenimiento: Si entra ANTES de las 06:25 AM, considerar marcación real de entrada
+                    # Si entra entre 06:25 AM y 07:00 AM, considerar inicio oficial 07:00 AM
+                    if e_sec < 6 * 3600 + 25 * 60:
+                        e_effective_sec = e_sec
+                    elif 6 * 3600 + 25 * 60 <= e_sec < 7 * 3600:
+                        e_effective_sec = 7 * 3600
+                    elif e_sec < 18 * 3600 + 25 * 60:
+                        e_effective_sec = e_sec
+                    elif 18 * 3600 + 25 * 60 <= e_sec < 19 * 3600:
+                        e_effective_sec = 19 * 3600
+                    elif 4 * 3600 <= e_sec < 5 * 3600:
+                        e_effective_sec = 5 * 3600
+                    elif 16 * 3600 <= e_sec < 17 * 3600:
+                        e_effective_sec = 17 * 3600
+                else:
+                    # Para las demás posiciones: Candado oficial 07:00 AM / 19:00 PM
+                    if 6 * 3600 <= e_sec < 7 * 3600:
+                        e_effective_sec = 7 * 3600
+                    elif 18 * 3600 <= e_sec < 19 * 3600:
+                        e_effective_sec = 19 * 3600
+                    elif 4 * 3600 <= e_sec < 5 * 3600:
+                        e_effective_sec = 5 * 3600
+                    elif 16 * 3600 <= e_sec < 17 * 3600:
+                        e_effective_sec = 17 * 3600
 
                 if fecha_salida != fecha_entrada or s_sec < e_effective_sec:
                     dur_sec = (86400 - e_effective_sec) + s_sec
