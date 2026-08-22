@@ -13,12 +13,12 @@ from data.database import (
 )
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user
 
-import base64
+logo_icon_path = "assets/gzg_logo.png" if os.path.exists("assets/gzg_logo.png") else "📱"
 
 # Configuración de página 100% enfocada en Celular (Centrado sin Sidebar)
 st.set_page_config(
-    page_title="GZG Minerales - Aprobaciones Móvil",
-    page_icon="📱",
+    page_title="GZG Minerales - Aprobaciones",
+    page_icon=logo_icon_path,
     layout="centered",
     initial_sidebar_state="collapsed"
 )
@@ -37,6 +37,14 @@ def get_logo_base64():
 
 logo_b64 = get_logo_base64()
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
+
+# Inyectar metas para icono de App Móvil (PWA Favicon)
+st.markdown("""
+<head>
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/assets/gzg_logo.png">
+    <link rel="shortcut icon" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/assets/gzg_logo.png">
+</head>
+""", unsafe_allow_html=True)
 
 # CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements)
 st.markdown("""
@@ -184,12 +192,11 @@ if not is_authenticated():
         btn_login = st.form_submit_button("🔑 INGRESAR A LA APP", type="primary", use_container_width=True)
         if btn_login:
             if u_name and u_pass:
-                success, msg = login_user(u_name, u_pass)
-                if success:
+                if login_user(u_name, u_pass):
                     st.success("Acceso concedido")
                     st.rerun()
                 else:
-                    st.error(msg)
+                    st.error("❌ Usuario o contraseña incorrectos.")
             else:
                 st.warning("Ingresa usuario y contraseña")
     st.stop()
