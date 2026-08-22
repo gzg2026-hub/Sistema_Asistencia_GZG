@@ -550,15 +550,15 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             if 5.0 <= horas_trabajadas <= 8.0:
                 es_media_jornada = True
 
-            # Identificar Cambio de Guardia / Relevo Cuadrilla
+            # Identificar Cambio de Guardia / Relevo Cuadrilla (Ventana de Relevo Día: 04:30-06:00 AM, Relevo Noche: 16:30-18:00 PM)
             es_cambio_guardia = False
-            if entrada and salida:
+            if entrada and salida and not es_mantenimiento:
                 e_sec = time_to_seconds(entrada)
                 s_sec = time_to_seconds(salida)
-                if (4 * 3600 + 30 * 60 <= e_sec <= 5 * 3600 + 30 * 60) or \
-                   (4 * 3600 + 45 * 60 <= s_sec <= 5 * 3600 + 30 * 60) or \
-                   (16 * 3600 + 30 * 60 <= e_sec <= 17 * 3600 + 30 * 60) or \
-                   (16 * 3600 + 45 * 60 <= s_sec <= 17 * 3600 + 30 * 60):
+                if (4 * 3600 + 30 * 60 <= e_sec <= 6 * 3600) or \
+                   (4 * 3600 + 30 * 60 <= s_sec <= 6 * 3600) or \
+                   (16 * 3600 + 30 * 60 <= e_sec <= 18 * 3600) or \
+                   (16 * 3600 + 30 * 60 <= s_sec <= 18 * 3600):
                     es_cambio_guardia = True
 
             # 3. Validar Marcación Faltante
