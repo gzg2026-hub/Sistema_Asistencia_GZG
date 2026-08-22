@@ -98,6 +98,14 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
         ruta_maestro_raw = os.path.join(CARPETA_DATA_CRUDA, "Transacciones_Acumuladas.xlsx")
         df_marc_master = fusionar_y_deduplicar_data_cruda(df_marc_nuevo, ruta_maestro_raw)
 
+        # Limpieza inmediata de la descarga temporal para dejar ÚNICAMENTE Transacciones_Acumuladas.xlsx
+        try:
+            if os.path.exists(excel_path_nuevo) and os.path.abspath(excel_path_nuevo) != os.path.abspath(ruta_maestro_raw):
+                os.remove(excel_path_nuevo)
+                _log(f"Limpieza de descarga temporal completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
+        except Exception as e_clean:
+            _log(f"Aviso al limpiar temporal raw: {e_clean}")
+
         # Fallback a base de datos de trabajadores si el Excel crudo no incluye pestaña de trabajadores
         df_trab = df_trab_nuevo
         if df_trab.empty:
@@ -160,15 +168,6 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                                 subir_archivo_a_gdrive(file_path_dia, subfolder_name="Data_Procesada")
                         else:
                             _log(f"Día actual {f_dia} en curso: NO se genera reporte diario incompleto (se mantiene acumulado en Data Cruda).")
-
-                # Limpieza de archivo temporal de descarga raw para conservar SOLO Transacciones_Acumuladas.xlsx en data_cruda
-                try:
-                    if os.path.exists(excel_path_nuevo) and os.path.abspath(excel_path_nuevo) != os.path.abspath(ruta_maestro_raw):
-                        os.remove(excel_path_nuevo)
-                        _log(f"Limpieza de descarga temporal completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
-                except Exception as e_clean:
-                    _log(f"Aviso al limpiar temporal raw: {e_clean}")
-
             else:
                 _log("AVISO: No se encontraron trabajadores en la base de datos para procesar asistencia.")
         else:
