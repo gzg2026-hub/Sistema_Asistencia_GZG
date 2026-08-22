@@ -221,6 +221,14 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
         _log(f"ERROR: {e}")
         _log(traceback.format_exc())
 
+    # 5. Sincronización Automática con GitHub para Streamlit Cloud
+    try:
+        _log("Sincronizando cambios diarios con GitHub / Streamlit Cloud...")
+        os.system('git add data/asistencia.db downloads/ && git commit -m "auto: Daily attendance update 9AM" && git push origin main')
+        _log("[OK] Sincronizado exitosamente con GitHub.")
+    except Exception as e_git:
+        _log(f"Aviso en sincronización git: {e_git}")
+
     _log("Descarga finalizada.")
     _log("=" * 60)
 
