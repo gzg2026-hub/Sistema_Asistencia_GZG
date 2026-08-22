@@ -13,6 +13,8 @@ from data.database import (
 )
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user
 
+import base64
+
 # Configuración de página 100% enfocada en Celular (Centrado sin Sidebar)
 st.set_page_config(
     page_title="GZG Minerales - Aprobaciones Móvil",
@@ -24,6 +26,17 @@ st.set_page_config(
 # Inicializar Base de Datos y Autenticación
 init_db()
 init_auth()
+
+def get_logo_base64():
+    """Obtiene el logo oficial transparente de GZG en Base64."""
+    for logo_path in ["assets/gzg_logo_transparent.png", "assets/gzg_logo.png"]:
+        if os.path.exists(logo_path):
+            with open(logo_path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
+    return ""
+
+logo_b64 = get_logo_base64()
+logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
 
 # CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements)
 st.markdown("""
@@ -151,10 +164,15 @@ st.markdown("""
 # PANTALLA DE LOGIN MÓVIL (SI NO ESTÁ AUTENTICADO)
 # ---------------------------------------------------------
 if not is_authenticated():
-    st.markdown("""
+    st.markdown(f"""
     <div style="text-align: center; padding: 20px 0 10px 0;">
-        <span class="gzg-logo-text">GZG</span> <span class="gzg-logo-text gzg-orange">MINERALES</span>
-        <div style="font-size: 12px; color: #9A9EA7; margin-top: 4px;">APLICACIÓN MÓVIL DE APROBACIONES</div>
+        <div style="display: inline-flex; align-items: center; justify-content: center;">
+            {logo_html}
+            <div>
+                <span class="gzg-logo-text">GZG</span> <span class="gzg-logo-text gzg-orange">MINERALES</span>
+                <div style="font-size: 11px; color: #9A9EA7; letter-spacing: 1px;">APLICACIÓN MÓVIL DE APROBACIONES</div>
+            </div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -183,13 +201,16 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Cabecera Móvil GZG
-col_head1, col_head2 = st.columns([3, 1])
+# Cabecera Móvil GZG con Logo Corporativo Oficial
+col_head1, col_head2 = st.columns([3.5, 1])
 with col_head1:
-    st.markdown("""
-    <div>
-        <span class="gzg-logo-text">GZG</span> <span class="gzg-logo-text gzg-orange">MINERALES</span>
-        <div style="font-size: 11px; color: #9A9EA7;">CONTROL DE ASISTENCIA Y APROBACIONES</div>
+    st.markdown(f"""
+    <div style="display: flex; align-items: center;">
+        {logo_html}
+        <div>
+            <span class="gzg-logo-text" style="font-size: 18px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 18px;">MINERALES</span>
+            <div style="font-size: 10px; color: #9A9EA7;">CONTROL DE ASISTENCIA Y APROBACIONES</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 with col_head2:
@@ -199,8 +220,11 @@ with col_head2:
 
 st.write(f"👋 **Hola, {username}** ({rol})")
 
-# Sincronizar data de aprobaciones desde asistencia SQLite
-sincronizar_aprobaciones_desde_asistencia()
+# Cargar data de aprobaciones de forma eficiente (sin bucles de sincronización)
+if 'aprobaciones_synced' not in st.session_state:
+    sincronizar_aprobaciones_desde_asistencia()
+    st.session_state['aprobaciones_synced'] = True
+
 df_all = obtener_solicitudes_aprobacion('TODAS')
 
 # 3 Pestañas Móviles PWA
