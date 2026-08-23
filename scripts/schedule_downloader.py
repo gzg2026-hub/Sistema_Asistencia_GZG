@@ -98,13 +98,19 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
         ruta_maestro_raw = os.path.join(CARPETA_DATA_CRUDA, "Transacciones_Acumuladas.xlsx")
         df_marc_master = fusionar_y_deduplicar_data_cruda(df_marc_nuevo, ruta_maestro_raw)
 
-        # Limpieza inmediata de la descarga temporal para dejar ÚNICAMENTE Transacciones_Acumuladas.xlsx
+        # Limpieza estricta e inmediata de cualquier descarga o reporte en downloads/data_cruda
+        # para conservar ÚNICAMENTE Transacciones_Acumuladas.xlsx
         try:
-            if os.path.exists(excel_path_nuevo) and os.path.abspath(excel_path_nuevo) != os.path.abspath(ruta_maestro_raw):
-                os.remove(excel_path_nuevo)
-                _log(f"Limpieza de descarga temporal completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
+            for item_tmp in os.listdir(CARPETA_DATA_CRUDA):
+                item_tmp_path = os.path.join(CARPETA_DATA_CRUDA, item_tmp)
+                if os.path.isfile(item_tmp_path) and item_tmp.strip().lower() != "transacciones_acumuladas.xlsx" and not item_tmp.startswith("~$"):
+                    try:
+                        os.remove(item_tmp_path)
+                    except Exception:
+                        pass
+            _log(f"Limpieza estricta de carpeta data_cruda completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
         except Exception as e_clean:
-            _log(f"Aviso al limpiar temporal raw: {e_clean}")
+            _log(f"Aviso al limpiar temporales en data_cruda: {e_clean}")
 
         # Fallback a base de datos de trabajadores si el Excel crudo no incluye pestaña de trabajadores
         df_trab = df_trab_nuevo
