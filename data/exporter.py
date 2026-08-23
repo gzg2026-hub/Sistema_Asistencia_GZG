@@ -162,6 +162,13 @@ def exportar_asistencia_excel(
             cell.font = font_header
         cell.alignment = align_center
 
+    # Identificar trabajadores con doble turno / doble entrada en la misma fecha
+    doble_turno_keys = set()
+    if df_asistencia is not None and not df_asistencia.empty and 'DNI' in df_asistencia.columns and 'FECHA' in df_asistencia.columns:
+        dups = df_asistencia[df_asistencia.duplicated(subset=['DNI', 'FECHA'], keep=False)]
+        for _, d_row in dups.iterrows():
+            doble_turno_keys.add((str(d_row['DNI']).strip(), str(d_row['FECHA']).strip()))
+
     # Escribir filas procesadas
     if df_asistencia is not None and not df_asistencia.empty:
         for _, row in df_asistencia.iterrows():
@@ -244,16 +251,19 @@ def exportar_asistencia_excel(
             # Aplicar bordes, fuente, alineaciones a la nueva fila (23 columnas: A a W)
             current_row = ws.max_row
             ws.row_dimensions[current_row].height = 20
+            es_doble_turno = (dni, fecha_t) in doble_turno_keys
+            
             for c_idx in range(1, 24):
                 cell = ws.cell(row=current_row, column=c_idx)
                 cell.font = font_data
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 23) else align_left
                 
-                # Resaltado pastel exclusivamente para incidencias/pendencias (Pendiente, Falta, Sin registro, Salida anticipada).
-                # Cambio de guardia / Jornada parcial queda SIN RELLENO (sin sombreado).
+                # Resaltado Durazno Pastel (#FCE4D6) para Doble Turno (doble entrada el mismo día), Pendientes, Faltas, Salida anticipada.
                 comb_check = (tipo_reg + " " + incid).lower()
-                if "cambio de guardia" in comb_check or tipo_reg.lower() == "cambio de guardia":
+                if es_doble_turno or "doble" in comb_check or "reingreso" in comb_check:
+                    cell.fill = fill_incidencia
+                elif "cambio de guardia" in comb_check or tipo_reg.lower() == "cambio de guardia":
                     pass # Sin relleno para Cambio de guardia
                 elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "salida anticipada" in comb_check:
                     cell.fill = fill_incidencia

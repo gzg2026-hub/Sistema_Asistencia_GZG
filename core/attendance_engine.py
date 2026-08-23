@@ -303,23 +303,13 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         if valid_rows.empty:
             continue
 
-        # SILENCIAR Y RECTIFICAR SILENCIOSAMENTE MARCACIONES ERRÓNEAS (PUNTOS 1 Y 6)
-        # Caso Jhon Agreda (Punto 1): Marcación accidental de 'Inicio de horas extra' a las 07:03 a la par con 'Registro de entrada' a las 07:03.
-        he_early_err = [
-            r for _, r in valid_rows.iterrows()
-            if ('inicio de horas extra' in str(r.get(tipo_col, '')).lower() or 'inicio h.e.' in str(r.get(tipo_col, '')).lower())
-            and time_to_seconds(r['Hora_Clean']) < 43200 # Mañana
-        ]
-        ent_early = [
-            r for _, r in valid_rows.iterrows()
-            if 'entrada' in str(r.get(tipo_col, '')).lower() and not ('horas extra' in str(r.get(tipo_col, '')).lower() or 'he' in str(r.get(tipo_col, '')).lower())
-            and time_to_seconds(r['Hora_Clean']) < 43200
-        ]
-        if he_early_err and ent_early:
-            he_h = he_early_err[0]['Hora_Clean']
-            ent_h = ent_early[0]['Hora_Clean']
-            if abs(time_to_seconds(he_h) - time_to_seconds(ent_h)) <= 300: # < 5 min
-                valid_rows = valid_rows[valid_rows['Hora_Clean'] != he_h]
+        # Caso Jhon Agreda (Punto 1): Marcación accidental de 'Inicio de horas extra' en la mañana (05:00 a 09:30 AM).
+        # Reclasificar como 'Registro de entrada' para evaluar Turno Día correctamente.
+        for r_idx, r in valid_rows.iterrows():
+            tipo_str = str(r.get(tipo_col, '')).lower()
+            t_sec = time_to_seconds(r['Hora_Clean'])
+            if ('inicio de horas extra' in tipo_str or 'inicio h.e.' in tipo_str) and 18000 <= t_sec < 34200:
+                valid_rows.loc[r_idx, tipo_col] = 'Registro de entrada'
 
         # Caso Yenkli Ordoñez / Doble marcación al retirarse en la tarde (Punto 6):
         # Entrada 06:41 AM, luego 19:01 Entrada y 19:01 Salida. Descartar la entrada errónea de las 19:01 silenciosamente sin poner mensaje de corrección.
