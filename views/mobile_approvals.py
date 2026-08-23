@@ -190,19 +190,15 @@ def render_mobile_approvals():
         font-weight: bold;
     }
 
-    /* Bordes estáticos blancos 1.5px uniformes en formularios, popovers e inputs */
+    /* Bordes finos uniformes idénticos al botón popover nativo */
     div[data-testid="stForm"],
-    div[data-baseweb="popover"],
     div[data-baseweb="input"],
-    .stTextInput > div > div,
-    div[data-testid="stPopover"] > button {
-        border: 1.5px solid #FFFFFF !important;
-        border-radius: 10px !important;
-        background-color: #1A1D24 !important;
+    .stTextInput > div > div {
+        border: 1px solid rgba(255, 255, 255, 0.4) !important;
+        border-radius: 8px !important;
     }
     div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
-        border: 1.5px solid #FFFFFF !important;
-        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
     }
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
