@@ -24,6 +24,24 @@ def get_logo_base64():
                 return base64.b64encode(f.read()).decode()
     return ""
 
+def get_worker_avatar_url(dni: str, worker_name: str) -> str:
+    if dni:
+        dni_clean = str(dni).strip().zfill(8)
+        root_dir = os.path.dirname(os.path.abspath(__file__))
+        for ext in ['.jpg', '.jpeg', '.png']:
+            for folder in [os.path.join(root_dir, 'assets', 'fotos'), os.path.join(root_dir, 'assets', 'fotos_trabajadores')]:
+                p = os.path.join(folder, f"{dni_clean}{ext}")
+                if os.path.exists(p):
+                    try:
+                        with open(p, "rb") as f:
+                            b64 = base64.b64encode(f.read()).decode()
+                            mime = "image/png" if ext == '.png' else "image/jpeg"
+                            return f"data:{mime};base64,{b64}"
+                    except Exception:
+                        pass
+    avatar_name = str(worker_name).strip().replace(" ", "+")
+    return f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
+
 logo_b64 = get_logo_base64()
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
 logo_icon = Image.open("assets/gzg_logo.png") if os.path.exists("assets/gzg_logo.png") else "📱"
@@ -361,8 +379,7 @@ with tab_pendientes:
             he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
             
-            avatar_name = worker_name.replace(" ", "+")
-            avatar_url = f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
+            avatar_url = get_worker_avatar_url(row.get('dni'), worker_name)
             
             with st.expander(f"👤 **{worker_name}** ({fecha_sol})", expanded=True):
                 st.markdown(f"""
