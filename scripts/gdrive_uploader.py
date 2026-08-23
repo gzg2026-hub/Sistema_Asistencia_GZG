@@ -27,14 +27,11 @@ def log_drive(msg: str):
 
 def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bool:
     """
-    Sube o actualiza un archivo local en la carpeta compartida de Google Drive (ID: 1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU).
+    GOOGLE DRIVE DESACTIVADO POR ORDEN DEL USUARIO.
+    NO REALIZA NINGUNA SUBIDA NI MODIFICACIÓN EN DRIVE.
     """
-    if not os.path.exists(local_file_path):
-        log_drive(f"Error: El archivo local no existe -> {local_file_path}")
-        return False
-
-    file_name = os.path.basename(local_file_path)
-    log_drive(f"Iniciando subida de {file_name} a Google Drive (Folder ID: {DRIVE_FOLDER_ID})...")
+    log_drive("GOOGLE DRIVE BLOQUEADO TOTALMENTE - Subida cancelada por preferencia explícita del usuario.")
+    return False
 
     # 1. Intentar por Google Drive Desktop Local Sync Folder si existe
     gdrive_sync_dirs = [
