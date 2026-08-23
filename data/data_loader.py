@@ -40,8 +40,11 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
             if match_period:
                 current_date = match_period.group(1)
                 
-        # Identificar la fila de encabezados
-        if 'ID' in row_vals and ('Tiempo' in row_vals or 'Tipo de pase de tarjeta' in row_vals):
+        # Identificar la fila de encabezados (reconoce 'ID' o 'DNI', y 'Tiempo' o 'Hora' o 'Dispositivo' or 'Tipo')
+        row_vals_upper = [v.upper() for v in row_vals]
+        has_id = any(v in ('ID', 'DNI', 'DNI/ID', 'PERSONA') for v in row_vals_upper)
+        has_time_or_type = any(v in ('TIEMPO', 'HORA', 'TIME', 'TIPO DE PASE DE TARJETA', 'TIPO', 'DISPOSITIVO', 'PUNTO DE CONTROL DE ASISTENCIA') for v in row_vals_upper)
+        if has_id and has_time_or_type and header_idx is None:
             header_idx = idx
             headers = [v for v in row_vals if v]
             continue
@@ -52,7 +55,7 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
             first_val_clean = first_val.lower().strip()
             
             # Omitir filas vacías, repetidas de encabezado o banners como "Fecha:2026-08-02 Semana:Domingo"
-            if not first_val or first_val_clean == 'id' or first_val_clean == 'none' or 'fecha:' in first_val_clean or 'semana:' in first_val_clean or 'periodo:' in first_val_clean:
+            if not first_val or first_val_clean in ('id', 'dni', 'none') or 'fecha:' in first_val_clean or 'semana:' in first_val_clean or 'periodo:' in first_val_clean:
                 continue
                 
             row_dict = {}
@@ -61,14 +64,14 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
                 row_dict[col_name] = val
                     
             # Asignar la fecha si la fila no tiene una columna 'Fecha' explícita
-            if not row_dict.get('Fecha') or str(row_dict.get('Fecha')).strip().lower() in ['', 'none', 'nan']:
+            if not row_dict.get('Fecha') and not row_dict.get('FECHA'):
                 row_dict['Fecha'] = current_date if current_date else datetime.now().strftime("%Y-%m-%d")
             
             # Limpiar departamento (solo texto después del >)
-            dept_val = str(row_dict.get('Departamento', '')).strip()
+            dept_val = str(row_dict.get('Departamento', row_dict.get('DEPARTAMENTO', ''))).strip()
             if '>' in dept_val:
                 row_dict['Departamento'] = dept_val.split('>')[-1].strip()
-            else:
+            elif dept_val:
                 row_dict['Departamento'] = dept_val
                 
             data_rows.append(row_dict)
@@ -77,6 +80,21 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
         return pd.DataFrame()
         
     df = pd.DataFrame(data_rows)
+
+    # Mapeo universal de nombres de columnas crudas de HikCentral
+    rename_dict = {
+        'DNI': 'ID',
+        'NOMBRES': 'Nombre',
+        'APELLIDOS': 'Apellido',
+        'FECHA': 'Fecha',
+        'HORA': 'Tiempo',
+        'DISPOSITIVO': 'Punto de control de asistencia',
+        'TIPO': 'Tipo de pase de tarjeta'
+    }
+    for old_c, new_c in rename_dict.items():
+        if old_c in df.columns and new_c not in df.columns:
+            df.rename(columns={old_c: new_c}, inplace=True)
+
     for col in ['ID', 'DNI', 'DNI/ID']:
         if col in df.columns:
             df[col] = df[col].apply(normalizar_dni)
@@ -84,6 +102,15 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
     for col in ['Nombre', 'Apellido', 'Nombres', 'Apellidos', 'Nombres y Apellidos']:
         if col in df.columns:
             df[col] = df[col].astype(str).apply(quitar_tildes)
+
+    if 'Departamento' not in df.columns:
+        df['Departamento'] = 'MINA'
+    if 'Posición' not in df.columns and 'Posicion' not in df.columns:
+        df['Posición'] = 'OPERATIVO'
+    if 'Semana' not in df.columns:
+        df['Semana'] = ''
+    if 'Método de verificación' not in df.columns and 'Metodo de verificacion' not in df.columns:
+        df['Método de verificación'] = 'Rostro'
 
     official_cols = [
         'ID', 'Nombre', 'Apellido', 'Departamento', 'Posición',

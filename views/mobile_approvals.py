@@ -1,7 +1,14 @@
 import streamlit as st
 import pandas as pd
 import datetime
-from data.database import obtener_solicitudes_aprobacion, actualizar_estado_aprobacion, sincronizar_aprobaciones_desde_asistencia
+from data.database import (
+    obtener_solicitudes_aprobacion,
+    actualizar_estado_aprobacion,
+    actualizar_estado_aprobacion_nivel,
+    sincronizar_aprobaciones_desde_asistencia,
+    cambiar_password_usuario
+)
+from core.auth import get_current_user, hash_password, verify_password
 
 def render_mobile_approvals():
     """Renderiza el Módulo Móvil PWA de Aprobaciones con el diseño GZG Minerales (Modo Oscuro)."""
@@ -182,26 +189,83 @@ def render_mobile_approvals():
     </div>
     """, unsafe_allow_html=True)
     
-    # 3. Usuario actual
-    username = st.session_state.get('username', 'Supervisor')
-    rol = st.session_state.get('user_role', 'SUPERVISOR')
+    # 3. Usuario actual y rol
+    user_info = get_current_user()
+    if user_info:
+        username = user_info.get('username', 'usuario')
+        rol = user_info.get('rol', 'SUPERVISOR')
+        nombre = user_info.get('nombre_completo', username)
+    else:
+        username = st.session_state.get('username', 'admin')
+        rol = st.session_state.get('user_role', 'ADMINISTRACION')
+        nombre = username
     
-    st.write(f"👋 **Hola, {username}** ({rol})")
+    curr_user_clean = str(username).strip().lower()
+    is_admin = (rol == 'ADMINISTRACION' or curr_user_clean == 'admin')
+    
+    col_usr_info, col_usr_pw = st.columns([1.5, 1])
+    with col_usr_info:
+        st.write(f"👋 **Hola, {nombre}** ({rol})")
+    with col_usr_pw:
+        with st.popover("🔑 Mi Clave"):
+            st.markdown("##### 🔑 Cambiar Contraseña")
+            with st.form("form_cambiar_pass_mobile"):
+                p_act = st.text_input("Contraseña Actual", type="password", key="m_p_act")
+                p_nue = st.text_input("Nueva Contraseña", type="password", key="m_p_nue")
+                p_cnf = st.text_input("Confirmar Nueva Contraseña", type="password", key="m_p_cnf")
+                btn_ch = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
+                if btn_ch:
+                    if user_info and not verify_password(p_act, user_info.get('password_hash', '')):
+                        st.error("La contraseña actual es incorrecta.")
+                    elif not p_nue or len(p_nue) < 4:
+                        st.warning("Debe tener al menos 4 caracteres.")
+                    elif p_nue != p_cnf:
+                        st.error("Las contraseñas no coinciden.")
+                    else:
+                        new_h = hash_password(p_nue)
+                        if cambiar_password_usuario(username, new_h):
+                            st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
+                            st.success("Contraseña modificada exitosamente.")
+                            st.rerun()
+                        else:
+                            st.error("Error al actualizar la contraseña.")
     
     # Sincronizar data de aprobaciones desde asistencia SQLite
     sincronizar_aprobaciones_desde_asistencia()
     df_all = obtener_solicitudes_aprobacion('TODAS')
     
-    # 4. Navegación Móvil de 4 Pestañas
+    # 4. Navegación Móvil de 3 Pestañas
     tab_pendientes, tab_historial, tab_dashboard = st.tabs([
         "📋 Pendientes", "📜 Historial", "📊 Dashboard"
     ])
     
     # ---------------------------------------------------------
-    # TAB 1: PENDIENTES DE APROBACIÓN
+    # TAB 1: PENDIENTES DE APROBACIÓN POR NIVEL 1 Y NIVEL 2
     # ---------------------------------------------------------
     with tab_pendientes:
-        df_pendientes = df_all[df_all['estado'] == 'PENDIENTE']
+        df_base_pend = df_all[df_all['estado'] == 'PENDIENTE'].copy()
+        
+        # Filtrar solicitudes según aprobador N1 o N2 asignado
+        if is_admin:
+            df_pendientes = df_base_pend
+        else:
+            def _filter_user_approvals(row):
+                n1 = str(row.get('aprobador_n1', '') or '').strip().lower()
+                n2 = str(row.get('aprobador_n2', '') or '').strip().lower()
+                st1 = str(row.get('estado_n1', 'PENDIENTE') or 'PENDIENTE').upper()
+                st2 = str(row.get('estado_n2', 'PENDIENTE') or 'PENDIENTE').upper()
+
+                # Caso 1: Usuario es Aprobador Nivel 1 y N1 está PENDIENTE
+                if n1 == curr_user_clean and st1 == 'PENDIENTE':
+                    return True
+                # Caso 2: Usuario es Aprobador Nivel 2, N1 ya está APROBADO (o sin N1) y N2 está PENDIENTE
+                if n2 == curr_user_clean and st2 == 'PENDIENTE' and (st1 == 'APROBADO' or not n1 or n1 == curr_user_clean):
+                    return True
+                return False
+
+            mask = df_base_pend.apply(_filter_user_approvals, axis=1)
+            df_pendientes = df_base_pend[mask] if not df_base_pend.empty else pd.DataFrame()
+
         df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO']
         
         # KPIs superiores
@@ -210,7 +274,7 @@ def render_mobile_approvals():
             st.markdown(f"""
             <div class="kpi-card-pending">
                 <div style="font-size: 26px; font-weight: 800;">{len(df_pendientes)}</div>
-                <div style="font-size: 12px; opacity: 0.9;">Pendientes de aprobación</div>
+                <div style="font-size: 12px; opacity: 0.9;">Pendientes para ti</div>
             </div>
             """, unsafe_allow_html=True)
         with col_kpi2:
@@ -222,7 +286,7 @@ def render_mobile_approvals():
             """, unsafe_allow_html=True)
             
         st.markdown("<br>", unsafe_allow_html=True)
-        st.subheader("Pendientes de aprobación")
+        st.subheader("Solicitudes Asignadas para tu Aprobación")
         
         if df_pendientes.empty:
             st.info("🎉 ¡Excelente! No tienes solicitudes pendientes de aprobación en este momento.")
@@ -237,7 +301,26 @@ def render_mobile_approvals():
                 obs_trabajador = row.get('observacion_trabajador', '')
                 motivo = row.get('motivo', 'Trabajo operativo adicional en turno')
                 
+                n1_user = str(row.get('aprobador_n1', '') or '').strip().lower()
+                n2_user = str(row.get('aprobador_n2', '') or '').strip().lower()
+                st1_val = str(row.get('estado_n1', 'PENDIENTE') or 'PENDIENTE').upper()
+                
+                # Determinar si el usuario actual actúa como Nivel 1 o Nivel 2
+                if is_admin:
+                    target_level = 1 if st1_val == 'PENDIENTE' else 2
+                elif n1_user == curr_user_clean and st1_val == 'PENDIENTE':
+                    target_level = 1
+                else:
+                    target_level = 2
+
+                level_badge = "🥇 APROBACIÓN NIVEL 1 (SUPERVISOR / JEFE)" if target_level == 1 else "🥈 APROBACIÓN NIVEL 2 (SUPERINTENDENTE)"
+
                 with st.expander(f"👤 **{worker_name}** | {cargo} ({fecha_sol})", expanded=True):
+                    st.caption(f"🛡️ **{level_badge}**")
+                    if target_level == 2 and st1_val == 'APROBADO':
+                        ap_por_1 = row.get('aprobado_por_n1', n1_user)
+                        st.success(f"✅ Nivel 1 ya fue APROBADO por `{ap_por_1}`. Falta VoBo Final del Superintendente.")
+
                     st.markdown(f"""
                     **Detalle de la Solicitud:**
                     - 📅 **Fecha**: {fecha_sol}
@@ -245,24 +328,54 @@ def render_mobile_approvals():
                     - ⏱️ **Jornada trabajada**: {row.get('jornada_trabajada_hhmm', '-')}
                     - ⏰ **Horas extras**: <b style="color: #F58220;">{he_hhmm}</b>
                     - ⚠️ **Exceso de jornada**: <b style="color: #E67E22;">{exceso_hhmm}</b>
-                    - 📝 **Motivo**: {motivo}
                     """, unsafe_allow_html=True)
                     
-                    if obs_trabajador:
-                        st.info(f"💬 **Observación**: {obs_trabajador}")
-                        
-                    comentario = st.text_input(f"Comentario opcional ({worker_name})", key=f"com_{sol_id}", placeholder="Escribe un comentario...")
+                    comentario_aprobador = st.text_input(
+                        "✍️ Comentario del Aprobador",
+                        key=f"com_{sol_id}",
+                        placeholder="Ingresa una observación o justificación de aprobación/rechazo..."
+                    )
+                    
+                    uploaded_file = st.file_uploader(
+                        "📷 Adjuntar Foto / Imagen de Sustento (opcional)",
+                        type=["png", "jpg", "jpeg"],
+                        key=f"file_{sol_id}"
+                    )
                     
                     c_btn1, c_btn2 = st.columns(2)
                     with c_btn1:
-                        if st.button("❌ RECHAZAR", key=f"rej_{sol_id}", use_container_width=True):
-                            actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario)
-                            st.success(f"Solicitud de {worker_name} RECHAZADA.")
+                        if st.button(f"❌ RECHAZAR (N{target_level})", key=f"rej_{sol_id}", use_container_width=True):
+                            adjunto_rel_path = None
+                            if uploaded_file is not None:
+                                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                                os.makedirs(adj_dir, exist_ok=True)
+                                fname = f"solic_{sol_id}_{uploaded_file.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                with open(fpath, "wb") as f:
+                                    f.write(uploaded_file.getbuffer())
+                                adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+
+                            actualizar_estado_aprobacion_nivel(sol_id, target_level, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
+                            st.success(f"Solicitud Nivel {target_level} de {worker_name} RECHAZADA.")
                             st.rerun()
                     with c_btn2:
-                        if st.button("✅ APROBAR", key=f"app_{sol_id}", type="primary", use_container_width=True):
-                            actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario)
-                            st.success(f"Solicitud de {worker_name} APROBADA.")
+                        btn_label = "✅ APROBAR N1" if target_level == 1 else "⭐ VoBo FINAL N2"
+                        if st.button(btn_label, key=f"app_{sol_id}", type="primary", use_container_width=True):
+                            adjunto_rel_path = None
+                            if uploaded_file is not None:
+                                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                                os.makedirs(adj_dir, exist_ok=True)
+                                fname = f"solic_{sol_id}_{uploaded_file.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                with open(fpath, "wb") as f:
+                                    f.write(uploaded_file.getbuffer())
+                                adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+
+                            actualizar_estado_aprobacion_nivel(sol_id, target_level, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
+                            st.toast(f"✅ Solicitud de {worker_name} Aprobada en Nivel {target_level}!", icon="🎉")
+                            st.success(f"Solicitud Nivel {target_level} de {worker_name} APROBADA.")
                             st.rerun()
 
     # ---------------------------------------------------------
@@ -282,6 +395,7 @@ def render_mobile_approvals():
         if df_hist.empty:
             st.info("No hay registros en el historial para el filtro seleccionado.")
         else:
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             for idx, row in df_hist.iterrows():
                 worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
                 cargo = row.get('cargo', '')
@@ -289,8 +403,12 @@ def render_mobile_approvals():
                 estado = row.get('estado', 'PENDIENTE')
                 he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
                 exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
-                aprobador = row.get('aprobado_por', 'Sistema')
-                f_aprob = row.get('fecha_aprobacion', '')
+                
+                ap_n1 = row.get('aprobado_por_n1', '')
+                c_n1 = row.get('comentario_n1', '')
+                ap_n2 = row.get('aprobado_por_n2', '')
+                c_n2 = row.get('comentario_n2', '')
+                adjunto = row.get('adjuntos', '')
                 
                 badge_html = f'<span class="badge-approved">APROBADO</span>' if estado == 'APROBADO' else (
                     f'<span class="badge-rejected">RECHAZADO</span>' if estado == 'RECHAZADO' else f'<span class="badge-pending">PENDIENTE</span>'
@@ -301,7 +419,7 @@ def render_mobile_approvals():
                     <div style="display: flex; justify-content: space-between; align-items: start;">
                         <div>
                             <div class="worker-name">{worker_name}</div>
-                            <div class="worker-role">{cargo}</div>
+                            <div class="worker-role">{cargo} ({fecha_sol})</div>
                         </div>
                         <div>{badge_html}</div>
                     </div>
@@ -310,11 +428,28 @@ def render_mobile_approvals():
                         <div>⏰ Horas extras: <b style="color: #F58220;">{he_hhmm}</b></div>
                         <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                     </div>
-                    <div style="font-size: 11px; color: #6C727F; margin-top: 8px;">
-                        Por: {aprobador} {f'| {f_aprob}' if f_aprob else ''}
-                    </div>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                if ap_n1 or c_n1:
+                    st.markdown(f"💬 **Aprobador N1 ({ap_n1 or 'Supervisor'})**: {c_n1 or 'Sin comentario'}")
+                if ap_n2 or c_n2:
+                    st.markdown(f"⭐ **Aprobador N2 ({ap_n2 or 'Superintendente'})**: {c_n2 or 'Sin comentario'}")
+                if adjunto and isinstance(adjunto, str) and adjunto.strip():
+                    full_adj_path = os.path.join(root_dir, adjunto)
+                    if os.path.exists(full_adj_path):
+                        ext = os.path.splitext(full_adj_path)[1].lower()
+                        if ext in ['.png', '.jpg', '.jpeg']:
+                            st.image(full_adj_path, caption="📎 Sustento Adjuntado", use_container_width=True)
+                        else:
+                            st.download_button(
+                                label="📎 Descargar Sustento Adjuntado",
+                                data=open(full_adj_path, "rb").read(),
+                                file_name=os.path.basename(full_adj_path),
+                                mime="application/pdf",
+                                key=f"dl_{row['id']}"
+                            )
+                st.divider()
 
     # ---------------------------------------------------------
     # TAB 3: DASHBOARD Y ESTADÍSTICAS

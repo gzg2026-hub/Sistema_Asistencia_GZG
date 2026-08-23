@@ -8,7 +8,8 @@
 - **Subida Única en Tarea Automática Programada de 9:00 AM (Vía API Nube)**:
   - ÚNICAMENTE la tarea programada automática de las 9:00 AM (`scripts/schedule_downloader.py`) subirá mediante **API directa en la nube** (sin carpetas locales `G:\`) los siguientes **2 archivos autorizados** directamente en la raíz de la carpeta `AGOSTO`:
     1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
-    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
+    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados de Día Anterior)*.
+  - **Definición Estricta de Día Cerrado (Regla de 9:00 AM)**: Un día calendárico (ej. día 22) se considera **Día Cerrado** ÚNICAMENTE a partir de la ejecución automática de las 9:00 AM del día posterior (ej. día 23 a las 9:00 AM). Antes de las 9:00 AM del día posterior, el día se considera EN CURSO debido a que las salidas del Turno Noche (07:00-08:00 AM) aún no han sido registradas ni descargadas. Queda estrictamente PROHIBIDO emitir o crear el reporte diario individual en Excel de un día (ej. `Reporte_Asistencia_GZG_2026-08-22.xlsx`) antes de las 9:00 AM del día siguiente.
 - **PROHIBIDO TOTALMENTE EN DRIVE**:
   - NO crear subcarpetas como `Data_Cruda` o `Data_Procesada` en Google Drive.
   - `Sistema_Asistencia_GZG_v1.0.xlsx` *(Archivo raíz ejecutable en la PC, NUNCA se sube a Drive)*.
@@ -18,6 +19,8 @@
 
 ## 2. PRESERVACIÓN DE DATA CRUDA REAL DEL BIOMÉTRICO
 - En los archivos de data cruda (`Transacciones_Acumuladas.xlsx`), se deben mantener **los valores reales exactos** exportados por el biométrico HikCentral (`Registro de entrada`, `Registrar salida`, `Imagen de cara`, `Huella dactilar`, departamentos y cargos reales).
+- **Integridad Estricta de Marcaciones 1-a-1**: El total de marcaciones en `Transacciones_Acumuladas.xlsx` debe ser un reflejo EXACTO del 100% de transacciones de HikCentral Web (ejemplo: 533 en Web = 533 en Excel). Queda estrictamente prohibido usar parsers que descarten o silencien archivos descargados con encabezados nativos (`DNI`, `APELLIDOS`, `NOMBRES`, `FECHA`, `HORA`, `DISPOSITIVO`, `TIPO`).
+- **Multi-Alias de Encabezados en Lectura**: Toda lectura o parseo de Excel en `data/data_loader.py` debe soportar explícitamente tanto el formato formateado (`ID`, `Tiempo`) como el formato nativo descargado de HikCentral (`DNI`, `HORA`, `DISPOSITIVO`, `TIPO`).
 - Queda prohibido hardcodear o inventar valores por defecto (como "MINA", "OPERATIVO", "Semana 34", "Marcación", "Rostro").
 
 ---
@@ -33,7 +36,22 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Asignación Universal de Turnos (DÍA / NOCHE / MANTENIMIENTO)**:
   * **Turno DÍA**: Entrada 07:00 AM (tolerancia hasta 07:15 AM). Salida 19:00 PM (12 Horas de Turno).
   * **Turno NOCHE**: Entrada 19:00 PM (tolerancia hasta 19:15 PM). Salida 07:00 AM del día siguiente (12 Horas de Turno).
-  * **Mantenimiento / Operaciones**: Evaluación adaptativa de jornadas según catálogo de personal.
+  * **Regla de Mantenimiento**: Para el personal cuyo cargo contenga la palabra "Mantenimiento", si la entrada ocurre antes de las 06:25 AM, se considera su marcación real de entrada. Si ingresa entre las 06:25 AM y 07:00 AM, su inicio oficial se ajusta a las 07:00 AM.
+  * **Lógica de Cambio de Guardia y Previos de Turno (Ciclos de 10 Días - ej. 20 de Agosto)**:
+    - El cambio oficial de guardia ocurre cada 10 días e involucra únicamente a un grupo/cuadrilla específica (el resto del personal mantiene su horario normal 07:00-19:00 / 19:00-07:00).
+    - **Turno Previo Noche (1-2 días antes del cambio)**: 19:00 PM a 05:00 AM del día siguiente (10 Horas). Permite que el turno entrante empiece a las 05:00 AM.
+    - **Turno Día en Cambio de Guardia**: 05:00 AM a 17:00 PM (12 Horas). Aplica para el personal que baja de turno para salir temprano.
+    - **Turno Noche en Cambio de Guardia**: 17:00 PM a 07:00 AM del día siguiente (14 Horas). Aplica para el personal que recupera las 2 horas del previo noche.
+    - **Tolerancia y Exceso**: Mantener 15 min de tolerancia en entrada/salida para estos horarios. NO considerar Exceso de Jornada en Cambios de Guardia, pero SÍ registrar Horas Extras si hay marcación explícita de biométrico.
+    - **Etiquetado y Sombreado Obligatorio**: Todo registro evaluado como Cambio de Guardia o Relevo en ventana de transición (04:30-06:00 AM / 16:30-18:00 PM) debe etiquetarse explícitamente como `"Cambio de guardia"` en la columna **Tipo de Registro** (Columna V), garantizando su sombreado automático en **Durazno Pastel (`#FCE4D6`)** en el reporte exportado.
+  * **Lógica de Media Jornada (Jornada Parcial)**:
+    - **Horarios Oficiales**: 07:00 AM a 13:00 PM (Turno Mañana) y 13:00 PM a 19:00 PM (Turno Tarde).
+    - Aplica únicamente para personal en cambio de guardia o que ingresa/retorna de sus días libres (Régimen 20x10 u otros).
+  * **Regla de Exceso de Jornada**: Se reporta únicamente cuando las horas trabajadas superan las 12.0 horas de turno por 30 minutos o más (se omiten excesos < 30 min). Quedan excluidos Cambio de Guardia, Jornada Parcial (5-8h) y Régimen Especial (DNI 46181231 - José Moncada). Se formatea como `Exceso de Jornada (HH:MM)`.
+  * **Exclusión Total de H.E. y Exceso para Personal Administrativo**:
+    - El personal cuya posición / cargo sea `"Administrativo"` (DNI `74546819` Leila Lostaunau, DNI `77134790` Clari Tocto, DNI `48455175` Iván Vásquez) NO realiza ni acumula Horas Extras ni Exceso de Jornada bajo ninguna circunstancia.
+    - En todos los cálculos y reportes del sistema, sus campos `HORAS EXTRAS (HH:MM)`, `EXCESO JORNADA (HH:MM)` y `TOTAL HORAS ADICIONALES (HH:MM)` permanecen estrictamente en `'00:00'` (0.0).
+    - Únicamente se calculan y visualizan sus horas de turno trabajadas (`HORAS TRABAJADAS (HH:MM)`).
 - **Doble Turno / Doble Entrada en el Mismo Día**:
   * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente y se sombrea la fila en durazno pastel.
 - **Filtro de Filas Fantasma / Sin Marcación (Regla Punto 9)**:
@@ -43,23 +61,38 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 
 ## 4. ESTILOS Y FORMATO DEL REPORTE EXCEL EXPORTADO (`data/exporter.py`)
 - **Estructura**: 23 Columnas (A a W).
-- **Encabezados Corporativos**:
-  * Azul Oscuro (`#1F4E78`) con texto blanco para columnas A a P (Datos generales y marcaciones).
-  * Azul Claro (`#2F5597`) con texto blanco para columnas Q a U (Cálculos de Horas de Turno, Tardanzas, Excesos y Horas Extras).
-- **Sombreado Pastel de Incidencias**:
-  * **Durazno Pastel (`#FCE4D6`)**: Faltas, Pendientes, Sin Registro, Salidas Anticipadas y Doble Turno (doble entrada el mismo día).
-  * **Sin Relleno (Blanco)**: Cambio de Guardia, Jornada Parcial y asistencias normales.
+- **Encabezados / Títulos de Celdas Corporativos**:
+  * TODOS los encabezados de columna en cualquier archivo Excel (`Transacciones_Acumuladas.xlsx` y `Reporte_Asistencia_GZG`) deben llevar **Fondo Azul Oscuro (#1F4E78)** con texto **Blanco Bold**, alineación centrada vertical/horizontal con `wrap_text=True` y altura de fila de 28 a 32pt. (Para columnas calculadas en reportes de asistencia Q a U, se usa Azul Claro `#2F5597` / `#317F96`).
+  * **Anchos de Columna Holgados sin Truncamiento**: Ningún título de columna debe quedar recortado o tapado por las flechas de filtro de Excel (ej. "Departamento", "Tiempo", "Tipo de pase de tarjeta", "Método de verificación", "Punto de control de asistencia"). Los anchos deben calcularse sumando una holgura de al menos +6 caracteres sobre la longitud del texto y un ancho mínimo de 16.
+- **Sombreado Pastel de Incidencias y Registros**:
+  * **Azul Pastel (`#D9E1F2`)**: Horas Extras (H.E.), Tipo de Registro con Horas Extras y Exceso de Jornada.
+  * **Durazno Pastel (`#FCE4D6`)**: Faltas, Pendientes, Sin Registro, Salidas Anticipadas, Doble Turno (doble entrada el mismo día), Cambio de Guardia y Jornada Parcial.
+  * **Sin Relleno (Blanco)**: Asistencias normales.
 - **Formato de Celdas**:
-  * Columna A (DNI): Formateada como Texto (`@`) para conservar ceros a la izquierda.
+  * Columna A (DNI / ID): Formateada strictly como Texto (`@`) con `cell.number_format = '@'` en TODOS los archivos Excel generados (`Reporte_Asistencia_GZG` y `Transacciones_Acumuladas.xlsx`) para conservar ceros a la izquierda y evitar advertencias de Excel.
   * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
 
 ---
 
 ## 5. NORMALIZACIÓN UNIVERSAL DE DNI Y CONTROL DE DUPLICIDAD
-- **Formato Estricto de 8 Dígitos (`zfill(8)`)**:
-  * Todo DNI o identificador de persona en cualquier capa del sistema (lectura Excel, base de datos SQLite, reportes y padrón) debe ser tratado **estrictamente como Texto de 8 dígitos**.
-  * Si el DNI tiene menos de 8 dígitos (por ejemplo `3208053` o `6616501`), la lógica debe rellenar automáticamente los ceros a la izquierda (`03208053`, `06616501`).
-- **Prohibición de Integer/Float**:
-  * Queda **PROHIBIDO** almacenar o comparar DNIs como números enteros (`int`) o flotantes (`float`) para evitar la pérdida de ceros a la izquierda.
+- **Formato Estricto e Invariante de 8 Dígitos (`digits.lstrip('0').zfill(8)`)**:
+  * Todo DNI o identificador de persona en cualquier capa del sistema (lectura Excel, exportación a Excel, base de datos SQLite, reportes y padrón) se procesa mediante la función matemática invariante `digits.lstrip('0').zfill(8)`.
+  * Esta regla garantiza que **NINGÚN DNI** pueda tener una longitud distinta de 8 dígitos, resolviendo de forma permanente y tajante cualquier descalce de ceros a la izquierda (ej. Franco `3208053` -> `03208053`, Yenkli `6616501` / `006616501` -> `06616501`).
+  * Queda estrictamente **PROHIBIDO** el uso de diccionarios de mapeo manual o harcodeos con ceros adicionales (ej. `0066...`), así como el almacenamiento de DNIs como enteros o flotantes.
 - **Consolidación Automática en SQLite y Padrón**:
-  * Al ingresar nuevas marcaciones o trabajadores, el sistema debe consolidar automáticamente por DNI normalizado de 8 dígitos, evitando duplicados en la base de datos o en `Padron_Trabajadores_GZG.xlsx`.
+  * Al ingresar nuevas marcaciones o trabajadores, el sistema consolida automáticamente por DNI normalizado de 8 dígitos, evitando duplicados en la base de datos o en `Padron_Trabajadores_GZG.xlsx`.
+
+---
+
+## 6. CONFIGURACIÓN DE GOOGLE DRIVE Y MANEJO DE ARCHIVOS EXCEL EN WINDOWS
+- **Permisos de Cuenta de Servicio en Google Drive**:
+  * Al compartir carpetas en Google Drive con la cuenta de servicio de Google Cloud (`*.gserviceaccount.com`), asignar estrictamente el rol **Colaborador** (Editor). Queda prohibido/bloqueado por Google asignar "Administrador de contenido".
+- **Soporte Obligatorio para Unidades/Carpetas Compartidas (`supportsAllDrives=True`)**:
+  * En la integración con la API v3 de Google Drive (`scripts/gdrive_uploader.py`), es **OBLIGATORIO** incluir los parámetros `supportsAllDrives=True` e `includeItemsFromAllDrives=True` en todas las llamadas de lectura (`files().list`), actualización (`files().update`) y creación (`files().create`), garantizando el acceso a carpetas compartidas de organización (ej. `29. CONECTIVIDAD > ASISTENCIA > AGOSTO`).
+- **Limpieza Automática de Archivos Temporales de Descarga**:
+  * La carpeta local `downloads/data_cruda/` debe contener **ÚNICAMENTE el archivo maestro `Transacciones_Acumuladas.xlsx`**. Todos los archivos temporales descargados por el biométrico (`Transacciones_YYYY-MM-DD_...xlsx`) deben eliminarse automáticamente tras ser fusionados en el maestro.
+- **Manejo Seguro de Archivos Bloqueados en Microsoft Excel (`PermissionError`)**:
+  * Cuando el usuario tiene abierto un archivo Excel (`Transacciones_Acumuladas.xlsx`, `Reporte_Asistencia_GZG_...xlsx` o `Sistema_Asistencia_GZG_v1.0.xlsx`) en su pantalla, Windows aplica un bloqueo de escritura de archivo.
+  * El sistema debe capturar `PermissionError`, emitir una advertencia clara indicando que el archivo está abierto en Excel, y continuar la ejecución sin interrupciones bruscas.
+  * Para visualizar las actualizaciones procesadas en segundo plano por el sistema, el usuario simplemente debe cerrar y volver a abrir la ventana de Excel en su computadora.
+

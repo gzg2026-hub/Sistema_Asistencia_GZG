@@ -40,17 +40,32 @@ st.set_page_config(
 init_db()
 init_auth()
 
-# Inyectar metas para icono y nombre de App Móvil PWA
+# Inyectar metas para icono, manifiesto y registro Service Worker PWA
 st.markdown(f"""
 <head>
     <meta name="apple-mobile-web-app-title" content="GZG Minerales">
     <meta name="application-name" content="GZG Minerales">
     <meta name="theme-color" content="#F58220">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="data:image/png;base64,{logo_b64}">
     <link rel="icon" type="image/png" href="data:image/png;base64,{logo_b64}">
     <link rel="shortcut icon" href="data:image/png;base64,{logo_b64}">
-    <link rel="manifest" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/manifest.json">
+    <link rel="manifest" href="/manifest.json">
 </head>
+
+<script>
+if ('serviceWorker' in navigator) {{
+    window.addEventListener('load', function() {{
+        navigator.serviceWorker.register('/sw.js').then(function(reg) {{
+            console.log('[PWA GZG Mobile] ServiceWorker registrado:', reg.scope);
+        }}).catch(function(err) {{
+            console.warn('[PWA GZG Mobile] Registro ServiceWorker diferido:', err);
+        }});
+    }});
+}}
+</script>
 """, unsafe_allow_html=True)
 
 # CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements)
@@ -281,8 +296,6 @@ with tab_pendientes:
             fecha_sol = row.get('fecha', '')
             he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
-            obs_trabajador = row.get('observacion_trabajador', '')
-            motivo = row.get('motivo', 'Trabajo operativo adicional en turno')
             
             with st.expander(f"👤 **{worker_name}** ({fecha_sol})", expanded=True):
                 st.markdown(f"""
@@ -291,23 +304,51 @@ with tab_pendientes:
                 - ⏱️ **Jornada trabajada**: {row.get('jornada_trabajada_hhmm', '-')}
                 - ⏰ **Horas extras**: <b style="color: #F58220;">{he_hhmm}</b>
                 - ⚠️ **Exceso de jornada**: <b style="color: #E67E22;">{exceso_hhmm}</b>
-                - 📝 **Motivo**: {motivo}
                 """, unsafe_allow_html=True)
                 
-                if obs_trabajador:
-                    st.info(f"💬 **Observación**: {obs_trabajador}")
-                    
-                comentario = st.text_input(f"Comentario opcional ({worker_name})", key=f"m_com_{sol_id}", placeholder="Escribe un comentario...")
+                comentario_aprobador = st.text_input(
+                    "✍️ Comentario del Aprobador",
+                    key=f"m_com_{sol_id}",
+                    placeholder="Escribe la observación de aprobación/rechazo..."
+                )
+                
+                uploaded_file = st.file_uploader(
+                    "📷 Adjuntar Foto / Imagen de Sustento (opcional)",
+                    type=["png", "jpg", "jpeg"],
+                    key=f"m_file_{sol_id}"
+                )
                 
                 c_btn1, c_btn2 = st.columns(2)
                 with c_btn1:
                     if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
-                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario)
+                        adjunto_rel_path = None
+                        if uploaded_file is not None:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            fname = f"solic_{sol_id}_{uploaded_file.name}"
+                            fpath = os.path.join(adj_dir, fname)
+                            with open(fpath, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+
+                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador)
                         st.success(f"Rechazado: {worker_name}")
                         st.rerun()
                 with c_btn2:
                     if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
-                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario)
+                        adjunto_rel_path = None
+                        if uploaded_file is not None:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            fname = f"solic_{sol_id}_{uploaded_file.name}"
+                            fpath = os.path.join(adj_dir, fname)
+                            with open(fpath, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+
+                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador)
                         st.success(f"Aprobado: {worker_name}")
                         st.rerun()
 
@@ -326,6 +367,7 @@ with tab_historial:
     if df_hist.empty:
         st.info("No hay registros en el historial para este filtro.")
     else:
+        root_dir = os.path.dirname(os.path.abspath(__file__))
         for idx, row in df_hist.iterrows():
             worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
             cargo = row.get('cargo', '')
@@ -334,6 +376,8 @@ with tab_historial:
             he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
             aprobador = row.get('aprobado_por', 'Sistema')
+            c_aprob = row.get('comentario_n1', '') or row.get('comentario_n2', '')
+            adjunto = row.get('adjuntos', '')
             
             badge_html = f'<span class="badge-approved">APROBADO</span>' if estado == 'APROBADO' else (
                 f'<span class="badge-rejected">RECHAZADO</span>' if estado == 'RECHAZADO' else f'<span class="badge-pending">PENDIENTE</span>'
@@ -345,10 +389,10 @@ with tab_historial:
                     <div class="worker-name">{worker_name}</div>
                     <div>{badge_html}</div>
                 </div>
-                <div class="worker-role">{cargo} | {fecha_sol}</div>
+                <div class="worker-role">{cargo} ({fecha_sol})</div>
                 <hr style="border-color: #2A2F3D; margin: 8px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                    <div>⏰ HE: <b style="color: #F58220;">{he_hhmm}</b></div>
+                    <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b></div>
                     <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                 </div>
                 <div style="font-size: 10px; color: #6C727F; margin-top: 6px;">Por: {aprobador}</div>

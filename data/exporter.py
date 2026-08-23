@@ -274,14 +274,18 @@ def exportar_asistencia_excel(
                 cell.border = thin_border
                 cell.alignment = align_center if c_idx not in (2, 3, 4, 5, 23) else align_left
                 
-                # Resaltado Durazno Pastel (#FCE4D6) para Doble Turno (doble entrada el mismo día), Pendientes, Faltas, Salida anticipada.
+                # Resaltado Pastel:
+                # - Durazno Pastel (#FCE4D6): Doble Turno, Pendientes, Faltas, Sin Registro, Salidas Anticipadas.
+                # - Azul Pastel (#D9E1F2): Horas Extras, H.E., Exceso de Jornada / Horas Adicionales.
                 comb_check = (tipo_reg + " " + incid).lower()
+                has_he = ("horas extra" in comb_check or "h.e." in comb_check or "exceso" in comb_check or "adicional" in comb_check or he_explicita != '00:00' or tot_adic != '00:00' or exc_turno != '00:00')
+                
                 if es_doble_turno or "doble" in comb_check or "reingreso" in comb_check:
                     cell.fill = fill_incidencia
-                elif "cambio de guardia" in comb_check or tipo_reg.lower() == "cambio de guardia":
-                    pass # Sin relleno para Cambio de guardia
-                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "salida anticipada" in comb_check:
+                elif "pendiente" in comb_check or "falta" in comb_check or "sin registro" in comb_check or "salida anticipada" in comb_check or "cambio de guardia" in comb_check or "jornada parcial" in comb_check:
                     cell.fill = fill_incidencia
+                elif has_he:
+                    cell.fill = fill_cambio_turno
 
                 # Formato de celda DNI como Texto '@'
                 if c_idx == 1:
@@ -401,10 +405,17 @@ def guardar_transacciones_acumuladas_excel(df: pd.DataFrame, target_path: str) -
             ws.row_dimensions[row_idx].height = 20
             for col_idx, val in enumerate(row_data, start=1):
                 col_name = headers[col_idx - 1]
-                val_str = "" if pd.isna(val) else str(val)
+                val_str = "" if pd.isna(val) else str(val).strip()
+                if col_name in ('ID', 'DNI') and val_str:
+                    if val_str.endswith(".0"):
+                        val_str = val_str[:-2]
+                    if val_str.isdigit():
+                        val_str = val_str.zfill(8)
                 c = ws.cell(row=row_idx, column=col_idx, value=val_str)
                 c.font = font_data
                 c.border = thin_border
+                if col_name in ('ID', 'DNI'):
+                    c.number_format = '@'
                 if col_name in center_cols:
                     c.alignment = align_center
                 else:
@@ -413,10 +424,14 @@ def guardar_transacciones_acumuladas_excel(df: pd.DataFrame, target_path: str) -
         for col in ws.columns:
             col_letter = get_column_letter(col[0].column)
             max_len = max(len(str(cell.value or '')) for cell in col)
-            ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
+            ws.column_dimensions[col_letter].width = max(max_len + 6, 16)
 
-        wb.save(target_path)
-        return True
+        try:
+            wb.save(target_path)
+            return True
+        except PermissionError:
+            print(f"[Aviso] No se pudo sobrescribir '{target_path}' porque está abierto en Excel. Ciérralo para guardar.")
+            return False
     except Exception as e:
         print(f"[Error] Error al guardar Transacciones_Acumuladas.xlsx formateado: {e}")
         return False

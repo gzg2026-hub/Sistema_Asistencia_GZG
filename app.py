@@ -29,6 +29,84 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Inyección de componentes PWA nativos, Service Worker y banner interactivo de instalación
+st.markdown("""
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#F58220">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Asistencia GZG">
+    <meta name="application-name" content="Asistencia GZG">
+    <link rel="apple-touch-icon" href="/assets/gzg_logo.png">
+</head>
+
+<!-- Banner Flotante Interactivo PWA -->
+<div id="gzg-pwa-install-banner" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999999; background: linear-gradient(135deg, #1D212A 0%, #121418 100%); border: 1.5px solid #F58220; box-shadow: 0 8px 32px rgba(245, 130, 32, 0.4); border-radius: 16px; padding: 14px 20px; align-items: center; justify-content: space-between; gap: 15px; width: 90%; max-width: 460px;">
+    <div style="display: flex; align-items: center; gap: 14px;">
+        <div style="font-size: 28px;">📱</div>
+        <div>
+            <div style="font-weight: 800; color: #FFFFFF; font-size: 14px; letter-spacing: 0.5px;">Instalar App GZG Minerales</div>
+            <div style="font-size: 11px; color: #9A9EA7; margin-top: 2px;">Acceso rápido en inicio, notificaciones y modo offline</div>
+        </div>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <button id="gzg-pwa-install-btn" style="background: linear-gradient(135deg, #F58220 0%, #D35400 100%); color: #FFFFFF; border: none; padding: 9px 18px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; box-shadow: 0 4px 12px rgba(245,130,32,0.3);">Instalar</button>
+        <button id="gzg-pwa-close-btn" style="background: rgba(255,255,255,0.1); color: #9A9EA7; border: none; padding: 9px 12px; border-radius: 10px; font-size: 13px; cursor: pointer;">✕</button>
+    </div>
+</div>
+
+<script>
+(function() {
+    // 1. Registro del Service Worker PWA
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) {
+                console.log('[PWA GZG] ServiceWorker registrado con éxito:', reg.scope);
+            }).catch(function(err) {
+                console.warn('[PWA GZG] Registro ServiceWorker diferido:', err);
+            });
+        });
+    }
+
+    // 2. Captura del evento beforeinstallprompt para mostrar banner PWA
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        const banner = document.getElementById('gzg-pwa-install-banner');
+        if (banner) banner.style.display = 'flex';
+    });
+
+    const installBtn = document.getElementById('gzg-pwa-install-btn');
+    if (installBtn) {
+        installBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('[PWA GZG] Usuario aceptó instalar la App PWA');
+                    }
+                    deferredPrompt = null;
+                    const banner = document.getElementById('gzg-pwa-install-banner');
+                    if (banner) banner.style.display = 'none';
+                });
+            }
+        });
+    }
+
+    const closeBtn = document.getElementById('gzg-pwa-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            const banner = document.getElementById('gzg-pwa-install-banner');
+            if (banner) banner.style.display = 'none';
+        });
+    }
+})();
+</script>
+""", unsafe_allow_html=True)
+
 # Estilo CSS para garantizar que los botones de la barra lateral queden perfectamente centrados sin desbordar
 st.markdown("""
 <style>

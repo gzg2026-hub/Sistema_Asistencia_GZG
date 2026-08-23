@@ -24,6 +24,8 @@ def init_db(db_path: str = DB_PATH):
         nombres TEXT,
         cargo TEXT,
         area TEXT,
+        aprobador_n1 TEXT,
+        aprobador_n2 TEXT,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -158,6 +160,36 @@ def init_db(db_path: str = DB_PATH):
     )
     """)
 
+    # Migración segura de columnas aprobador_n1 y aprobador_n2 en trabajadores
+    cols_trab = [row[1] for row in cursor.execute("PRAGMA table_info(trabajadores)").fetchall()]
+    if 'aprobador_n1' not in cols_trab:
+        cursor.execute("ALTER TABLE trabajadores ADD COLUMN aprobador_n1 TEXT")
+    if 'aprobador_n2' not in cols_trab:
+        cursor.execute("ALTER TABLE trabajadores ADD COLUMN aprobador_n2 TEXT")
+
+    # Migración segura de columnas de aprobación en 2 niveles para aprobaciones
+    cols_aprob = [row[1] for row in cursor.execute("PRAGMA table_info(aprobaciones)").fetchall()]
+    if 'aprobador_n1' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN aprobador_n1 TEXT")
+    if 'aprobador_n2' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN aprobador_n2 TEXT")
+    if 'estado_n1' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN estado_n1 TEXT DEFAULT 'PENDIENTE'")
+    if 'aprobado_por_n1' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN aprobado_por_n1 TEXT")
+    if 'fecha_n1' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN fecha_n1 TIMESTAMP")
+    if 'comentario_n1' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN comentario_n1 TEXT")
+    if 'estado_n2' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN estado_n2 TEXT DEFAULT 'PENDIENTE'")
+    if 'aprobado_por_n2' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN aprobado_por_n2 TEXT")
+    if 'fecha_n2' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN fecha_n2 TIMESTAMP")
+    if 'comentario_n2' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN comentario_n2 TEXT")
+
     # Migración segura de columnas de validación en horas_extra e incidencias
     cols_he = [row[1] for row in cursor.execute("PRAGMA table_info(horas_extra)").fetchall()]
     if 'estado_validacion' not in cols_he:
@@ -176,29 +208,15 @@ def init_db(db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
-OFFICIAL_DNI_MAPPING = {
-    '3208053': '03208053',
-    '03208053': '03208053',
-    '6616501': '006616501',
-    '06616501': '006616501',
-    '006616501': '006616501',
-}
-
 def clean_dni(val) -> str:
-    """Normaliza cualquier DNI respetando estrictamente el Padrón Oficial de Trabajadores."""
+    """Normaliza cualquier DNI respetando estrictamente la Regla Invariante de 8 dígitos (zfill(8))."""
     if pd.isna(val) or val is None or str(val).strip() == '':
         return ''
     digits = ''.join(c for c in str(val) if c.isdigit())
-    if not digits:
+    digits_clean = digits.lstrip('0')
+    if not digits_clean:
         return ''
-    digits_lstrip = digits.lstrip('0')
-    if digits in OFFICIAL_DNI_MAPPING:
-        return OFFICIAL_DNI_MAPPING[digits]
-    if digits_lstrip in OFFICIAL_DNI_MAPPING:
-        return OFFICIAL_DNI_MAPPING[digits_lstrip]
-    if len(digits) <= 8:
-        return digits.zfill(8)
-    return digits
+    return digits_clean.zfill(8)
 
 def quitar_tildes(texto: str) -> str:
     if not isinstance(texto, str) or not texto or str(texto).strip().lower() in ('nan', 'none', ''):
@@ -226,21 +244,30 @@ def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
         dni = clean_dni(row.get('DNI', ''))
         if not dni:
             continue
+        n1_val = str(row.get('APROBADOR_N1', row.get('Nivel de Aprobacion 1', ''))).strip() if pd.notna(row.get('APROBADOR_N1', row.get('Nivel de Aprobacion 1', ''))) else ''
+        n2_val = str(row.get('APROBADOR_N2', row.get('Nivel de Aprobacion 2', ''))).strip() if pd.notna(row.get('APROBADOR_N2', row.get('Nivel de Aprobacion 2', ''))) else ''
+        if n1_val.lower() in ('nan', 'none', ''): n1_val = None
+        if n2_val.lower() in ('nan', 'none', ''): n2_val = None
+
         cursor.execute("""
-        INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, updated_at)
-        VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, aprobador_n1, aprobador_n2, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(dni) DO UPDATE SET
             apellidos=excluded.apellidos,
             nombres=excluded.nombres,
             cargo=excluded.cargo,
             area=excluded.area,
+            aprobador_n1=excluded.aprobador_n1,
+            aprobador_n2=excluded.aprobador_n2,
             updated_at=CURRENT_TIMESTAMP
         """, (
             dni,
-            quitar_tildes(str(row.get('APELLIDOS', ''))),
-            quitar_tildes(str(row.get('NOMBRES', ''))),
-            str(row.get('CARGO', '')).strip(),
-            str(row.get('AREA', row.get('ÁREA', ''))).strip()
+            quitar_tildes(str(row.get('APELLIDOS', row.get('Apellidos', '')))),
+            quitar_tildes(str(row.get('NOMBRES', row.get('Nombres', '')))),
+            str(row.get('CARGO', row.get('Posición / Cargo', ''))).strip(),
+            str(row.get('AREA', row.get('ÁREA', row.get('Departamento / Área', '')))).strip(),
+            n1_val,
+            n2_val
         ))
     conn.commit()
     conn.close()
@@ -688,17 +715,23 @@ def obtener_datos_db(fecha_inicio: Optional[str] = None, fecha_fin: Optional[str
 # ==============================================================================
 
 def seed_default_users(hash_fn, db_path: str = DB_PATH):
-    """Crea los usuarios iniciales del sistema si no existen."""
+    """Crea los usuarios iniciales autorizados del sistema y elimina usuarios legacy."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
     
+    # Eliminar usuarios de muestra no autorizados
+    cursor.execute("""
+    DELETE FROM usuarios 
+    WHERE username IN ('raul.espinoza', 'jhon.alva', 'carlos.mendoza', 'manuel.benitez', 'javier.delariva')
+    """)
+
     users = [
-        ('admin', hash_fn('gzg2026*'), 'Administración RRHH', 'ADMINISTRACION', 'TODAS', 'Administrador de Sistema'),
-        ('raul.espinoza', hash_fn('gzg2026*'), 'Ing. Raúl Espinoza', 'GERENTE_GENERAL', 'TODAS', 'Gerente General'),
-        ('jhon.alva', hash_fn('gzg2026*'), 'Ing. Jhon Alva', 'GERENTE_PLANTA', 'TODAS', 'Gerente de Planta'),
-        ('carlos.mendoza', hash_fn('gzg2026*'), 'Ing. Carlos Mendoza', 'SUPERINTENDENTE', 'TODAS', 'Superintendente de Mina'),
-        ('manuel.benitez', hash_fn('gzg2026*'), 'Ing. Manuel Benítez', 'JEFE_SUPERVISOR', 'OPER&MTTO', 'Jefe de Operaciones'),
-        ('javier.delariva', hash_fn('gzg2026*'), 'Lic. Javier De La Riva', 'JEFE_SUPERVISOR', 'JEFATURA', 'Supervisor de Jefatura')
+        ('admin', hash_fn('gzg2026*'), 'Administración (Control Total)', 'ADMINISTRACION', 'TODAS', 'Administrador de Sistema'),
+        ('jagreda', hash_fn('jagreda2026*'), 'Jhon Robert Ágreda Aspajo', 'JEFE_SUPERVISOR', 'OPER&MTTO', 'Supervisor'),
+        ('jalva', hash_fn('jalva2026*'), 'Jhon Kenedy Alva Medina', 'JEFE_SUPERVISOR', 'JEFATURA', 'Jefe'),
+        ('jdelariva', hash_fn('jdelariva2026*'), 'Javier Adrián De La Riva Aguilar', 'JEFE_SUPERVISOR', 'JEFATURA', 'Supervisor'),
+        ('jhuayama', hash_fn('jhuayama2026*'), 'Josmell Waldir Huayama Adriano', 'JEFE_SUPERVISOR', 'OPER&MTTO', 'Jefe'),
+        ('msanchez', hash_fn('msanchez2026*'), 'Manuel Ysidoro Sánchez Montoya', 'SUPERINTENDENTE', 'JEFATURA', 'Superintendente')
     ]
     
     for username, pass_hash, nombre, rol, area, cargo in users:
@@ -709,6 +742,19 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
         
     conn.commit()
     conn.close()
+
+def cambiar_password_usuario(username: str, new_password_hash: str, db_path: str = DB_PATH) -> bool:
+    """Actualiza el password_hash de un usuario en la base de datos."""
+    try:
+        conn = get_connection(db_path)
+        cursor = conn.cursor()
+        cursor.execute("UPDATE usuarios SET password_hash = ? WHERE LOWER(username) = LOWER(?)", (new_password_hash, username.strip()))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error al cambiar contraseña de {username}: {e}")
+        return False
 
 def obtener_usuario_by_username(username: str, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
     """Obtiene la información de un usuario según su nombre de usuario (búsqueda case-insensitive)."""
@@ -846,25 +892,34 @@ def sincronizar_desde_hcweb_downloadcenter(db_path: str = DB_PATH):
 
 
 def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
-    """Poblar solicitudes de aprobación desde la tabla asistencia para HE y Exceso de Jornada."""
+    """Sincronizar marcaciones con incidencias/HE hacia la tabla aprobaciones asociando N1 y N2."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
     
-    # 1. Asegurar tabla creada
+    # 1. Asegurar tabla creada y limpiar administrativos residuales y registros sin HE/Exceso
     init_db(db_path)
-    
-    # 2. Leer registros de asistencia con Exceso o Horas Extras
     cursor.execute("""
-        SELECT fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
-               horas_trabajadas, exceso_jornada_min, total_horas_adicionales_min,
-               observaciones
-        FROM asistencia
-        WHERE exceso_jornada_min > 0 OR total_horas_adicionales_min > 0 OR tardanza_min > 0
+        DELETE FROM aprobaciones 
+        WHERE LOWER(cargo) LIKE '%administrativo%' 
+           OR dni IN ('74546819', '77134790', '48455175')
+           OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
+    """)
+    
+    # 2. Leer registros de asistencia con Exceso o Horas Extras uniendo aprobadores N1 y N2 (excluyendo Administrativos)
+    cursor.execute("""
+        SELECT a.fecha, a.dni, a.apellidos, a.nombres, a.cargo, a.area, a.entrada, a.salida,
+               a.horas_trabajadas, a.exceso_jornada_min, a.total_horas_adicionales_min,
+               a.observaciones, t.aprobador_n1, t.aprobador_n2
+        FROM asistencia a
+        LEFT JOIN trabajadores t ON a.dni = t.dni
+        WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
+          AND LOWER(COALESCE(a.cargo, '')) NOT LIKE '%administrativo%'
+          AND a.dni NOT IN ('74546819', '77134790', '48455175')
     """)
     rows = cursor.fetchall()
     
     for r in rows:
-        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs = r
+        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs, n1_app, n2_app = r
         
         # Formatear HH:MM
         exceso_min = exceso_min or 0
@@ -893,12 +948,21 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
             INSERT OR IGNORE INTO aprobaciones (
                 fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
                 horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
-                horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador,
+                aprobador_n1, aprobador_n2, estado_n1, estado_n2
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', 'PENDIENTE')
         """, (
             fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
-            h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str, obs or ''
+            h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str, obs or '',
+            n1_app, n2_app
         ))
+
+        # Actualizar N1 y N2 si ya existía el registro
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET aprobador_n1 = ?, aprobador_n2 = ?
+            WHERE fecha = ? AND dni = ?
+        """, (n1_app, n2_app, fecha, dni))
         
     conn.commit()
     conn.close()
@@ -922,26 +986,77 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
 
 
 def actualizar_estado_aprobacion(id_solicitud: int, nuevo_estado: str, aprobado_por: str, comentario: str = "", db_path: str = DB_PATH) -> bool:
-    """Actualizar estado de aprobación (APROBADO / RECHAZADO) en SQLite."""
+    """Actualizar estado de aprobación directa (compatibilidad legacy / Admin)."""
+    return actualizar_estado_aprobacion_nivel(id_solicitud, 1, nuevo_estado, aprobado_por, comentario, db_path)
+
+
+def actualizar_estado_aprobacion_nivel(
+    id_solicitud: int,
+    nivel: int,
+    nuevo_estado: str,
+    aprobado_por: str,
+    comentario: str = "",
+    adjunto_path: str = None,
+    db_path: str = DB_PATH
+) -> bool:
+    """Actualiza la aprobación especificando Nivel 1 o Nivel 2, guarda adjuntos y evalúa el estado global."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
     try:
-        cursor.execute("""
-            UPDATE aprobaciones
-            SET estado = ?,
-                aprobado_por = ?,
-                comentario_supervisor = ?,
-                fecha_aprobacion = CURRENT_TIMESTAMP,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (nuevo_estado.upper(), aprobado_por, comentario, id_solicitud))
+        st_upper = nuevo_estado.upper()
+        if nivel == 1:
+            cursor.execute("""
+                UPDATE aprobaciones
+                SET estado_n1 = ?,
+                    aprobado_por_n1 = ?,
+                    comentario_n1 = ?,
+                    adjuntos = COALESCE(?, adjuntos),
+                    fecha_n1 = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (st_upper, aprobado_por, comentario, adjunto_path, id_solicitud))
+        elif nivel == 2:
+            cursor.execute("""
+                UPDATE aprobaciones
+                SET estado_n2 = ?,
+                    aprobado_por_n2 = ?,
+                    comentario_n2 = ?,
+                    adjuntos = COALESCE(?, adjuntos),
+                    fecha_n2 = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (st_upper, aprobado_por, comentario, adjunto_path, id_solicitud))
+
+        # Evaluar estado final global de la aprobación:
+        cursor.execute("SELECT estado_n1, estado_n2, aprobador_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+        row = cursor.fetchone()
+        if row:
+            e1, e2, app_n2 = row[0], row[1], row[2]
+            # Si cualquiera rechaza -> RECHAZADO
+            if e1 == 'RECHAZADO' or e2 == 'RECHAZADO':
+                final_state = 'RECHAZADO'
+            # Si no hay aprobador_n2 asignado -> el estado global depende de N1
+            elif not app_n2 or str(app_n2).strip().lower() in ('nan', 'none', ''):
+                final_state = e1 or 'PENDIENTE'
+            # Si hay aprobador_n2 -> requiere que ambos N1 y N2 estén APROBADOS
+            elif e1 == 'APROBADO' and e2 == 'APROBADO':
+                final_state = 'APROBADO'
+            else:
+                final_state = 'PENDIENTE'
+
+            cursor.execute("""
+                UPDATE aprobaciones
+                SET estado = ?,
+                    aprobado_por = ?,
+                    comentario_supervisor = ?,
+                    fecha_aprobacion = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (final_state, aprobado_por, comentario, id_solicitud))
+
         conn.commit()
         conn.close()
         return True
     except Exception as e:
         conn.close()
-        print(f"Error actualizando aprobación: {e}")
+        print(f"Error actualizando aprobación nivel {nivel}: {e}")
         return False
-
-
-

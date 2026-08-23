@@ -628,6 +628,14 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
             total_horas_adicionales_min = exceso_jornada_min_reporte + he_explicita_total_min
 
+            # Regla especial Personal Administrativo: No realizan H.E. ni Exceso de Jornada, solo visualización de Horas Trabajadas
+            is_administrativo = "administrativo" in cargo_val
+            if is_administrativo:
+                he_explicita_total_min = 0
+                exceso_jornada_min = 0
+                exceso_jornada_min_reporte = 0
+                total_horas_adicionales_min = 0
+
             # Regla especial DNI 46181231 (José Moncada): Horarios libres, siempre registro Normal, sin observaciones
             is_dni_46181231 = (str(dni_clean).strip() == "46181231")
             if is_dni_46181231:
@@ -652,6 +660,10 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 # 3. Jornada Parcial (Medio día) (hh:mm) en Observación
                 if es_media_jornada:
                     incidencias_list.append(f"Jornada parcial (Medio día) ({format_hhmm_str(int(round(horas_trabajadas * 60)), is_hours_float=False)})")
+
+                # 3b. Cambio de Guardia en Observación (activa sombreado Durazno Pastel)
+                if es_cambio_guardia:
+                    incidencias_list.append("Cambio de Guardia")
 
                 # 4. Salida Anticipada
                 if salida_ant_min > 0 and not es_media_jornada:
