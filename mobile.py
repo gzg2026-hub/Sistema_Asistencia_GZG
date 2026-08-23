@@ -26,7 +26,7 @@ def get_logo_base64():
 
 def get_worker_avatar_url(dni: str, worker_name: str) -> str:
     if dni:
-        dni_clean = str(dni).strip().zfill(8)
+        dni_clean = str(dni).strip().lstrip('0').zfill(8)
         root_dir = os.path.dirname(os.path.abspath(__file__))
         for ext in ['.jpg', '.jpeg', '.png']:
             for folder in [os.path.join(root_dir, 'assets', 'fotos'), os.path.join(root_dir, 'assets', 'fotos_trabajadores')]:
