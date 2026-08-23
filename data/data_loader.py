@@ -77,16 +77,35 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
         return pd.DataFrame()
         
     df = pd.DataFrame(data_rows)
+    for col in ['Nombre', 'Apellido', 'Nombres', 'Apellidos', 'Nombres y Apellidos']:
+        if col in df.columns:
+            df[col] = df[col].astype(str).apply(quitar_tildes)
+
     official_cols = [
-        'ID', 'Fecha', 'Nombre', 'Apellido', 'Departamento', 'Tiempo',
-        'Tipo de pase de tarjeta', 'Método de verificación',
-        'Punto de control de asistencia', 'Posición', 'Semana'
+        'ID', 'Nombre', 'Apellido', 'Departamento', 'Posición',
+        'Fecha', 'Semana', 'Tiempo', 'Tipo de pase de tarjeta',
+        'Método de verificación', 'Punto de control de asistencia'
     ]
     # Reordenar según columnas oficiales si están presentes
     present_cols = [c for c in official_cols if c in df.columns]
     other_cols = [c for c in df.columns if c not in official_cols]
     df = df[present_cols + other_cols]
     return df
+
+
+def quitar_tildes(texto: str) -> str:
+    if not isinstance(texto, str) or not texto or str(texto).strip().lower() in ('nan', 'none', ''):
+        return ""
+    replacements = {
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U',
+        'á': 'A', 'é': 'E', 'í': 'I', 'ó': 'O', 'ú': 'U', 'ü': 'U',
+        'À': 'A', 'È': 'E', 'Ì': 'I', 'Ò': 'O', 'Ù': 'U',
+        'à': 'A', 'è': 'E', 'ì': 'I', 'ò': 'O', 'ù': 'U',
+    }
+    res = str(texto)
+    for k, v in replacements.items():
+        res = res.replace(k, v)
+    return res.strip()
 
 def cargar_datos_excel(excel_source) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """

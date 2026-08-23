@@ -24,6 +24,21 @@ DIAS_SEMANA = {
 }
 
 
+def quitar_tildes(texto: str) -> str:
+    if not isinstance(texto, str) or not texto or str(texto).strip().lower() in ('nan', 'none', ''):
+        return ""
+    replacements = {
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U',
+        'á': 'A', 'é': 'E', 'í': 'I', 'ó': 'O', 'ú': 'U', 'ü': 'U',
+        'À': 'A', 'È': 'E', 'Ì': 'I', 'Ò': 'O', 'Ù': 'U',
+        'à': 'A', 'è': 'E', 'ì': 'I', 'ò': 'O', 'ù': 'U',
+    }
+    res = str(texto)
+    for k, v in replacements.items():
+        res = res.replace(k, v)
+    return res.strip()
+
+
 def format_date_ddmmyyyy(date_val) -> str:
     """Convierte cualquier representación de fecha a formato DD/MM/YYYY (ej. 18/08/2026)."""
     if pd.isna(date_val) or date_val is None or date_val == "" or str(date_val).strip() == "-":
@@ -173,8 +188,8 @@ def exportar_asistencia_excel(
     if df_asistencia is not None and not df_asistencia.empty:
         for _, row in df_asistencia.iterrows():
             dni = str(row.get('DNI', '')).strip()
-            apellidos = str(row.get('APELLIDOS', '')).strip()
-            nombres = str(row.get('NOMBRES', '')).strip()
+            apellidos = quitar_tildes(str(row.get('APELLIDOS', '')))
+            nombres = quitar_tildes(str(row.get('NOMBRES', '')))
             dept = str(row.get('ÁREA', row.get('Departamento', ''))).strip()
             posicion = str(row.get('CARGO', row.get('Posición', ''))).strip()
             fecha_t = str(row.get('FECHA', '')).strip()

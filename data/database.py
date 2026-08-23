@@ -200,6 +200,20 @@ def clean_dni(val) -> str:
         return digits.zfill(8)
     return digits
 
+def quitar_tildes(texto: str) -> str:
+    if not isinstance(texto, str) or not texto or str(texto).strip().lower() in ('nan', 'none', ''):
+        return ""
+    replacements = {
+        'Á': 'A', 'É': 'E', 'Í': 'I', 'Ó': 'O', 'Ú': 'U', 'Ü': 'U',
+        'á': 'A', 'é': 'E', 'í': 'I', 'ó': 'O', 'ú': 'U', 'ü': 'U',
+        'À': 'A', 'È': 'E', 'Ì': 'I', 'Ò': 'O', 'Ù': 'U',
+        'à': 'A', 'è': 'E', 'ì': 'I', 'ò': 'O', 'ù': 'U',
+    }
+    res = str(texto)
+    for k, v in replacements.items():
+        res = res.replace(k, v)
+    return res.strip()
+
 def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
     """Guarda o actualiza la lista de trabajadores maestros normalizando DNIs."""
     if df_trabajadores.empty:
@@ -223,8 +237,8 @@ def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
             updated_at=CURRENT_TIMESTAMP
         """, (
             dni,
-            str(row.get('APELLIDOS', '')).strip(),
-            str(row.get('NOMBRES', '')).strip(),
+            quitar_tildes(str(row.get('APELLIDOS', ''))),
+            quitar_tildes(str(row.get('NOMBRES', ''))),
             str(row.get('CARGO', '')).strip(),
             str(row.get('AREA', row.get('ÁREA', ''))).strip()
         ))
@@ -275,8 +289,8 @@ def guardar_marcaciones_raw(df_marcaciones: pd.DataFrame, archivo_origen: str = 
         ON CONFLICT(dni, fecha, tiempo, tipo_pase) DO NOTHING
         """, (
             dni,
-            str(row.get('Nombre', '')),
-            str(row.get('Apellido', '')),
+            quitar_tildes(str(row.get('Nombre', ''))),
+            quitar_tildes(str(row.get('Apellido', ''))),
             cargo_val,
             dept_val,
             str(row.get('Grupo de asistencia', '')),
