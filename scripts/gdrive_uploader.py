@@ -27,23 +27,11 @@ def log_drive(msg: str):
 
 def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bool:
     """
-    Sube o actualiza un archivo local en la carpeta compartida de Google Drive (ID: 1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU).
-    ÚNICAMENTE PERMITIDO PARA:
-      1. Transacciones_Acumuladas.xlsx
-      2. Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx (Reportes diarios cerrados)
+    SINCRONIZACIÓN Y SUBIDA A GOOGLE DRIVE BLOQUEADAS Y DESACTIVADAS AL 100%.
+    Todos los archivos permanecen 100% locales en la PC.
     """
-    if not os.path.exists(local_file_path):
-        log_drive(f"Error: El archivo local no existe -> {local_file_path}")
-        return False
-
-    file_name = os.path.basename(local_file_path)
-
-    # REGLA DE SEGURIDAD: PROHIBIR Sistema_Asistencia_GZG_v1.0.xlsx
-    if file_name.strip().lower() == "sistema_asistencia_gzg_v1.0.xlsx":
-        log_drive("DENEGADO: El archivo raíz ejecutable Sistema_Asistencia_GZG_v1.0.xlsx NO se sube a Google Drive (Regla local PC).")
-        return False
-
-    log_drive(f"Iniciando subida de {file_name} a Google Drive (Folder ID: {DRIVE_FOLDER_ID})...")
+    log_drive(f"SINCRONIZACIÓN CON DRIVE DESACTIVADA: El archivo {os.path.basename(local_file_path)} permanece 100% local en PC.")
+    return False
     # 1. Intentar por Google Drive Desktop Local Sync Folder si existe
     gdrive_sync_dirs = [
         r"G:\.shortcut-targets-by-id\1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU\AGOSTO",
