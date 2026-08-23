@@ -3,8 +3,8 @@
 ## 1. PROHIBICIÓN TOTAL DE SUBIDA A GOOGLE DRIVE (REGLA PERMANENTE)
 - **NUNCA** subas, copies, ejecutes ni intentes sincronizar ningún archivo hacia Google Drive.
 - Google Drive está **100% DESACTIVADO Y BLOQUEADO** en este proyecto.
+- **REGLA DE AUTORIZACIÓN**: Mientras el usuario no te diga explícitamente que actualices o subas a Google Drive, NADA se sube sin su autorización previa ni se actualiza en la Nube (aplicable tanto a ejecuciones manuales como al robot automático).
 - Todos los archivos (`Sistema_Asistencia_GZG_v1.0.xlsx`, `Transacciones_Acumuladas.xlsx`, reportes diarios, etc.) se procesan y guardan **ÚNICAMENTE en el disco local de la PC**.
-- Queda estrictamente prohibida cualquier subida automática o manual a Nube/Drive a menos que el usuario lo ordene de forma explícita en el futuro.
 
 ## 2. PRESERVACIÓN DE DATA CRUDA REAL DEL BIOMÉTRICO
 - En los archivos de data cruda (`Transacciones_Acumuladas.xlsx`), se deben mantener **los valores reales exactos** exportados por el biométrico HikCentral.
