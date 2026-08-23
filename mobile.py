@@ -182,18 +182,26 @@ st.markdown("""
         gap: 4px !important;
         margin-bottom: 12px !important;
     }
-    /* Bordes destacados e intensos para cajones de texto / inputs */
-    div[data-baseweb="input"] {
-        border: 1.5px solid #4A5162 !important;
-        border-radius: 8px !important;
+    /* Bordes estáticos permanentes uniformes en todos los cajones de texto / inputs */
+    div[data-baseweb="input"], .stTextInput > div > div {
+        border: 1.5px solid rgba(245, 130, 32, 0.6) !important;
+        border-radius: 10px !important;
         background-color: #1A1D24 !important;
     }
-    div[data-baseweb="input"]:focus-within {
-        border-color: #F58220 !important;
-        box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.3) !important;
+    div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
+        border: 1.5px solid #F58220 !important;
+        box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.35) !important;
     }
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
+    }
+
+    /* Ocultar permanentemente la instrucción "Press Enter to submit form" */
+    [data-testid="InputInstructions"], div[data-testid="InputInstructions"], .stInputInstructions {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        opacity: 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
