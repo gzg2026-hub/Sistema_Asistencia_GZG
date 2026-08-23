@@ -14,19 +14,7 @@ from data.database import (
 )
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user
 
-logo_icon_path = "assets/gzg_logo.png" if os.path.exists("assets/gzg_logo.png") else "📱"
-
-# Configuración de página 100% enfocada en Celular (Centrado sin Sidebar)
-st.set_page_config(
-    page_title="GZG Minerales - Aprobaciones",
-    page_icon=logo_icon_path,
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
-
-# Inicializar Base de Datos y Autenticación
-init_db()
-init_auth()
+from PIL import Image
 
 def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
@@ -38,15 +26,29 @@ def get_logo_base64():
 
 logo_b64 = get_logo_base64()
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
+logo_icon = Image.open("assets/gzg_logo.png") if os.path.exists("assets/gzg_logo.png") else "📱"
+
+# Configuración de página 100% enfocada en Celular (Centrado sin Sidebar)
+st.set_page_config(
+    page_title="GZG Minerales - Aprobaciones",
+    page_icon=logo_icon,
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# Inicializar Base de Datos y Autenticación
+init_db()
+init_auth()
 
 # Inyectar metas para icono y nombre de App Móvil PWA
-st.markdown("""
+st.markdown(f"""
 <head>
     <meta name="apple-mobile-web-app-title" content="GZG Minerales">
     <meta name="application-name" content="GZG Minerales">
     <meta name="theme-color" content="#F58220">
-    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/assets/gzg_logo.png">
-    <link rel="shortcut icon" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/assets/gzg_logo.png">
+    <link rel="apple-touch-icon" href="data:image/png;base64,{logo_b64}">
+    <link rel="icon" type="image/png" href="data:image/png;base64,{logo_b64}">
+    <link rel="shortcut icon" href="data:image/png;base64,{logo_b64}">
     <link rel="manifest" href="https://raw.githubusercontent.com/gzg2026-hub/Sistema_Asistencia_GZG/main/manifest.json">
 </head>
 """, unsafe_allow_html=True)
