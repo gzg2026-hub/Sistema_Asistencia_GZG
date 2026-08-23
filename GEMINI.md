@@ -1,10 +1,11 @@
 # REGLAS OBLIGATORIAS DEL PROYECTO SISTEMA DE ASISTENCIA GZG
 
 ## 1. REGLA DE EXCEPCIÓN AUTORIZADA PARA GOOGLE DRIVE
-- ÚNICAMENTE los siguientes **2 archivos** tienen autorización explícita para subida/sincronización automática a Google Drive (Carpeta AGOSTO):
-  1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas en subcarpeta Data_Cruda)*.
-  2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados en subcarpeta Data_Procesada)*.
+- ÚNICAMENTE los siguientes **2 archivos** tienen autorización explícita para subida/sincronización automática a Google Drive (**Directamente en la carpeta `AGOSTO`, SIN CREAR SUBDORIOS NI SUBCARPETAS**):
+  1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas)*.
+  2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
 - **PROHIBIDO TOTALMENTE EN DRIVE**:
+  - NO crear subcarpetas como `Data_Cruda` o `Data_Procesada` en Google Drive.
   - `Sistema_Asistencia_GZG_v1.0.xlsx` *(Archivo raíz ejecutable en la PC, NUNCA se sube a Drive)*.
   - Cualquier otro archivo temporal o de consolidado parcial.
 

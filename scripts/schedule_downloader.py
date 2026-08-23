@@ -179,8 +179,8 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
             except Exception as e_m:
                 _log(f"Aviso guardando maestro data cruda: {e_m}")
 
-            # Guardar y Subir Data Cruda Maestro (Transacciones_Acumuladas.xlsx) a Google Drive
-            subir_archivo_a_gdrive(ruta_maestro_raw, subfolder_name="Data_Cruda")
+            # Guardar y Subir Data Cruda Maestro (Transacciones_Acumuladas.xlsx) a Google Drive (directo a carpeta AGOSTO)
+            subir_archivo_a_gdrive(ruta_maestro_raw)
             guardar_marcaciones_raw(df_marc_master, archivo_origen=ruta_maestro_raw)
             if not df_trab.empty:
                 guardar_trabajadores(df_trab)
@@ -191,7 +191,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                 guardar_excel_base(df_trab, df_marc_master, df_asis, df_he_out, df_inc)
                 _log(f"Procesamiento consolidado completado. Guardado en carpeta raíz y downloads/data_procesada/.")
 
-                # 4. Generar y Subir a Google Drive ÚNICAMENTE los Reportes Procesados Diarios de Días Cerrados
+                # 4. Generar y Subir a Google Drive ÚNICAMENTE los Reportes Procesados Diarios de Días Cerrados (directo a carpeta AGOSTO)
                 carp_diario = os.path.join(CARPETA_DATA_PROCESADA, "diario")
                 os.makedirs(carp_diario, exist_ok=True)
 
@@ -212,8 +212,8 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                                     f_out.write(excel_bytes)
                                 _log(f"Reporte diario completado generado para {f_dia} -> {file_path_dia}")
 
-                                # ÚNICO ARCHIVO AUTORIZADO A SUBIR A GOOGLE DRIVE: Reporte Diario Procesado de Día Cerrado
-                                subir_archivo_a_gdrive(file_path_dia, subfolder_name="Data_Procesada")
+                                # ÚNICO ARCHIVO AUTORIZADO A SUBIR A GOOGLE DRIVE: Reporte Diario Procesado de Día Cerrado (directo a AGOSTO)
+                                subir_archivo_a_gdrive(file_path_dia)
                         else:
                             _log(f"Día actual {f_dia} en curso: NO se genera reporte diario incompleto (se mantiene acumulado en Data Cruda).")
                 
