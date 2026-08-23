@@ -245,6 +245,108 @@ def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
+    # Actualizar automáticamente el archivo local Padron_Trabajadores_GZG.xlsx
+    try:
+        actualizar_excel_padron_trabajadores(db_path)
+    except Exception as e_p:
+        print(f"Aviso al actualizar Padron_Trabajadores_GZG.xlsx: {e_p}")
+
+
+def actualizar_excel_padron_trabajadores(db_path: str = DB_PATH):
+    """Sincroniza el archivo local Padron_Trabajadores_GZG.xlsx con la base de datos."""
+    padron_path = os.path.join(ROOT_DIR, "Padron_Trabajadores_GZG.xlsx")
+    conn = get_connection(db_path)
+    df_db = pd.read_sql_query("SELECT dni, apellidos, nombres, cargo, area FROM trabajadores", conn)
+    conn.close()
+
+    if df_db.empty:
+        return
+
+    import openpyxl
+    from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    df_db['dni'] = df_db['dni'].astype(str).str.strip().str.zfill(8)
+    df_db['apellidos'] = df_db['apellidos'].astype(str).apply(quitar_tildes)
+    df_db['nombres'] = df_db['nombres'].astype(str).apply(quitar_tildes)
+    df_db['cargo'] = df_db['cargo'].astype(str).apply(quitar_tildes)
+    df_db['area'] = df_db['area'].astype(str).apply(quitar_tildes)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Trabajadores"
+    ws.views.sheetView[0].showGridLines = True
+
+    fill_banner = PatternFill(start_color="1B365D", end_color="1B365D", fill_type="solid")
+    font_banner = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+
+    fill_header = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+    font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+
+    font_data = Font(name="Calibri", size=10)
+    align_center = Alignment(horizontal="center", vertical="center")
+    align_left = Alignment(horizontal="left", vertical="center")
+
+    thin_border = Border(
+        left=Side(style='thin', color='D9D9D9'), right=Side(style='thin', color='D9D9D9'),
+        top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
+    )
+
+    ws.merge_cells("A1:F1")
+    ws.row_dimensions[1].height = 28
+    ws["A1"] = "PADRÓN OFICIAL DE TRABAJADORES Y PERSONAL REGISTRADO - GZG MINERALES"
+    ws["A1"].fill = fill_banner
+    ws["A1"].font = font_banner
+    ws["A1"].alignment = align_center
+
+    ws.merge_cells("A2:F2")
+    ws.row_dimensions[2].height = 18
+    fill_sub = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+    font_sub = Font(name="Calibri", size=10, italic=True, bold=True, color="1F4E78")
+    ws["A2"] = "GZG Minerales | Estado Actualizado de Personal en Biométrico y Sistema"
+    ws["A2"].fill = fill_sub
+    ws["A2"].font = font_sub
+    ws["A2"].alignment = align_center
+
+    headers = ["DNI", "Apellidos", "Nombres", "Departamento / Área", "Posición / Cargo", "Estado en Sistema"]
+    ws.row_dimensions[3].height = 25
+    ws.append(headers)
+
+    for cell in ws[3]:
+        cell.fill = fill_header
+        cell.font = font_header
+        cell.alignment = align_center
+        cell.border = thin_border
+
+    for idx, r in df_db.sort_values(by=['apellidos', 'nombres']).iterrows():
+        dni = str(r['dni']).strip().zfill(8)
+        ape = str(r['apellidos']).strip()
+        nom = str(r['nombres']).strip()
+        area = str(r['area']).strip()
+        cargo = str(r['cargo']).strip()
+        estado = "Activo"
+
+        ws.append([dni, ape, nom, area, cargo, estado])
+        c_row = ws.max_row
+        ws.row_dimensions[c_row].height = 20
+
+        for c_i in range(1, 7):
+            cell = ws.cell(row=c_row, column=c_i)
+            cell.font = font_data
+            cell.border = thin_border
+            if c_i in (1, 6):
+                cell.alignment = align_center
+                if c_i == 1:
+                    cell.number_format = '@'
+            else:
+                cell.alignment = align_left
+
+    widths = {1: 15, 2: 28, 3: 26, 4: 26, 5: 30, 6: 18}
+    for c_idx, w in widths.items():
+        ws.column_dimensions[get_column_letter(c_idx)].width = w
+
+    wb.save(padron_path)
+
 def guardar_marcaciones_raw(df_marcaciones: pd.DataFrame, archivo_origen: str = "", db_path: str = DB_PATH):
     """Inserta transacciones de marcación raw en la base de datos."""
     if df_marcaciones.empty:
