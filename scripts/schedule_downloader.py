@@ -173,20 +173,18 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
             except Exception as e_m:
                 _log(f"Aviso guardando maestro data cruda: {e_m}")
 
-            # Subir Data Cruda Maestro a Google Drive
-            subir_archivo_a_gdrive(ruta_maestro_raw, subfolder_name="Data_Cruda")
-
+            # Guardar Data Cruda Maestro localmente (SIN subir a Drive)
             guardar_marcaciones_raw(df_marc_master, archivo_origen=ruta_maestro_raw)
             if not df_trab.empty:
                 guardar_trabajadores(df_trab)
                 df_asis, df_he_out, df_inc, kpis = procesar_asistencia_df(df_trab, df_marc_master)
                 guardar_asistencia_y_reportes(df_asis, df_he_out, df_inc)
                 
-                # 3. Guardar Reporte Consolidado Período Completo en la raíz y en data_procesada
+                # 3. Guardar Reporte Consolidado Período Completo en la raíz y en data_procesada (localmente)
                 guardar_excel_base(df_trab, df_marc_master, df_asis, df_he_out, df_inc)
                 _log(f"Procesamiento consolidado completado. Guardado en carpeta raíz y downloads/data_procesada/.")
 
-                # 4. Generar y Subir Archivos Procesados Diarios SOLO para Días Completados (Anteriores a HOY)
+                # 4. Generar y Subir a Google Drive ÚNICAMENTE los Reportes Procesados Diarios de Días Cerrados
                 carp_diario = os.path.join(CARPETA_DATA_PROCESADA, "diario")
                 os.makedirs(carp_diario, exist_ok=True)
 
@@ -207,21 +205,20 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                                     f_out.write(excel_bytes)
                                 _log(f"Reporte diario completado generado para {f_dia} -> {file_path_dia}")
 
-                                # Subir a Google Drive solo los días cerrados
+                                # ÚNICO ARCHIVO AUTORIZADO A SUBIR A GOOGLE DRIVE: Reporte Diario Procesado de Día Cerrado
                                 subir_archivo_a_gdrive(file_path_dia, subfolder_name="Data_Procesada")
                         else:
                             _log(f"Día actual {f_dia} en curso: NO se genera reporte diario incompleto (se mantiene acumulado en Data Cruda).")
                 
-                # Sincronizar archivo raíz principal Sistema_Asistencia_GZG_v1.0.xlsx
+                # Actualizar únicamente de forma local en la PC el archivo raíz principal Sistema_Asistencia_GZG_v1.0.xlsx
                 ruta_root_v1 = os.path.join(ROOT_DIR, "Sistema_Asistencia_GZG_v1.0.xlsx")
-                excel_bytes_root = exportar_asistencia_excel(df_trab, df_marc_master, df_asist, df_he_out, df_inc)
+                excel_bytes_root = exportar_asistencia_excel(df_trab, df_marc_master, df_asis, df_he_out, df_inc)
                 try:
                     with open(ruta_root_v1, "wb") as f_out:
                         f_out.write(excel_bytes_root)
-                    _log(f"Archivo raíz principal actualizado: {ruta_root_v1}")
-                    subir_archivo_a_gdrive(ruta_root_v1, "Sistema_Asistencia_GZG_v1.0.xlsx")
+                    _log(f"Archivo raíz principal actualizado en PC local: {ruta_root_v1}")
                 except Exception as e_v1:
-                    _log(f"Aviso actualizando archivo raíz principal: {e_v1}")
+                    _log(f"Aviso actualizando archivo raíz principal local: {e_v1}")
             else:
                 _log("AVISO: No se encontraron trabajadores en la base de datos para procesar asistencia.")
         else:
