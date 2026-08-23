@@ -27,11 +27,29 @@ def log_drive(msg: str):
 
 def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bool:
     """
-    SINCRONIZACIÓN Y SUBIDA A GOOGLE DRIVE BLOQUEADAS Y DESACTIVADAS AL 100%.
-    Todos los archivos permanecen 100% locales en la PC.
+    Sube o actualiza un archivo local en la carpeta compartida de Google Drive (ID: 1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU).
+    EXCEPCIÓN AUTORIZADA POR EL USUARIO:
+      1. Transacciones_Acumuladas.xlsx
+      2. Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx (Reportes diarios cerrados)
+    PROHIBICIÓN STRICTA:
+      - Sistema_Asistencia_GZG_v1.0.xlsx (Permanentemente local en PC)
     """
-    log_drive(f"SINCRONIZACIÓN CON DRIVE DESACTIVADA: El archivo {os.path.basename(local_file_path)} permanece 100% local en PC.")
-    return False
+    if not os.path.exists(local_file_path):
+        log_drive(f"Error: El archivo local no existe -> {local_file_path}")
+        return False
+
+    file_name = os.path.basename(local_file_path).strip()
+    file_name_lower = file_name.lower()
+
+    # FILTRO EXCLUSIVO DE EXCEPCIÓN AUTORIZADA: Únicamente Transacciones_Acumuladas.xlsx o Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx
+    es_transacciones = (file_name_lower == "transacciones_acumuladas.xlsx")
+    es_reporte_diario = file_name_lower.startswith("reporte_asistencia_gzg_") and file_name_lower.endswith(".xlsx")
+
+    if not (es_transacciones or es_reporte_diario):
+        log_drive(f"DENEGADO: El archivo '{file_name}' no pertenece a los 2 autorizados para Google Drive. Permanece exclusivo en PC.")
+        return False
+
+    log_drive(f"Iniciando subida autorizada de {file_name} a Google Drive (Folder ID: {DRIVE_FOLDER_ID})...")
     # 1. Intentar por Google Drive Desktop Local Sync Folder si existe
     gdrive_sync_dirs = [
         r"G:\.shortcut-targets-by-id\1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU\AGOSTO",

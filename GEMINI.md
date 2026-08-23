@@ -1,10 +1,12 @@
 # REGLAS OBLIGATORIAS DEL PROYECTO SISTEMA DE ASISTENCIA GZG
 
-## 1. PROHIBICIÓN TOTAL DE SUBIDA A GOOGLE DRIVE (REGLA PERMANENTE)
-- **NUNCA** subas, copies, ejecutes ni intentes sincronizar ningún archivo hacia Google Drive.
-- Google Drive está **100% DESACTIVADO Y BLOQUEADO** en este proyecto.
-- **REGLA DE AUTORIZACIÓN**: Mientras el usuario no te diga explícitamente que actualices o subas a Google Drive, NADA se sube sin su autorización previa ni se actualiza en la Nube (aplicable tanto a ejecuciones manuales como al robot automático).
-- Todos los archivos (`Sistema_Asistencia_GZG_v1.0.xlsx`, `Transacciones_Acumuladas.xlsx`, reportes diarios, etc.) se procesan y guardan **ÚNICAMENTE en el disco local de la PC**.
+## 1. REGLA DE EXCEPCIÓN AUTORIZADA PARA GOOGLE DRIVE
+- ÚNICAMENTE los siguientes **2 archivos** tienen autorización explícita para subida/sincronización automática a Google Drive (Carpeta AGOSTO):
+  1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas en subcarpeta Data_Cruda)*.
+  2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados en subcarpeta Data_Procesada)*.
+- **PROHIBIDO TOTALMENTE EN DRIVE**:
+  - `Sistema_Asistencia_GZG_v1.0.xlsx` *(Archivo raíz ejecutable en la PC, NUNCA se sube a Drive)*.
+  - Cualquier otro archivo temporal o de consolidado parcial.
 
 ## 2. PRESERVACIÓN DE DATA CRUDA REAL DEL BIOMÉTRICO
 - En los archivos de data cruda (`Transacciones_Acumuladas.xlsx`), se deben mantener **los valores reales exactos** exportados por el biométrico HikCentral.
