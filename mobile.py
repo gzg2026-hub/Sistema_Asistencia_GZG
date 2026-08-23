@@ -182,10 +182,18 @@ st.markdown("""
         gap: 4px !important;
         margin-bottom: 12px !important;
     }
-    div[data-baseweb="tab-list"] button {
-        flex: 1 1 auto !important;
-        font-size: 13px !important;
-        padding: 8px 4px !important;
+    /* Bordes destacados e intensos para cajones de texto / inputs */
+    div[data-baseweb="input"] {
+        border: 1.5px solid #4A5162 !important;
+        border-radius: 8px !important;
+        background-color: #1A1D24 !important;
+    }
+    div[data-baseweb="input"]:focus-within {
+        border-color: #F58220 !important;
+        box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.3) !important;
+    }
+    .stTextInput input, input[type="text"], input[type="password"] {
+        color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -345,9 +353,19 @@ with tab_pendientes:
             he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
             
+            avatar_name = worker_name.replace(" ", "+")
+            avatar_url = f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
+            
             with st.expander(f"👤 **{worker_name}** ({fecha_sol})", expanded=True):
                 st.markdown(f"""
-                - 💼 **Cargo**: {cargo}
+                <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 12px 0;">
+                    <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
+                    <div>
+                        <div style="font-size: 15px; font-weight: 700; color: #FFFFFF;">{worker_name}</div>
+                        <div style="font-size: 12px; color: #9A9EA7;">{cargo} ({fecha_sol})</div>
+                    </div>
+                </div>
+
                 - 🕒 **Entrada**: `{row.get('entrada', '-')}` | **Salida**: `{row.get('salida', '-')}`
                 - ⏱️ **Jornada trabajada**: {row.get('jornada_trabajada_hhmm', '-')}
                 - ⏰ **Horas extras**: <b style="color: #F58220;">{he_hhmm}</b>

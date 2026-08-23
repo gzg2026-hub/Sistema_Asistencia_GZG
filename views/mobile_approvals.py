@@ -171,6 +171,20 @@ def render_mobile_approvals():
         font-size: 12px;
         font-weight: bold;
     }
+
+    /* Bordes destacados e intensos para cajones de texto / inputs */
+    div[data-baseweb="input"] {
+        border: 1.5px solid #4A5162 !important;
+        border-radius: 8px !important;
+        background-color: #1A1D24 !important;
+    }
+    div[data-baseweb="input"]:focus-within {
+        border-color: #F58220 !important;
+        box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.3) !important;
+    }
+    .stTextInput input, input[type="text"], input[type="password"] {
+        color: #FFFFFF !important;
+    }
     </style>
     """, unsafe_allow_html=True)
     
@@ -315,6 +329,9 @@ def render_mobile_approvals():
 
                 level_badge = "🥇 APROBACIÓN NIVEL 1 (SUPERVISOR / JEFE)" if target_level == 1 else "🥈 APROBACIÓN NIVEL 2 (SUPERINTENDENTE)"
 
+                avatar_name = worker_name.replace(" ", "+")
+                avatar_url = f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
+
                 with st.expander(f"👤 **{worker_name}** | {cargo} ({fecha_sol})", expanded=True):
                     st.caption(f"🛡️ **{level_badge}**")
                     if target_level == 2 and st1_val == 'APROBADO':
@@ -322,6 +339,14 @@ def render_mobile_approvals():
                         st.success(f"✅ Nivel 1 ya fue APROBADO por `{ap_por_1}`. Falta VoBo Final del Superintendente.")
 
                     st.markdown(f"""
+                    <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0 14px 0;">
+                        <img src="{avatar_url}" style="width: 44px; height: 44px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; color: #FFFFFF;">{worker_name}</div>
+                            <div style="font-size: 12px; color: #9A9EA7;">{cargo} ({fecha_sol})</div>
+                        </div>
+                    </div>
+
                     **Detalle de la Solicitud:**
                     - 📅 **Fecha**: {fecha_sol}
                     - 🕒 **Entrada**: `{row.get('entrada', '-')}` | **Salida**: `{row.get('salida', '-')}`
