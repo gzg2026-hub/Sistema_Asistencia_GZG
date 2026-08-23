@@ -78,9 +78,9 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
         
     df = pd.DataFrame(data_rows)
     official_cols = [
-        'ID', 'Fecha', 'Nombre', 'Apellido', 'Cargo', 'Departamento', 'Grupo de asistencia',
-        'Tiempo', 'Tipo de pase de tarjeta', 'Método de verificación',
-        'Punto de control de asistencia'
+        'ID', 'Fecha', 'Nombre', 'Apellido', 'Departamento', 'Tiempo',
+        'Tipo de pase de tarjeta', 'Método de verificación',
+        'Punto de control de asistencia', 'Posición', 'Semana'
     ]
     # Reordenar según columnas oficiales si están presentes
     present_cols = [c for c in official_cols if c in df.columns]
