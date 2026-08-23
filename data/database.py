@@ -896,8 +896,20 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     conn = get_connection(db_path)
     cursor = conn.cursor()
     
-    # 1. Asegurar tabla creada y limpiar administrativos residuales y registros sin HE/Exceso
+    # 1. Asegurar tabla creada y sincronizar cargos oficiales del Padrón
     init_db(db_path)
+    cursor.execute("""
+        UPDATE asistencia
+        SET cargo = (SELECT t.cargo FROM trabajadores t WHERE t.dni = asistencia.dni),
+            area = (SELECT t.area FROM trabajadores t WHERE t.dni = asistencia.dni)
+        WHERE EXISTS (SELECT 1 FROM trabajadores t WHERE t.dni = asistencia.dni AND t.cargo IS NOT NULL AND t.cargo != '');
+    """)
+    cursor.execute("""
+        UPDATE aprobaciones
+        SET cargo = (SELECT t.cargo FROM trabajadores t WHERE t.dni = aprobaciones.dni),
+            area = (SELECT t.area FROM trabajadores t WHERE t.dni = aprobaciones.dni)
+        WHERE EXISTS (SELECT 1 FROM trabajadores t WHERE t.dni = aprobaciones.dni AND t.cargo IS NOT NULL AND t.cargo != '');
+    """)
     cursor.execute("""
         DELETE FROM aprobaciones 
         WHERE LOWER(cargo) LIKE '%administrativo%' 
@@ -905,15 +917,15 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
            OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
     """)
     
-    # 2. Leer registros de asistencia con Exceso o Horas Extras uniendo aprobadores N1 y N2 (excluyendo Administrativos)
+    # 2. Leer registros de asistencia usando el cargo oficial del Padrón (t.cargo)
     cursor.execute("""
-        SELECT a.fecha, a.dni, a.apellidos, a.nombres, a.cargo, a.area, a.entrada, a.salida,
+        SELECT a.fecha, a.dni, a.apellidos, a.nombres, COALESCE(t.cargo, a.cargo) as cargo, COALESCE(t.area, a.area) as area, a.entrada, a.salida,
                a.horas_trabajadas, a.exceso_jornada_min, a.total_horas_adicionales_min,
                a.observaciones, t.aprobador_n1, t.aprobador_n2
         FROM asistencia a
         LEFT JOIN trabajadores t ON a.dni = t.dni
         WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
-          AND LOWER(COALESCE(a.cargo, '')) NOT LIKE '%administrativo%'
+          AND LOWER(COALESCE(t.cargo, a.cargo, '')) NOT LIKE '%administrativo%'
           AND a.dni NOT IN ('74546819', '77134790', '48455175')
     """)
     rows = cursor.fetchall()
