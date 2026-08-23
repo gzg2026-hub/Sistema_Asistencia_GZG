@@ -45,4 +45,4 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * **Sin Relleno (Blanco)**: Cambio de Guardia, Jornada Parcial y asistencias normales.
 - **Formato de Celdas**:
   * Columna A (DNI): Formateada como Texto (`@`) para conservar ceros a la izquierda.
-  * Horas trabajadas, tardanzas y excesos: Formateadas estrictamente en `HH:MM`.
+  * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
