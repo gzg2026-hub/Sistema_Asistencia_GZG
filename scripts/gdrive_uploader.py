@@ -50,30 +50,7 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
         return False
 
     log_drive(f"Iniciando subida autorizada de {file_name} a Google Drive (Folder ID: {DRIVE_FOLDER_ID})...")
-    # 1. Intentar por Google Drive Desktop Local Sync Folder si existe
-    gdrive_sync_dirs = [
-        r"G:\.shortcut-targets-by-id\1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU\AGOSTO",
-        r"G:\.shortcut-targets-by-id\1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU",
-        r"G:\Mi unidad\AGOSTO",
-        r"G:\Mi unidad\ASISTENCIA\AGOSTO",
-        r"G:\Compartidos conmigo\AGOSTO",
-        os.path.expanduser(r"~\Google Drive\ASISTENCIA\AGOSTO"),
-    ]
-
-    for sync_dir in gdrive_sync_dirs:
-        # Colocar los archivos DIRECTAMENTE en la carpeta AGOSTO (sin subcarpetas adicionales)
-        target_dir = sync_dir
-        if os.path.exists(sync_dir):
-            try:
-                os.makedirs(target_dir, exist_ok=True)
-                dest = os.path.join(target_dir, file_name)
-                shutil.copy2(local_file_path, dest)
-                log_drive(f"Éxito: Sincronizado a través de Google Drive Desktop -> {dest}")
-                return True
-            except Exception as e:
-                log_drive(f"Aviso al copiar a sincronizador local {sync_dir}: {e}")
-
-    # 2. Intentar por API oficial de Google Drive si existe googleapiclient / service account
+    # Subida directa a Nube por API oficial de Google Drive (sin vincular ni tocar carpetas locales del disco G:)
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build

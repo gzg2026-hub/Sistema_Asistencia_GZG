@@ -121,6 +121,25 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
         _log(f"Data Cruda Maestro Acumulada: {len(df_marc_master)} marcaciones limpias sin duplicados, {len(df_trab)} trabajadores")
 
         if not df_marc_master.empty:
+            # Completar Posición desde maestro de trabajadores si está vacía y quitar tildes
+            if not df_trab.empty:
+                c_col = 'CARGO' if 'CARGO' in df_trab.columns else ('Cargo' if 'Cargo' in df_trab.columns else None)
+                d_col = 'DNI' if 'DNI' in df_trab.columns else None
+                if c_col and d_col:
+                    cargo_dict = dict(zip(df_trab[d_col].astype(str).str.strip().str.zfill(8), df_trab[c_col].astype(str).str.strip()))
+                    pos_col = 'Posición' if 'Posición' in df_marc_master.columns else ('Posicion' if 'Posicion' in df_marc_master.columns else None)
+                    id_col = 'ID' if 'ID' in df_marc_master.columns else 'DNI'
+                    if pos_col and id_col:
+                        for r_idx, r_val in df_marc_master.iterrows():
+                            cur_p = str(r_val.get(pos_col, '')).strip()
+                            d_id = str(r_val.get(id_col, '')).strip().zfill(8)
+                            if (not cur_p or cur_p.lower() in ('nan', 'none', '', '-')) and d_id in cargo_dict:
+                                df_marc_master.loc[r_idx, pos_col] = cargo_dict[d_id]
+
+            for col_name in ['Nombre', 'Apellido', 'Nombres', 'Apellidos']:
+                if col_name in df_marc_master.columns:
+                    df_marc_master[col_name] = df_marc_master[col_name].astype(str).apply(quitar_tildes)
+
             # Guardar el Archivo Maestro de Data Cruda en Excel
             try:
                 import openpyxl
