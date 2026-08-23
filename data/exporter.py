@@ -331,3 +331,68 @@ def guardar_excel_base(
         print(f"[Error] Error al guardar Excel base: {e}")
 
     return success
+
+
+def guardar_transacciones_acumuladas_excel(df: pd.DataFrame, target_path: str) -> bool:
+    """
+    Guarda Transacciones_Acumuladas.xlsx aplicando el formato ejecutivo corporativo:
+    - Encabezados Azul Corporativo (#1F4E78) con texto Blanco en negrita.
+    - Anchos de columna auto-ajustados y cuadrículas activas.
+    """
+    try:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Transacciones"
+        ws.views.sheetView[0].showGridLines = True
+
+        fill_header = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+        font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+        align_header = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+        font_data = Font(name="Calibri", size=10)
+        align_center = Alignment(horizontal="center", vertical="center")
+        align_left = Alignment(horizontal="left", vertical="center")
+
+        thin_border = Border(
+            left=Side(style='thin', color='D9D9D9'),
+            right=Side(style='thin', color='D9D9D9'),
+            top=Side(style='thin', color='D9D9D9'),
+            bottom=Side(style='thin', color='D9D9D9')
+        )
+
+        headers = list(df.columns)
+        ws.row_dimensions[1].height = 28
+        ws.append(headers)
+
+        for cell in ws[1]:
+            cell.fill = fill_header
+            cell.font = font_header
+            cell.alignment = align_header
+            cell.border = thin_border
+
+        center_cols = {'ID', 'Fecha', 'Semana', 'Tiempo', 'Tipo de pase de tarjeta', 'Método de verificación'}
+
+        for row_idx, row_data in enumerate(df.itertuples(index=False), start=2):
+            ws.row_dimensions[row_idx].height = 20
+            for col_idx, val in enumerate(row_data, start=1):
+                col_name = headers[col_idx - 1]
+                val_str = "" if pd.isna(val) else str(val)
+                c = ws.cell(row=row_idx, column=col_idx, value=val_str)
+                c.font = font_data
+                c.border = thin_border
+                if col_name in center_cols:
+                    c.alignment = align_center
+                else:
+                    c.alignment = align_left
+
+        for col in ws.columns:
+            col_letter = get_column_letter(col[0].column)
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
+
+        wb.save(target_path)
+        return True
+    except Exception as e:
+        print(f"[Error] Error al guardar Transacciones_Acumuladas.xlsx formateado: {e}")
+        return False
+
