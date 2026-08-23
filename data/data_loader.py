@@ -77,6 +77,10 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
         return pd.DataFrame()
         
     df = pd.DataFrame(data_rows)
+    for col in ['ID', 'DNI', 'DNI/ID']:
+        if col in df.columns:
+            df[col] = df[col].apply(normalizar_dni)
+
     for col in ['Nombre', 'Apellido', 'Nombres', 'Apellidos', 'Nombres y Apellidos']:
         if col in df.columns:
             df[col] = df[col].astype(str).apply(quitar_tildes)
@@ -92,6 +96,15 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
     df = df[present_cols + other_cols]
     return df
 
+
+def normalizar_dni(dni_raw) -> str:
+    if pd.isna(dni_raw) or not str(dni_raw).strip():
+        return ""
+    val = str(dni_raw).strip().split('.')[0]
+    val_clean = val.lstrip('0')
+    if not val_clean:
+        return ""
+    return val_clean.zfill(8)
 
 def quitar_tildes(texto: str) -> str:
     if not isinstance(texto, str) or not texto or str(texto).strip().lower() in ('nan', 'none', ''):
