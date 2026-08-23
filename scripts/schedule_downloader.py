@@ -211,6 +211,17 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                                 subir_archivo_a_gdrive(file_path_dia, subfolder_name="Data_Procesada")
                         else:
                             _log(f"Día actual {f_dia} en curso: NO se genera reporte diario incompleto (se mantiene acumulado en Data Cruda).")
+                
+                # Sincronizar archivo raíz principal Sistema_Asistencia_GZG_v1.0.xlsx
+                ruta_root_v1 = os.path.join(ROOT_DIR, "Sistema_Asistencia_GZG_v1.0.xlsx")
+                excel_bytes_root = exportar_asistencia_excel(df_trab, df_marc_master, df_asist, df_he_out, df_inc)
+                try:
+                    with open(ruta_root_v1, "wb") as f_out:
+                        f_out.write(excel_bytes_root)
+                    _log(f"Archivo raíz principal actualizado: {ruta_root_v1}")
+                    subir_archivo_a_gdrive(ruta_root_v1, "Sistema_Asistencia_GZG_v1.0.xlsx")
+                except Exception as e_v1:
+                    _log(f"Aviso actualizando archivo raíz principal: {e_v1}")
             else:
                 _log("AVISO: No se encontraron trabajadores en la base de datos para procesar asistencia.")
         else:
