@@ -208,8 +208,8 @@ if not is_authenticated():
     
     with st.form("form_login_mobile"):
         st.markdown("#### 🔐 Iniciar Sesión")
-        u_name = st.text_input("Usuario", placeholder="ej. admin o supervisor")
-        u_pass = st.text_input("Contraseña", type="password", placeholder="••••••••")
+        u_name = st.text_input("Usuario", placeholder="")
+        u_pass = st.text_input("Contraseña", type="password", placeholder="")
         
         btn_login = st.form_submit_button("🔑 INGRESAR A LA APP", type="primary", use_container_width=True)
         if btn_login:
@@ -225,7 +225,7 @@ if not is_authenticated():
     with st.popover("🔑 Cambiar mi contraseña"):
         st.markdown("##### 🔑 Cambiar Contraseña")
         with st.form("form_login_change_pw"):
-            u_target = st.text_input("Usuario", placeholder="ej. jagreda o msanchez")
+            u_target = st.text_input("Usuario", placeholder="")
             p_actual = st.text_input("Contraseña Actual", type="password")
             p_nueva = st.text_input("Nueva Contraseña", type="password")
             p_conf = st.text_input("Confirmar Nueva Contraseña", type="password")
@@ -357,7 +357,7 @@ with tab_pendientes:
                 comentario_aprobador = st.text_input(
                     "✍️ Comentario del Aprobador",
                     key=f"m_com_{sol_id}",
-                    placeholder="Escribe la observación de aprobación/rechazo..."
+                    placeholder=""
                 )
                 
                 uploaded_file = st.file_uploader(

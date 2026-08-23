@@ -333,7 +333,7 @@ def render_mobile_approvals():
                     comentario_aprobador = st.text_input(
                         "✍️ Comentario del Aprobador",
                         key=f"com_{sol_id}",
-                        placeholder="Ingresa una observación o justificación de aprobación/rechazo..."
+                        placeholder=""
                     )
                     
                     uploaded_file = st.file_uploader(
