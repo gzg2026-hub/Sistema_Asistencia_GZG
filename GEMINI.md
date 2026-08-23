@@ -51,4 +51,15 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * **Sin Relleno (Blanco)**: Cambio de Guardia, Jornada Parcial y asistencias normales.
 - **Formato de Celdas**:
   * Columna A (DNI): Formateada como Texto (`@`) para conservar ceros a la izquierda.
-  * Horas trabajadas, tardanzas y excesos: Formateadas estrictamente en `HH:MM`.
+  * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
+
+---
+
+## 5. NORMALIZACIÓN UNIVERSAL DE DNI Y CONTROL DE DUPLICIDAD
+- **Formato Estricto de 8 Dígitos (`zfill(8)`)**:
+  * Todo DNI o identificador de persona en cualquier capa del sistema (lectura Excel, base de datos SQLite, reportes y padrón) debe ser tratado **estrictamente como Texto de 8 dígitos**.
+  * Si el DNI tiene menos de 8 dígitos (por ejemplo `3208053` o `6616501`), la lógica debe rellenar automáticamente los ceros a la izquierda (`03208053`, `06616501`).
+- **Prohibición de Integer/Float**:
+  * Queda **PROHIBIDO** almacenar o comparar DNIs como números enteros (`int`) o flotantes (`float`) para evitar la pérdida de ceros a la izquierda.
+- **Consolidación Automática en SQLite y Padrón**:
+  * Al ingresar nuevas marcaciones o trabajadores, el sistema debe consolidar automáticamente por DNI normalizado de 8 dígitos, evitando duplicados en la base de datos o en `Padron_Trabajadores_GZG.xlsx`.
