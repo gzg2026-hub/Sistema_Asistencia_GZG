@@ -2,10 +2,13 @@
 
 ---
 
-## 1. REGLA DE EXCEPCIÓN AUTORIZADA PARA GOOGLE DRIVE
-- ÚNICAMENTE los siguientes **2 archivos** tienen autorización explícita para subida/sincronización automática a Google Drive (**Directamente en la carpeta `AGOSTO`, SIN CREAR SUBDIRECTORIOS NI SUBCARPETAS**):
-  1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
-  2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
+## 1. REGLA DE EXCEPCIÓN Y DESVINCULACIÓN TOTAL DE GOOGLE DRIVE
+- **Cero Sincronización Local en PC**: La carpeta del proyecto en el disco local (`c:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\`) está **100% desvinculada de Google Drive Desktop** (PROHIBIDO totalmente usar, copiar o vincular con la unidad `G:\` o carpetas de sincronización local de Windows).
+- **Cero Subidas en Sesiones Interactivas**: Durante conversaciones, pruebas manuales o ejecuciones interactivas con el usuario, **NUNCA se sube nada a Google Drive**.
+- **Subida Única en Tarea Automática Programada de 9:00 AM (Vía API Nube)**:
+  - ÚNICAMENTE la tarea programada automática de las 9:00 AM (`scripts/schedule_downloader.py`) subirá mediante **API directa en la nube** (sin carpetas locales `G:\`) los siguientes **2 archivos autorizados** directamente en la raíz de la carpeta `AGOSTO`:
+    1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
+    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
 - **PROHIBIDO TOTALMENTE EN DRIVE**:
   - NO crear subcarpetas como `Data_Cruda` o `Data_Procesada` en Google Drive.
   - `Sistema_Asistencia_GZG_v1.0.xlsx` *(Archivo raíz ejecutable en la PC, NUNCA se sube a Drive)*.
