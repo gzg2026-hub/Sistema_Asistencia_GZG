@@ -190,15 +190,19 @@ def render_mobile_approvals():
         font-weight: bold;
     }
 
-    /* Bordes estáticos permanentes uniformes en todos los cajones de texto / inputs */
-    div[data-baseweb="input"], .stTextInput > div > div {
-        border: 1.5px solid rgba(245, 130, 32, 0.6) !important;
+    /* Bordes estáticos blancos 1.5px uniformes en formularios, popovers e inputs */
+    div[data-testid="stForm"],
+    div[data-baseweb="popover"],
+    div[data-baseweb="input"],
+    .stTextInput > div > div,
+    div[data-testid="stPopover"] > button {
+        border: 1.5px solid #FFFFFF !important;
         border-radius: 10px !important;
         background-color: #1A1D24 !important;
     }
     div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
-        border: 1.5px solid #F58220 !important;
-        box-shadow: 0 0 0 2px rgba(245, 130, 32, 0.35) !important;
+        border: 1.5px solid #FFFFFF !important;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3) !important;
     }
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
