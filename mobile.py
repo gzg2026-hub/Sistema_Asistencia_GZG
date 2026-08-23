@@ -10,9 +10,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from data.database import (
     init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
-    sincronizar_aprobaciones_desde_asistencia
+    sincronizar_aprobaciones_desde_asistencia, cambiar_password_usuario, obtener_usuario_by_username
 )
-from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user
+from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password, verify_password
 
 from PIL import Image
 
@@ -221,6 +221,31 @@ if not is_authenticated():
                     st.error("❌ Usuario o contraseña incorrectos.")
             else:
                 st.warning("Ingresa usuario y contraseña")
+
+    with st.popover("🔑 Cambiar mi contraseña"):
+        st.markdown("##### 🔑 Cambiar Contraseña")
+        with st.form("form_login_change_pw"):
+            u_target = st.text_input("Usuario", placeholder="ej. jagreda o msanchez")
+            p_actual = st.text_input("Contraseña Actual", type="password")
+            p_nueva = st.text_input("Nueva Contraseña", type="password")
+            p_conf = st.text_input("Confirmar Nueva Contraseña", type="password")
+            btn_save_pw = st.form_submit_button("💾 Guardar Nueva Contraseña", type="primary", use_container_width=True)
+            if btn_save_pw:
+                u_obj = obtener_usuario_by_username(u_target.strip())
+                if not u_obj:
+                    st.error("El usuario ingresado no existe.")
+                elif not verify_password(p_actual, u_obj.get('password_hash', '')):
+                    st.error("La contraseña actual es incorrecta.")
+                elif not p_nueva or len(p_nueva) < 4:
+                    st.warning("La contraseña debe tener al menos 4 caracteres.")
+                elif p_nueva != p_conf:
+                    st.error("Las contraseñas no coinciden.")
+                else:
+                    new_h = hash_password(p_nueva)
+                    if cambiar_password_usuario(u_target.strip(), new_h):
+                        st.success("🎉 ¡Contraseña actualizada exitosamente! Ya puedes iniciar sesión.")
+                    else:
+                        st.error("Error al actualizar la contraseña.")
     st.stop()
 
 # ---------------------------------------------------------
@@ -231,18 +256,41 @@ username = current_user.get('username', 'Supervisor') if current_user else 'Supe
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
 # Cabecera Móvil GZG con Logo Corporativo Oficial
-col_head1, col_head2 = st.columns([3.5, 1])
+col_head1, col_head2, col_head3 = st.columns([2.5, 1.2, 1])
 with col_head1:
     st.markdown(f"""
     <div style="display: flex; align-items: center;">
         {logo_html}
         <div>
-            <span class="gzg-logo-text" style="font-size: 18px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 18px;">MINERALES</span>
-            <div style="font-size: 10px; color: #9A9EA7;">CONTROL DE ASISTENCIA Y APROBACIONES</div>
+            <span class="gzg-logo-text" style="font-size: 16px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 16px;">MINERALES</span>
+            <div style="font-size: 9px; color: #9A9EA7;">CONTROL DE ASISTENCIA</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
 with col_head2:
+    with st.popover("🔑 Mi Clave"):
+        st.markdown("##### 🔑 Cambiar Contraseña")
+        with st.form("form_header_change_pw"):
+            p_act_h = st.text_input("Contraseña Actual", type="password")
+            p_nue_h = st.text_input("Nueva Contraseña", type="password")
+            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
+            btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
+            if btn_h_pw:
+                if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
+                    st.error("La contraseña actual es incorrecta.")
+                elif not p_nue_h or len(p_nue_h) < 4:
+                    st.warning("Debe tener al menos 4 caracteres.")
+                elif p_nue_h != p_cnf_h:
+                    st.error("Las contraseñas no coinciden.")
+                else:
+                    new_h = hash_password(p_nue_h)
+                    if cambiar_password_usuario(username, new_h):
+                        st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
+                        st.success("Contraseña modificada exitosamente.")
+                        st.rerun()
+                    else:
+                        st.error("Error al actualizar la contraseña.")
+with col_head3:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
         logout_user()
         st.rerun()
