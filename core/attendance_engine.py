@@ -344,10 +344,10 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         # Caso Error Humano en Biométrico (Turno Noche):
         # Si NO existe ninguna entrada previa en el día (antes de las 16:00 PM)
         # y el trabajador marca entre las 16:00 y las 21:00 PM etiquetada como 'salida' por error humano,
-        # y al día siguiente existe salida en la mañana (<= 09:00 AM):
+        # y al día siguiente existe salida en la mañana (<= 09:00 AM) de Turno Noche:
         # Reclasificar lógicamente la marcación de la tarde como ENTRADA para Turno Noche.
         no_prior_entry = not any(
-            'entrada' in str(r.get(tipo_col, '')).lower() and time_to_seconds(r['Hora_Clean']) < 57600 # Antes de las 16:00 PM
+            'entrada' in str(r.get(tipo_col, '')).lower() and time_to_seconds(r['Hora_Clean']) < 57600
             for _, r in valid_rows.iterrows()
         )
         if no_prior_entry:
@@ -365,11 +365,22 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
                         (df_marcaciones['Fecha_Clean'] == fecha_next_str)
                     ]
-                    has_next_morning_exit = any(
-                        time_to_seconds(r['Hora_Clean']) <= 32400 # <= 09:00 AM
-                        for _, r in next_day_swipes.iterrows()
-                    )
-                    if has_next_morning_exit:
+                    next_morning_swipes = [
+                        r for _, r in next_day_swipes.iterrows()
+                        if time_to_seconds(r['Hora_Clean']) <= 32400 # <= 09:00 AM
+                    ]
+                    next_evening_exits = [
+                        r for _, r in next_day_swipes.iterrows()
+                        if time_to_seconds(r['Hora_Clean']) >= 57600 # >= 16:00 PM
+                    ]
+                    is_real_night_exit = False
+                    if next_morning_swipes:
+                        if any('salida' in str(r.get(tipo_col, '')).lower() for r in next_morning_swipes):
+                            is_real_night_exit = True
+                        elif not next_evening_exits:
+                            is_real_night_exit = True
+
+                    if is_real_night_exit:
                         valid_rows.loc[evening_swipes_salida[0], tipo_col] = 'Registro de entrada'
                 except Exception:
                     pass
