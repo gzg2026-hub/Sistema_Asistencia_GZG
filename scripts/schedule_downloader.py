@@ -173,7 +173,8 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
             except Exception as e_m:
                 _log(f"Aviso guardando maestro data cruda: {e_m}")
 
-            # Guardar Data Cruda Maestro localmente (SIN subir a Drive)
+            # Guardar y Subir Data Cruda Maestro (Transacciones_Acumuladas.xlsx) a Google Drive
+            subir_archivo_a_gdrive(ruta_maestro_raw, subfolder_name="Data_Cruda")
             guardar_marcaciones_raw(df_marc_master, archivo_origen=ruta_maestro_raw)
             if not df_trab.empty:
                 guardar_trabajadores(df_trab)
