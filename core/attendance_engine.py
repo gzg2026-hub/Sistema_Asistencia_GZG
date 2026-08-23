@@ -341,6 +341,39 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     if 'entrada' in str(first_ev.get(tipo_col, '')).lower() and 'salida' in str(second_ev.get(tipo_col, '')).lower():
                         valid_rows = valid_rows[valid_rows['Hora_Clean'] != first_ev['Hora_Clean']]
 
+        # Caso Error Humano en Biométrico (Turno Noche):
+        # Si no hay entrada en la mañana y el trabajador marca entre las 16:00 y las 21:00 PM
+        # pero la pantalla del biométrico registró 'Registrar salida' (botón presionado por error humano),
+        # y al día siguiente existe salida en la mañana (<= 09:00 AM):
+        # Reclasificar lógicamente la marcación de la tarde como ENTRADA para Turno Noche.
+        no_morning_entry = not any(
+            'entrada' in str(r.get(tipo_col, '')).lower() and time_to_seconds(r['Hora_Clean']) < 43200
+            for _, r in valid_rows.iterrows()
+        )
+        if no_morning_entry:
+            evening_swipes_salida = [
+                idx_r for idx_r, r in valid_rows.iterrows()
+                if 57600 <= time_to_seconds(r['Hora_Clean']) <= 75600 # 16:00 a 21:00 PM
+                and 'salida' in str(r.get(tipo_col, '')).lower()
+                and not ('horas extra' in str(r.get(tipo_col, '')).lower() or 'he' in str(r.get(tipo_col, '')).lower())
+            ]
+            if evening_swipes_salida:
+                try:
+                    fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
+                    fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                    next_day_swipes = df_marcaciones[
+                        (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
+                        (df_marcaciones['Fecha_Clean'] == fecha_next_str)
+                    ]
+                    has_next_morning_exit = any(
+                        time_to_seconds(r['Hora_Clean']) <= 32400 # <= 09:00 AM
+                        for _, r in next_day_swipes.iterrows()
+                    )
+                    if has_next_morning_exit:
+                        valid_rows.loc[evening_swipes_salida[0], tipo_col] = 'Registro de entrada'
+                except Exception:
+                    pass
+
         # Dividir sub-bloques de turno si existe un reingreso (SEGUNDA ENTRADA) después de las 16:00 PM (Caso Cambio de Guardia / Medio Día previo - Punto 4)
         morning_entries = [
             r for _, r in valid_rows.iterrows() 
