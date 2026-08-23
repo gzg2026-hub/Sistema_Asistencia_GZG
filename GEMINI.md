@@ -22,14 +22,17 @@
 ## 3. LÓGICA DE DEDUCCIÓN E INTELIGENCIA ARTIFICIAL EN EL MOTOR DE ASISTENCIA
 La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el motor de cálculo de asistencia** (`core/attendance_engine.py`), sin alterar el texto original de la data cruda:
 
-- **Asignación de Turnos (DÍA / NOCHE / MANTENIMIENTO)**:
+- **Ventana de Contexto Temporal Universal (Día Anterior, Día Actual y Día Posterior)**:
+  * El motor analiza de forma continua la secuencia cronológica completa del trabajador (evaluando marcaciones del día anterior, día en curso y día posterior) para emparejar lógicamente entradas y salidas en turnos rotativos y de medianoche.
+- **Deducción Universal de Error Humano en Marcación (Caso Jhon Ágreda y similar para todo el personal)**:
+  * Si un trabajador presenta una marcación matutina (05:00 AM a 09:30 AM) etiquetada como `"Inicio de horas extra"` o `"Inicio H.E."`, y posteriormente registra una salida en la tarde/noche (19:00 a 20:30 PM) sin existir otra entrada matutina previa ni marcación de fin de H.E., el motor deduce un **error humano de botón/estado en la terminal biométrica**.
+  * Dicha marcación se reclasifica automáticamente en la evaluación como `"Registro de entrada"`, asignándole el **Turno DÍA** y evaluando el día limpiamente como `ASISTIO`.
+- **Asignación Universal de Turnos (DÍA / NOCHE / MANTENIMIENTO)**:
   * **Turno DÍA**: Entrada 07:00 AM (tolerancia hasta 07:15 AM). Salida 19:00 PM (12 Horas de Turno).
   * **Turno NOCHE**: Entrada 19:00 PM (tolerancia hasta 19:15 PM). Salida 07:00 AM del día siguiente (12 Horas de Turno).
   * **Mantenimiento / Operaciones**: Evaluación adaptativa de jornadas según catálogo de personal.
-- **Marcaciones Matutinas de Horas Extras (Caso Jhon Ágreda y similares)**:
-  * Toda marcación registrada en la mañana (05:00 AM a 09:30 AM) clasificada como `"Inicio de horas extra"` o `"Inicio H.E."` sin otra entrada matutina previa se reclasifica automáticamente en la evaluación como `"Registro de entrada"` para asignar Turno DÍA y registrar la asistencia correctamente como `ASISTIO`.
 - **Doble Turno / Doble Entrada en el Mismo Día**:
-  * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente.
+  * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente y se sombrea la fila en durazno pastel.
 - **Filtro de Filas Fantasma / Sin Marcación (Regla Punto 9)**:
   * Se eliminan automáticamente de la vista procesada las filas donde tanto la Entrada (Fecha/Hora) como la Salida (Fecha/Hora) sean nulas, vacías o `NaN`.
 
