@@ -342,15 +342,15 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         valid_rows = valid_rows[valid_rows['Hora_Clean'] != first_ev['Hora_Clean']]
 
         # Caso Error Humano en Biométrico (Turno Noche):
-        # Si no hay entrada en la mañana y el trabajador marca entre las 16:00 y las 21:00 PM
-        # pero la pantalla del biométrico registró 'Registrar salida' (botón presionado por error humano),
+        # Si NO existe ninguna entrada previa en el día (antes de las 16:00 PM)
+        # y el trabajador marca entre las 16:00 y las 21:00 PM etiquetada como 'salida' por error humano,
         # y al día siguiente existe salida en la mañana (<= 09:00 AM):
         # Reclasificar lógicamente la marcación de la tarde como ENTRADA para Turno Noche.
-        no_morning_entry = not any(
-            'entrada' in str(r.get(tipo_col, '')).lower() and time_to_seconds(r['Hora_Clean']) < 43200
+        no_prior_entry = not any(
+            'entrada' in str(r.get(tipo_col, '')).lower() and time_to_seconds(r['Hora_Clean']) < 57600 # Antes de las 16:00 PM
             for _, r in valid_rows.iterrows()
         )
-        if no_morning_entry:
+        if no_prior_entry:
             evening_swipes_salida = [
                 idx_r for idx_r, r in valid_rows.iterrows()
                 if 57600 <= time_to_seconds(r['Hora_Clean']) <= 75600 # 16:00 a 21:00 PM
