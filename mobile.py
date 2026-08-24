@@ -628,6 +628,13 @@ Creado por raules v1.0.0
 # APLICACIÓN MÓVIL PWA PRINCIPAL (USUARIOS AUTENTICADOS)
 # ---------------------------------------------------------
 current_user = get_current_user()
+if current_user:
+    # Recargar datos frescos de la BD para reflejar cambios inmediatos de rol/cargo
+    db_user_fresh = obtener_usuario_by_username(current_user.get('username', ''))
+    if db_user_fresh:
+        current_user = db_user_fresh
+        st.session_state['user'] = db_user_fresh
+
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
