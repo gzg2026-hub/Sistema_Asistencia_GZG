@@ -241,10 +241,6 @@ st.markdown("""
         font-size: 15px !important;
         padding: 10px 14px !important;
     }
-    div[data-baseweb="input"] input::placeholder {
-        font-size: 18px !important;
-        opacity: 0.8 !important;
-    }
     .stTextInput label p {
         color: #FFFFFF !important;
         font-weight: 600 !important;
@@ -267,25 +263,94 @@ if not is_authenticated():
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Inyectar fondo minero envolvente con overlay oscuro
-    if hero_b64:
-        st.markdown(f"""
-<style>
-.stApp {{
-    background: linear-gradient(180deg, rgba(18, 20, 24, 0.65) 0%, rgba(18, 20, 24, 0.88) 45%, #121418 100%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top fixed !important;
-    background-size: cover !important;
-}}
-div[data-testid="stForm"] {{
-    background: rgba(22, 25, 32, 0.88) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 16px !important;
-    padding: 22px 18px !important;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
-}}
-</style>
-""", unsafe_allow_html=True)
+    # Inyectar fondo minero envolvente en stAppViewContainer e iconos fijos a la izquierda
+    bg_css = f"""
+    <style>
+    .stApp,
+    [data-testid="stAppViewContainer"] {{
+        background: linear-gradient(180deg, rgba(14, 16, 20, 0.60) 0%, rgba(14, 16, 20, 0.85) 45%, #0E1014 100%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
+        background-size: cover !important;
+        background-attachment: fixed !important;
+    }}
+    [data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
+        background-color: transparent !important;
+    }}
+    div[data-testid="stForm"] {{
+        background: rgba(22, 25, 32, 0.88) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 16px !important;
+        padding: 22px 18px !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
+    }}
+    /* Posicionamiento relativo para cajones de login */
+    div[data-testid="stForm"] div[data-baseweb="input"] {{
+        position: relative !important;
+    }}
+    /* Ícono permanente de Usuario a la izquierda */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"]::before {{
+        content: "👤";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        opacity: 0.8;
+        z-index: 5;
+        pointer-events: none;
+    }}
+    /* Ícono permanente de Contraseña a la izquierda */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"]::before {{
+        content: "🔒";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        opacity: 0.8;
+        z-index: 5;
+        pointer-events: none;
+    }}
+    /* El cursor y el texto ingresado inician limpiamente después del ícono */
+    div[data-testid="stForm"] div[data-baseweb="input"] input {{
+        padding-left: 42px !important;
+    }}
+    </style>
+    """ if hero_b64 else """
+    <style>
+    /* Posicionamiento relativo para cajones de login */
+    div[data-testid="stForm"] div[data-baseweb="input"] {
+        position: relative !important;
+    }
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"]::before {
+        content: "👤";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        opacity: 0.8;
+        z-index: 5;
+        pointer-events: none;
+    }
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"]::before {
+        content: "🔒";
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        opacity: 0.8;
+        z-index: 5;
+        pointer-events: none;
+    }
+    div[data-testid="stForm"] div[data-baseweb="input"] input {
+        padding-left: 42px !important;
+    }
+    </style>
+    """
+    st.markdown(bg_css, unsafe_allow_html=True)
 
     st.markdown(f"""
 <div style="text-align: center; padding: 25px 0 15px 0;">
@@ -306,8 +371,8 @@ APLICACIÓN MÓVIL PARA APROBACIONES
 """, unsafe_allow_html=True)
     
     with st.form("form_login_mobile"):
-        u_name = st.text_input("Usuario", placeholder="👤")
-        u_pass = st.text_input("Contraseña", type="password", placeholder="🔒")
+        u_name = st.text_input("Usuario", placeholder="")
+        u_pass = st.text_input("Contraseña", type="password", placeholder="")
         
         col_rec, _ = st.columns([1.5, 1])
         with col_rec:
@@ -328,8 +393,8 @@ APLICACIÓN MÓVIL PARA APROBACIONES
                 st.warning("Por favor ingresa tu usuario y contraseña.")
     
     st.markdown("""
-<div style="text-align: center; font-size: 11px; color: #6E7280; margin-top: 25px; letter-spacing: 1px;">
-v1.0.0
+<div style="text-align: center; font-size: 11px; color: #6E7280; margin-top: 25px; letter-spacing: 0.5px;">
+Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
     
@@ -563,3 +628,9 @@ with tab_dashboard:
             'Cantidad': [n_aprob, n_rech, n_pend]
         })
         st.bar_chart(chart_df.set_index('Estado'))
+
+st.markdown("""
+<div style="text-align: center; font-size: 11px; color: #5A5E6B; margin: 35px 0 15px 0; letter-spacing: 0.5px;">
+Creado por raules v1.0.0
+</div>
+""", unsafe_allow_html=True)
