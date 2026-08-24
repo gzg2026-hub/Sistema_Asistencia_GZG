@@ -69,7 +69,7 @@ manifest_dict = {
     "name": "GZG MINERALES",
     "short_name": "GZG MINERALES",
     "description": "Sistema de Control de Asistencia y Aprobaciones Móviles - GZG Minerales",
-    "start_url": "/?embed=true&embed_options=disable_scrolling",
+    "start_url": "./",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait-primary",
@@ -245,7 +245,53 @@ st.markdown("""
         margin: 0 auto !important;
         width: 100% !important;
     }
+</style>
+""", unsafe_allow_html=True)
 
+import streamlit.components.v1 as components
+components.html("""
+<script>
+function cleanupStreamlitElements() {
+    try {
+        const doc = window.parent.document;
+        if (!doc) return;
+        
+        const targets = [
+            'footer',
+            '[data-testid="stFooter"]',
+            '[data-testid="stToolbar"]',
+            '[data-testid="stDecoration"]',
+            '[data-testid="stStatusWidget"]',
+            '[data-testid="stEmbedCode"]',
+            '[class*="viewerBadge"]',
+            '[class*="styles_viewerBadge"]',
+            '[class*="FloatingProfile"]',
+            '[class*="stAppDeployButton"]',
+            '[class*="StatusWidget"]',
+            'a[href*="streamlit.io"]',
+            'a[href*="github.com"]'
+        ];
+        
+        targets.forEach(selector => {
+            doc.querySelectorAll(selector).forEach(el => {
+                el.style.display = 'none';
+                el.style.visibility = 'hidden';
+                el.style.opacity = '0';
+                el.style.height = '0px';
+                el.style.pointerEvents = 'none';
+                try { el.remove(); } catch(e){}
+            });
+        });
+    } catch(e) {}
+}
+
+cleanupStreamlitElements();
+setInterval(cleanupStreamlitElements, 250);
+</script>
+""", height=0, width=0)
+
+st.markdown("""
+<style>
     /* Cabecera Móvil GZG */
     .mobile-header {
         background: linear-gradient(185deg, #1D212A 0%, #121418 100%);
