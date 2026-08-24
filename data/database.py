@@ -1125,9 +1125,8 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     conn.close()
 
 
-@st.cache_data(ttl=30, show_spinner=False)
 def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_PATH) -> pd.DataFrame:
-    """Obtener DataFrame de solicitudes de aprobacion con caché de 30s para reducir latencia en el app móvil."""
+    """Obtener DataFrame de solicitudes de aprobacion directamente desde SQLite sin cache para respuesta instantanea."""
     conn = get_connection(db_path)
     
     query = "SELECT * FROM aprobaciones"
@@ -1150,27 +1149,22 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
     """
     try:
-        import sys
-        import os
-        import datetime
-        import threading
+        import sys, os, datetime, threading
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if root_dir not in sys.path:
-            sys.path.insert(0, root_dir)
         from data.exporter import exportar_aprobaciones_excel
+        
         conn = get_connection(db_path)
         df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
         conn.close()
-        if df_aprob.empty:
-            return True
-
-        # 1. Generar / actualizar Excel local en downloads/data_procesada/
+        
         mes_str = datetime.date.today().strftime('%Y-%m')
         out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        
         ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
-
-        if ok_local:
-            # 2. Subir a Google Drive en hilo background (no bloquea la UI del app)
+        
+        # Subida inmediata a Google Drive en segundo plano si el guardado local fue exitoso
+        if ok_local and out_path and os.path.exists(out_path):
             def _subir_drive(filepath):
                 try:
                     from scripts.gdrive_uploader import subir_archivo_a_gdrive
@@ -1188,14 +1182,46 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
 
 
 
-def actualizar_estado_aprobacion(id_solicitud: int, nuevo_estado: str, aprobado_por: str, comentario: str = "", db_path: str = DB_PATH) -> bool:
-    """Actualizar estado de aprobacion directa y regenerar Excel de aprobaciones automaticamente."""
-    resultado = actualizar_estado_aprobacion_nivel(id_solicitud, 1, nuevo_estado, aprobado_por, comentario, db_path)
-    # Invalidar caché y regenerar Excel de aprobaciones
-    try:
-        obtener_solicitudes_aprobacion.clear()
-    except Exception:
-        pass
+def actualizar_estado_aprobacion(
+    id_solicitud: int,
+    nuevo_estado: str,
+    aprobado_por: str,
+    comentario: str = "",
+    adjunto_path: str = None,
+    db_path: str = DB_PATH
+) -> bool:
+    """
+    Actualiza inteligentemente la aprobacion detectando si el usuario es Nivel 1 o Nivel 2
+    para esta solicitud especifica, y regenera el Excel en segundo plano.
+    """
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute("SELECT aprobador_n1, aprobador_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+    row = cursor.fetchone()
+    conn.close()
+    
+    nivel = 1
+    if row:
+        n1_usr = (row[0] or '').strip().lower()
+        n2_usr = (row[1] or '').strip().lower()
+        curr_usr = (aprobado_por or '').strip().lower()
+        
+        if curr_usr == n2_usr:
+            nivel = 2
+        elif curr_usr == n1_usr:
+            nivel = 1
+        else:
+            nivel = 1
+
+    resultado = actualizar_estado_aprobacion_nivel(
+        id_solicitud=id_solicitud,
+        nivel=nivel,
+        nuevo_estado=nuevo_estado,
+        aprobado_por=aprobado_por,
+        comentario=comentario,
+        adjunto_path=adjunto_path,
+        db_path=db_path
+    )
     try:
         regenerar_aprobaciones_excel(db_path)
     except Exception:

@@ -269,38 +269,32 @@ st.markdown("""
 
     /* =========================================================================
        PUNTO 1: ÍCONOS PUROS NATIVOS EN LOS INPUTS DE LOGIN (USUARIO Y CONTRASEÑA)
-       Selectores basados en type='text' y type='password' para coincidencia 100% universal
+       Anclados directamente a input[aria-label="Usuario"] e input[aria-label="Contraseña"]
        ========================================================================= */
     /* Input 1: Usuario (Ícono Personita 👤) */
-    div[data-baseweb="input"]:has(input[type="text"]),
-    div[data-baseweb="input"]:has(input[aria-label="Usuario"]) {
+    input[aria-label="Usuario"],
+    input[aria-label="Usuario"]:focus {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
         background-size: 18px 18px !important;
-    }
-    div[data-baseweb="input"]:has(input[type="text"]) input,
-    div[data-baseweb="input"]:has(input[aria-label="Usuario"]) input {
-        padding-left: 42px !important;
-        background: transparent !important;
-        background-color: transparent !important;
+        background-color: #1A1D24 !important;
+        padding-left: 44px !important;
+        text-align: left !important;
         color: #FFFFFF !important;
         font-size: 15px !important;
     }
 
     /* Input 2: Contraseña (Ícono Candadito 🔒) */
-    div[data-baseweb="input"]:has(input[type="password"]),
-    div[data-baseweb="input"]:has(input[aria-label="Contraseña"]) {
+    input[aria-label="Contraseña"],
+    input[aria-label="Contraseña"]:focus {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
         background-size: 18px 18px !important;
-    }
-    div[data-baseweb="input"]:has(input[type="password"]) input,
-    div[data-baseweb="input"]:has(input[aria-label="Contraseña"]) input {
-        padding-left: 42px !important;
-        background: transparent !important;
-        background-color: transparent !important;
+        background-color: #1A1D24 !important;
+        padding-left: 44px !important;
+        text-align: left !important;
         color: #FFFFFF !important;
         font-size: 15px !important;
     }
@@ -602,15 +596,10 @@ with col_actions:
 
 
 
-# Cargar data de aprobaciones — sincronizar solo en primera carga de sesión
-if 'aprobaciones_synced' not in st.session_state:
-    sincronizar_aprobaciones_desde_asistencia()
-    st.session_state['aprobaciones_synced'] = True
-
+# Cargar data de aprobaciones directamente de SQLite sin bucles
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
 
 # PUNTO 7: Filtrado por bandeja personal del usuario autenticado
-# Admin ve TODO. Aprobadores N1/N2 ven solo sus trabajadores asignados en el Padron.
 if rol not in ('ADMINISTRACION', 'ADMIN') and 'aprobador_n1' in df_all_raw.columns:
     mask = (
         df_all_raw['aprobador_n1'].fillna('').str.lower().str.strip() == username.lower().strip()
@@ -628,11 +617,30 @@ tab_pendientes, tab_historial, tab_dashboard = st.tabs([
 ])
 
 # ---------------------------------------------------------
-# TAB 1: PENDIENTES DE APROBACIÓN
+# TAB 1: PENDIENTES DE APROBACIÓN (EVALUACIÓN POR NIVEL)
 # ---------------------------------------------------------
 with tab_pendientes:
-    df_pendientes = df_all[df_all['estado'] == 'PENDIENTE']
-    df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO']
+    u_lower = username.lower().strip()
+    if rol in ('ADMINISTRACION', 'ADMIN'):
+        df_pendientes = df_all[df_all['estado'] == 'PENDIENTE'].copy()
+        df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO'].copy()
+    else:
+        # Pendiente para el usuario según su nivel asignado (N1 o N2):
+        is_pend_for_me = (
+            (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'PENDIENTE')
+        ) | (
+            (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'PENDIENTE') & (df_all['estado_n1'] != 'RECHAZADO')
+        )
+        df_pendientes = df_all[is_pend_for_me & (df_all['estado'] != 'RECHAZADO')].copy()
+        
+        # Aprobada por el usuario o resuelta:
+        is_app_by_me = (
+            (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'APROBADO')
+        ) | (
+            (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'APROBADO')
+        ) | (df_all['estado'] == 'APROBADO')
+        df_aprobadas_mes = df_all[is_app_by_me].copy()
+
     
     col_kpi1, col_kpi2 = st.columns(2)
     with col_kpi1:
