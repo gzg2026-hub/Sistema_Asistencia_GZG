@@ -397,20 +397,30 @@ st.markdown("""
         height: 0px !important;
         opacity: 0 !important;
     }
-    /* Inputs con iconos permanentes e indestructibles al teclear */
-    div[data-baseweb="input"]:has(input[aria-label="Usuario"]) {
+    /* Usuario Icon (Primer input del formulario) */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"],
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input,
+    input[aria-label="Usuario"],
+    input[aria-label="Usuario"]:focus {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
         background-size: 18px 18px !important;
-        background-color: #1A1D24 !important;
+        padding-left: 42px !important;
+        text-align: left !important;
     }
-    div[data-baseweb="input"]:has(input[aria-label="Contraseña"]) {
+
+    /* Contraseña Icon (Segundo input del formulario) */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"],
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input,
+    input[aria-label="Contraseña"],
+    input[aria-label="Contraseña"]:focus {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
         background-size: 18px 18px !important;
-        background-color: #1A1D24 !important;
+        padding-left: 42px !important;
+        text-align: left !important;
     }
     
     div[data-baseweb="input"] input,
