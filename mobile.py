@@ -291,8 +291,37 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
+# AUTO-LOGIN PERSISTENTE CON LOCALSTORAGE Y EMBED AUTOMÁTICO
 # ---------------------------------------------------------
+import streamlit.components.v1 as components
+
+components.html("""
+<script>
+// 1. Auto-eliminar barras de Streamlit Cloud forzando modo embed
+try {
+    const parentLoc = window.parent.location;
+    if (parentLoc.hostname.includes('streamlit.app') && !parentLoc.search.includes('embed=true')) {
+        const u = new URL(parentLoc.href);
+        u.searchParams.set('embed', 'true');
+        u.searchParams.set('embed_options', 'disable_scrolling');
+        parentLoc.replace(u.toString());
+    }
+} catch(e) {}
+
+// 2. Sincronizar Token desde LocalStorage del celular
+try {
+    const savedToken = localStorage.getItem('gzg_auth_token');
+    if (savedToken) {
+        const pUrl = new URL(window.parent.location.href);
+        if (pUrl.searchParams.get('token') !== savedToken) {
+            pUrl.searchParams.set('token', savedToken);
+            window.parent.location.replace(pUrl.toString());
+        }
+    }
+} catch(e) {}
+</script>
+""", height=0, width=0)
+
 if not is_authenticated():
     persisted_token = st.query_params.get("token", "")
     if persisted_token:
@@ -371,6 +400,13 @@ APLICACIÓN MÓVIL PARA APROBACIONES
                     if recordarme:
                         new_token = crear_token_sesion(u_name.strip())
                         st.query_params["token"] = new_token
+                        components.html(f"""
+                        <script>
+                        try {{
+                            localStorage.setItem('gzg_auth_token', '{new_token}');
+                        }} catch(e) {{}}
+                        </script>
+                        """, height=0, width=0)
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
@@ -432,6 +468,13 @@ with col_head3:
         if "token" in st.query_params:
             eliminar_token_sesion(st.query_params["token"])
             del st.query_params["token"]
+        components.html("""
+        <script>
+        try {
+            localStorage.removeItem('gzg_auth_token');
+        } catch(e) {}
+        </script>
+        """, height=0, width=0)
         logout_user()
         st.rerun()
 
