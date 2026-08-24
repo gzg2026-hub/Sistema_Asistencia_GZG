@@ -555,31 +555,35 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# PUNTO 4: Cabecera Central Corporativa GZG en Dashboard
-st.markdown(f"""
-<div style="text-align: center; padding: 4px 0 4px 0;">
-    <div style="margin-bottom: 4px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 56px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
+# Cabecera Corporativa con Botón de Refresh en la Esquina Superior Derecha
+col_head_left, col_head_center, col_head_right = st.columns([1, 4, 1])
+with col_head_left:
+    st.write("")
+with col_head_center:
+    st.markdown(f"""
+<div style="text-align: center; padding: 2px 0 2px 0;">
+    <div style="margin-bottom: 3px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 52px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
     </div>
-    <div style="font-size: 21px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+    <div style="font-size: 20px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.95;">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
         CONTROL DE ASISTENCIA
     </div>
 </div>
 """, unsafe_allow_html=True)
+with col_head_right:
+    st.markdown("<div style='padding-top: 6px;'></div>", unsafe_allow_html=True)
+    if st.button("🔄", key="btn_refresh_top_right", help="Actualizar datos", use_container_width=True):
+        st.rerun()
 
-
-# Fila de Usuario y Acciones Rápidas (Actualizar, Clave, Salir)
-col_user, col_actions = st.columns([1.3, 1.7])
+# Fila de Información de Usuario y Botones de Clave y Salir
+col_user, col_actions = st.columns([1.5, 1.5])
 with col_user:
     st.markdown(f"<div style='padding-top: 6px; font-size: 13px; font-weight: 600; color: #FFFFFF;'>👋 <b>Hola, {username}</b> <span style='color: #9A9EA7; font-size: 11px;'>({rol})</span></div>", unsafe_allow_html=True)
 with col_actions:
-    c_act0, c_act1, c_act2 = st.columns([1, 1.2, 1.2])
-    with c_act0:
-        if st.button("🔄", key="btn_refresh_data", help="Actualizar datos", use_container_width=True):
-            st.rerun()
+    c_act1, c_act2 = st.columns([1.1, 1.1])
     with c_act1:
         with st.popover("🔑 Clave"):
             st.markdown("##### 🔑 Cambiar Contraseña")
