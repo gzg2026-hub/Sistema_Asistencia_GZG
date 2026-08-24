@@ -10,9 +10,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
   <meta name="application-name" content="GZG MINERALES">
-  <link rel="manifest" href="manifest.json?v=4">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=4">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=4">
+  <link rel="manifest" href="manifest.json?v=5">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=5">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=5">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=5">
+  <link rel="shortcut icon" href="assets/favicon.png?v=5">
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -21,6 +23,7 @@
       width: 100%; height: 100%;
       background: #121418;
       overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     /* Capa oscura que cubre los parches mientras carga Streamlit */
@@ -30,6 +33,7 @@
       background: #121418;
       z-index: 999;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       transition: opacity 0.5s ease;
@@ -41,15 +45,15 @@
 
     /* Spinner naranja minimalista */
     .loader {
-      width: 42px; height: 42px;
-      border: 3px solid rgba(245,130,32,0.25);
+      width: 44px; height: 44px;
+      border: 3px solid rgba(245,130,32,0.2);
       border-top-color: #F58220;
       border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+      animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Contenedor que oculta el footer "Built with Streamlit" */
+    /* Contenedor que oculta el footer 'Built with Streamlit' */
     #app-box {
       position: fixed;
       inset: 0;
@@ -59,43 +63,73 @@
 
     iframe {
       width: 100vw;
-      /* 52px extra para empujar el footer fuera de pantalla */
+      /* Extra 52px para expulsar el footer de Streamlit fuera de pantalla */
       height: calc(100dvh + 52px);
       border: none;
       display: block;
       background: #121418;
     }
 
-    /* Botón instalar */
-    #install-btn {
+    /* Barra flotante superior de instalación (discreta y cerrable) */
+    #install-bar {
       position: fixed;
-      bottom: 22px;
+      top: 15px;
       left: 50%;
       transform: translateX(-50%);
-      background: linear-gradient(135deg,#F58220,#D96A0B);
-      color: #fff;
-      padding: 13px 28px;
-      border-radius: 30px;
-      font-weight: 800;
-      font-size: 14px;
+      background: rgba(26, 29, 36, 0.95);
+      border: 1px solid rgba(245, 130, 32, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #FFFFFF;
+      padding: 10px 18px;
+      border-radius: 25px;
+      font-size: 13px;
+      font-weight: 600;
       display: none;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 8px 20px rgba(245,130,32,0.5);
+      gap: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
       z-index: 1000;
-      cursor: pointer;
+    }
+
+    #install-bar button.action {
+      background: #F58220;
+      color: #FFFFFF;
       border: none;
-      white-space: nowrap;
+      padding: 6px 14px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #install-bar button.close {
+      background: transparent;
+      border: none;
+      color: #8E929B;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    @media (display-mode: standalone) {
+      #install-bar { display: none !important; }
     }
   </style>
 </head>
 <body>
 
   <!-- Capa negra que cubre los parches de carga -->
-  <div id="dark-cover"><div class="loader"></div></div>
+  <div id="dark-cover">
+    <div class="loader"></div>
+  </div>
 
-  <!-- Botón instalar -->
-  <button id="install-btn" onclick="installPWA()">📲 Instalar App GZG</button>
+  <!-- Barra de instalación discreta superior -->
+  <div id="install-bar">
+    <span>📲 Instalar <b>GZG MINERALES</b></span>
+    <button class="action" onclick="installPWA()">Instalar</button>
+    <button class="close" onclick="closeBar()">✕</button>
+  </div>
 
   <!-- Iframe con Streamlit embed limpio -->
   <div id="app-box">
@@ -107,39 +141,52 @@
   </div>
 
   <script>
-    // Forzar que el Service Worker se actualice y limpie el cache viejo
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(regs => {
         regs.forEach(r => r.update());
       });
-      navigator.serviceWorker.register('sw.js?v=4').catch(() => {});
+      navigator.serviceWorker.register('sw.js?v=5').catch(() => {});
     }
 
     const cover = document.getElementById('dark-cover');
     const frame = document.getElementById('st-frame');
 
-    // Quitar la capa oscura después de 5s para asegurar que Streamlit terminó de renderizar
     function removeCover() {
-      cover.classList.add('hidden');
-      setTimeout(() => cover.remove(), 600);
+      if (cover) {
+        cover.classList.add('hidden');
+        setTimeout(() => cover.remove(), 600);
+      }
     }
 
-    frame.addEventListener('load', () => setTimeout(removeCover, 5000));
-    // Fallback: máximo 9 segundos
-    setTimeout(removeCover, 9000);
+    frame.addEventListener('load', () => setTimeout(removeCover, 3800));
+    setTimeout(removeCover, 6500);
 
     // PWA Install
     let prompt;
-    const btn = document.getElementById('install-btn');
+    const bar = document.getElementById('install-bar');
     window.addEventListener('beforeinstallprompt', e => {
-      e.preventDefault(); prompt = e; btn.style.display = 'flex';
+      e.preventDefault();
+      prompt = e;
+      bar.style.display = 'flex';
     });
+
     function installPWA() {
-      if (!prompt) return;
-      prompt.prompt();
-      prompt.userChoice.then(() => { btn.style.display='none'; prompt=null; });
+      if (prompt) {
+        prompt.prompt();
+        prompt.userChoice.then(() => {
+          bar.style.display = 'none';
+          prompt = null;
+        });
+      }
     }
-    window.addEventListener('appinstalled', () => btn.style.display='none');
+
+    function closeBar() {
+      bar.style.display = 'none';
+    }
+
+    window.addEventListener('appinstalled', () => {
+      bar.style.display = 'none';
+    });
   </script>
 </body>
 </html>
