@@ -110,6 +110,24 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 
 ## 7. ESTÁNDARES DE INTERFAZ MÓVIL PWA Y EXPERIENCIA DE USUARIO
 - **Eliminación Total de Watermarks de Streamlit (Sin Parches ni Máscaras)**: En el visor PWA (`docs/index.html`), el iframe se dimensiona a `height: calc(100% + 44px)` con `#app-container { overflow: hidden; height: 100dvh; }` para expulsar físicamente fuera de pantalla el pie de página de Streamlit sin añadir máscaras que recorten la interfaz.
-- **Persistencia Indestructible de Íconos en Inputs Móviles**: Los íconos SVG de los inputs de usuario/contraseña deben anclarse obligatoriamente en el contenedor padre (`div[data-baseweb="input"]:has(...)`) y el `<input>` interno debe ser transparente con `padding-left: 42px; text-align: left;`, evitando que el teclado de Android o el autocompletado del navegador oculten o borren el ícono al escribir.
+- **Persistencia Indestructible de Íconos en Inputs Móviles (CSS Puro Nativo)**:
+  * Los íconos SVG de los inputs de login (Usuario 👤 y Contraseña 🔒) deben anclarse obligatoriamente mediante CSS en el contenedor padre `div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1/2) div[data-baseweb="input"]` como `background-image`.
+  * El `<input>` interno debe ser 100% transparente con `padding-left: 40px; text-align: left;`.
+  * Queda estrictamente PROHIBIDO usar scripts inestables en `components.html` para manipular o inyectar íconos que colisionen con el ciclo de renderizado de Streamlit.
+- **Limpieza de UI de Streamlit sin Parches**: Toda ocultación de toolbar, header, deploy buttons, footer y skeletons debe realizarse exclusivamente mediante CSS estático en `<style>`, garantizando cero parpadeos (flickering) y cero bloqueos de pantalla.
+- **Persistencia de Sesión ("Recordarme") y Cero Latencia**:
+  * La persistencia de sesión móvil se gestiona de forma nativa mediante tokens seguros almacenados en la tabla SQLite `user_tokens` y vinculados a `st.query_params["token"]`.
+  * Al cerrar sesión (`🚪 Salir`), el token se elimina inmediatamente de SQLite y de los query params, ejecutando `logout_user()` y `st.rerun()` de forma instantánea sin latencia.
+
+---
+
+## 8. SISTEMA DE APROBACIONES MÓVIL PWA Y ROLES RBAC
+- **Bandeja Filtrada por Aprobador Asignado (Padrón Oficial)**:
+  * En la aplicación móvil (`mobile.py`), cada usuario supervisor/jefe únicamente visualiza y aprueba a los trabajadores asignados bajo su cargo según las columnas `Nivel de Aprobacion 1` y `Nivel de Aprobacion 2` de `Padron_Trabajadores_GZG.xlsx`.
+  * Los usuarios con rol `ADMINISTRACION` o `ADMIN` visualizan la totalidad de solicitudes del sistema sin restricciones.
+- **Sincronización Automática e Invariante del Padrón (8 Columnas)**:
+  * Toda sincronización de trabajadores entre Excel y SQLite (`data/database.py`) debe preservar obligatoriamente las 8 columnas completas: `DNI`, `Apellidos`, `Nombres`, `Departamento / Área`, `Posición / Cargo`, `Estado en Sistema`, `Nivel de Aprobacion 1`, `Nivel de Aprobacion 2`.
+- **Regeneración y Subida Inmediata de `Aprobaciones_GZG_YYYY-MM.xlsx`**:
+  * Tras cada acción de aprobación o rechazo en el app móvil, el sistema regenera automáticamente el archivo Excel `downloads/data_procesada/Aprobaciones_GZG_YYYY-MM.xlsx` con formato corporativo `#1F4E78` y lanza la subida inmediata a Google Drive en un **hilo background** (`threading.Thread`) para garantizar tiempo de respuesta instantáneo en la pantalla del supervisor.
 
 
