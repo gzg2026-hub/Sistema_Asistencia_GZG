@@ -54,9 +54,53 @@
       display: block;
       background-color: #121418;
     }
+
+    /* Overlay oscuro que cubre el iframe mientras carga — elimina el flash blanco */
+    #loading-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100dvh;
+      background: #121418;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      transition: opacity 0.3s ease;
+    }
+    #loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Spinner GZG */
+    .gzg-spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(245,130,32,0.2);
+      border-top: 3px solid #F58220;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .gzg-label {
+      color: rgba(255,255,255,0.5);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
+  <!-- Overlay de carga que oculta el flash blanco del iframe -->
+  <div id="loading-overlay">
+    <div class="gzg-spinner"></div>
+    <div class="gzg-label">GZG MINERALES</div>
+  </div>
+
   <div id="app-container">
     <iframe 
       id="app-frame" 
@@ -71,6 +115,26 @@
         reg.update();
       }).catch(() => {});
     }
+
+    // Ocultar overlay cuando el iframe termina de cargar
+    var frame = document.getElementById('app-frame');
+    var overlay = document.getElementById('loading-overlay');
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      // Remover completamente tras la transición
+      setTimeout(function() {
+        overlay.style.display = 'none';
+      }, 350);
+    }
+
+    frame.addEventListener('load', function() {
+      // Esperar un tick para que Streamlit pinte el primer frame
+      setTimeout(hideOverlay, 800);
+    });
+
+    // Fallback: ocultar siempre después de 6 segundos máximo
+    setTimeout(hideOverlay, 6000);
   </script>
 </body>
 </html>

@@ -273,13 +273,20 @@ st.markdown("""
     }
 
     /* =========================================================================
-       PUNTO 1: ÍCONOS PUROS NATIVOS EN LOS INPUTS DE LOGIN (USUARIO Y CONTRASEÑA)
-       Selectores nativos universales (input[type="text"] y input[type="password"])
+       ÍCONOS FIJOS EN INPUTS DE LOGIN — INDESTRUCTIBLES EN TODOS LOS ESTADOS
+       Se aplican en: normal, focus, active, hover, autofill y al teclear.
        ========================================================================= */
-    /* Input 1: Usuario (Ícono Personita 👤) */
+    /* Input Usuario 👤 — todos los estados posibles */
     div[data-testid="stForm"] input[type="text"],
+    div[data-testid="stForm"] input[type="text"]:focus,
+    div[data-testid="stForm"] input[type="text"]:active,
+    div[data-testid="stForm"] input[type="text"]:hover,
     div[data-testid="stForm"] input[aria-label="Usuario"],
-    input[aria-label="Usuario"] {
+    div[data-testid="stForm"] input[aria-label="Usuario"]:focus,
+    div[data-testid="stForm"] input[aria-label="Usuario"]:active,
+    input[aria-label="Usuario"],
+    input[aria-label="Usuario"]:focus,
+    input[aria-label="Usuario"]:active {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
@@ -289,13 +296,23 @@ st.markdown("""
         text-align: left !important;
         color: #FFFFFF !important;
         font-size: 15px !important;
+        caret-color: #F58220 !important;
     }
 
-    /* Input 2: Contraseña (Ícono Candadito 🔒) */
+    /* Input Contraseña 🔒 — todos los estados posibles */
     div[data-testid="stForm"] input[type="password"],
+    div[data-testid="stForm"] input[type="password"]:focus,
+    div[data-testid="stForm"] input[type="password"]:active,
+    div[data-testid="stForm"] input[type="password"]:hover,
     div[data-testid="stForm"] input[aria-label="Contraseña"],
+    div[data-testid="stForm"] input[aria-label="Contraseña"]:focus,
+    div[data-testid="stForm"] input[aria-label="Contraseña"]:active,
     input[aria-label="Contraseña"],
-    input[type="password"] {
+    input[aria-label="Contraseña"]:focus,
+    input[aria-label="Contraseña"]:active,
+    input[type="password"],
+    input[type="password"]:focus,
+    input[type="password"]:active {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
@@ -305,8 +322,10 @@ st.markdown("""
         text-align: left !important;
         color: #FFFFFF !important;
         font-size: 15px !important;
+        caret-color: #F58220 !important;
     }
 
+    /* Texto blanco en todos los inputs del form */
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
         font-size: 15px !important;
@@ -775,15 +794,31 @@ with col_b1:
 
 with col_b2:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        # Guardar token para eliminarlo en el próximo ciclo (antes del render)
+        # Eliminar token de BD
         _cur_token = st.query_params.get('token', '')
-        # Limpiar todo el session_state ahora mismo
+        if _cur_token:
+            try:
+                eliminar_token_sesion(_cur_token)
+            except Exception:
+                pass
+        # Limpiar session_state
         for _k in list(st.session_state.keys()):
             del st.session_state[_k]
-        # Marcar flag de logout para que el inicio del próximo ciclo lo procese
-        st.session_state['_do_logout'] = True
-        st.session_state['_logout_token'] = _cur_token
-        st.rerun()
+        st.session_state['authenticated'] = False
+        st.session_state['user'] = None
+        # Forzar reload completo del browser via JS
+        # Esto corta la conexion WebSocket y arranca desde cero sin DOM residual
+        st.components.v1.html("""
+        <script>
+            try {
+                var url = window.parent.location.href.split('?')[0];
+                window.parent.location.replace(url);
+            } catch(e) {
+                window.location.replace(window.location.href.split('?')[0]);
+            }
+        </script>
+        """, height=0, width=0)
+        st.stop()
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
