@@ -541,7 +541,7 @@ if not is_authenticated():
                 st.warning("Por favor ingresa tu usuario y contraseña.")
 
     st.markdown("""
-<div style="text-align: center; font-size: 11px; font-weight: 600; color: #9A9EA7; margin: 18px 0 25px 0; letter-spacing: 0.8px;">
+<div style="text-align: center; font-size: 11px; font-weight: 600; color: #9A9EA7; margin: 4px 0 10px 0; letter-spacing: 0.8px;">
 Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
