@@ -2,7 +2,7 @@
   "name": "GZG Minerales - Sistema de Asistencia y Aprobaciones",
   "short_name": "Asistencia GZG",
   "description": "Sistema de Control de Asistencia, Tiempos y Aprobaciones de Horas Extras - GZG Minerales",
-  "start_url": "/",
+  "start_url": "/?embed=true&embed_options=disable_scrolling",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
