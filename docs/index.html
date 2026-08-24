@@ -13,11 +13,11 @@
   <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
   <meta name="application-name" content="GZG MINERALES">
   
-  <link rel="manifest" href="manifest.json?v=10">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=10">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=10">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=10">
-  <link rel="shortcut icon" href="assets/favicon.png?v=10">
+  <link rel="manifest" href="manifest.json?v=11">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=11">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=11">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=11">
+  <link rel="shortcut icon" href="assets/favicon.png?v=11">
 
   <style>
     * {
@@ -51,32 +51,20 @@
       display: block;
       background-color: #121418;
     }
-
-    #footer-mask {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100vw;
-      height: 52px;
-      background: #121418;
-      z-index: 999999;
-      pointer-events: none;
-    }
   </style>
 </head>
 <body>
   <div id="app-container">
     <iframe 
       id="app-frame" 
-      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true"
+      src="https://gzg-aprobaciones-movil.streamlit.app/"
       allow="camera; microphone; geolocation; clipboard-read; clipboard-write">
     </iframe>
-    <div id="footer-mask"></div>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=10').catch(() => {});
+      navigator.serviceWorker.register('sw.js?v=11').catch(() => {});
     }
   </script>
 </body>

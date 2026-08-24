@@ -238,9 +238,9 @@ st.markdown("""
         touch-action: pan-y !important;
     }
 
-    /* Padding inferior para garantizar que todo el contenido y firma sean visibles */
+    /* Padding compacto superior e inferior para vista móvil */
     .main .block-container {
-        padding: 0.75rem 0.5rem 100px 0.5rem !important;
+        padding: 0.15rem 0.5rem 60px 0.5rem !important;
         max-width: 500px !important;
         margin: 0 auto !important;
         width: 100% !important;
@@ -397,29 +397,43 @@ st.markdown("""
         height: 0px !important;
         opacity: 0 !important;
     }
-    div[data-baseweb="input"] input {
+    div[data-baseweb="input"] input,
+    .stTextInput input,
+    input[type="text"],
+    input[type="password"] {
         font-size: 15px !important;
-        padding: 10px 14px !important;
+        padding: 10px 14px 10px 42px !important;
+        text-align: left !important;
     }
     .stTextInput label p {
         color: #FFFFFF !important;
         font-weight: 600 !important;
         font-size: 13px !important;
     }
-    /* Íconos SVG fijos integrados a la izquierda en los inputs */
-    input[aria-label="Usuario"] {
+    /* Íconos SVG fijos integrados a la izquierda en los inputs en todos los estados */
+    input[aria-label="Usuario"],
+    input[aria-label="Usuario"]:focus,
+    input[aria-label="Usuario"]:hover,
+    input[aria-label="Usuario"]:valid,
+    input[aria-label="Usuario"]:not(:placeholder-shown) {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
         background-size: 18px 18px !important;
         padding-left: 42px !important;
+        text-align: left !important;
     }
-    input[aria-label="Contraseña"] {
+    input[aria-label="Contraseña"],
+    input[aria-label="Contraseña"]:focus,
+    input[aria-label="Contraseña"]:hover,
+    input[aria-label="Contraseña"]:valid,
+    input[aria-label="Contraseña"]:not(:placeholder-shown) {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
         background-size: 18px 18px !important;
         padding-left: 42px !important;
+        text-align: left !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -472,18 +486,18 @@ div[data-testid="stForm"] {{
 """, unsafe_allow_html=True)
 
     st.markdown(f"""
-<div style="text-align: center; padding: 25px 0 15px 0;">
-<div style="margin-bottom: 10px;">
-<img src="data:image/png;base64,{logo_b64}" style="height: 85px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+<div style="text-align: center; padding: 12px 0 10px 0;">
+<div style="margin-bottom: 8px;">
+<img src="data:image/png;base64,{logo_b64}" style="height: 80px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
 </div>
 <div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
 <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
 </div>
-<div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 24px; opacity: 0.95;">
-APLICACIÓN MÓVIL PARA APROBACIONES
+<div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 18px; opacity: 0.95;">
+CONTROL DE ASISTENCIA
 </div>
-<div style="text-align: left; margin-top: 10px; margin-bottom: 12px;">
-<div style="font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
+<div style="text-align: left; margin-top: 6px; margin-bottom: 10px;">
+<div style="font-size: 24px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
 <div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
 </div>
 </div>
@@ -512,7 +526,7 @@ APLICACIÓN MÓVIL PARA APROBACIONES
                 st.warning("Por favor ingresa tu usuario y contraseña.")
     
     st.markdown("""
-<div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 25px 0 45px 0; letter-spacing: 0.8px;">
+<div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 20px 0 35px 0; letter-spacing: 0.8px;">
 Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
@@ -528,15 +542,15 @@ rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
 # Cabecera Central Corporativa GZG (Idéntica a la Pantalla de Inicio)
 st.markdown(f"""
-<div style="text-align: center; padding: 10px 0 6px 0;">
-    <div style="margin-bottom: 8px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 65px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+<div style="text-align: center; padding: 0px 0 2px 0;">
+    <div style="margin-bottom: 6px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 60px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
     </div>
-    <div style="font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
+    <div style="font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.95;">
-        APLICACIÓN MÓVIL PARA APROBACIONES
+    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; opacity: 0.95;">
+        CONTROL DE ASISTENCIA
     </div>
 </div>
 """, unsafe_allow_html=True)
