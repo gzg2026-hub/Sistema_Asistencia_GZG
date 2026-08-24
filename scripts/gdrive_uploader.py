@@ -41,12 +41,16 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
     file_name = os.path.basename(local_file_path).strip()
     file_name_lower = file_name.lower()
 
-    # FILTRO EXCLUSIVO DE EXCEPCIÓN AUTORIZADA: Únicamente Transacciones_Acumuladas.xlsx o Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx
+    # FILTRO DE EXCEPCION AUTORIZADA:
+    #   1. Transacciones_Acumuladas.xlsx
+    #   2. Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx (reportes diarios cerrados)
+    #   3. Aprobaciones_GZG_YYYY-MM.xlsx (triggered inmediatamente tras cada accion de aprobacion/rechazo)
     es_transacciones = (file_name_lower == "transacciones_acumuladas.xlsx")
     es_reporte_diario = file_name_lower.startswith("reporte_asistencia_gzg_") and file_name_lower.endswith(".xlsx")
+    es_aprobaciones = file_name_lower.startswith("aprobaciones_gzg_") and file_name_lower.endswith(".xlsx")
 
-    if not (es_transacciones or es_reporte_diario):
-        log_drive(f"DENEGADO: El archivo '{file_name}' no pertenece a los 2 autorizados para Google Drive. Permanece exclusivo en PC.")
+    if not (es_transacciones or es_reporte_diario or es_aprobaciones):
+        log_drive(f"DENEGADO: El archivo '{file_name}' no pertenece a los 3 autorizados para Google Drive. Permanece exclusivo en PC.")
         return False
 
     log_drive(f"Iniciando subida autorizada de {file_name} a Google Drive (Folder ID: {DRIVE_FOLDER_ID})...")
@@ -63,20 +67,35 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
             )
             service = build("drive", "v3", credentials=creds)
 
-            # Buscar si el archivo ya existe en la carpeta
+            # Buscar si el archivo ya existe en la carpeta (soportando unidades compartidas de organización)
             query = f"'{DRIVE_FOLDER_ID}' in parents and name = '{file_name}' and trashed = false"
-            results = service.files().list(q=query, fields="files(id, name)").execute()
+            results = service.files().list(
+                q=query,
+                fields="files(id, name)",
+                supportsAllDrives=True,
+                includeItemsFromAllDrives=True
+            ).execute()
             files = results.get("files", [])
 
             media = MediaFileUpload(local_file_path, resumable=True)
 
             if files:
                 file_id = files[0]["id"]
-                updated_file = service.files().update(fileId=file_id, media_body=media).execute()
+                updated_file = service.files().update(
+                    fileId=file_id,
+                    media_body=media,
+                    supportsAllDrives=True,
+                    fields="id, name"
+                ).execute()
                 log_drive(f"Éxito: Archivo actualizado por API (ID: {updated_file.get('id')}) -> {file_name}")
             else:
                 file_metadata = {"name": file_name, "parents": [DRIVE_FOLDER_ID]}
-                created_file = service.files().create(body=file_metadata, media_body=media, fields="id").execute()
+                created_file = service.files().create(
+                    body=file_metadata,
+                    media_body=media,
+                    supportsAllDrives=True,
+                    fields="id, name"
+                ).execute()
                 log_drive(f"Éxito: Archivo creado por API (ID: {created_file.get('id')}) -> {file_name}")
 
             return True

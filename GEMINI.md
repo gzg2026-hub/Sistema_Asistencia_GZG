@@ -5,14 +5,17 @@
 ## 1. REGLA DE EXCEPCIÓN Y DESVINCULACIÓN TOTAL DE GOOGLE DRIVE
 - **Cero Sincronización Local en PC**: La carpeta del proyecto en el disco local (`c:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\`) está **100% desvinculada de Google Drive Desktop** (PROHIBIDO totalmente usar, copiar o vincular con la unidad `G:\` o carpetas de sincronización local de Windows).
 - **Cero Subidas en Sesiones Interactivas**: Durante conversaciones, pruebas manuales o ejecuciones interactivas con el usuario, **NUNCA se sube ni se actualiza nada a Google Drive, ÚNICAMENTE SE HARÁ A LA ORDEN O CONFIRMACIÓN EXPLÍCITA DEL USUARIO**.
-- **Subida Única en Tarea Automática Programada de 9:00 AM (Vía API Nube)**:
-  - ÚNICAMENTE la tarea programada automática de las 9:00 AM (`scripts/schedule_downloader.py`) subirá mediante **API directa en la nube** (sin carpetas locales `G:\`) los siguientes **2 archivos autorizados** directamente en la raíz de la carpeta `AGOSTO`:
+- **Archivos Autorizados para Google Drive (3 en Total)**:
+  - **Subida Automática 9:00 AM** (`scripts/schedule_downloader.py`) → Carpeta raíz `AGOSTO` en Drive:
     1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
-    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados de Día Anterior)*.
-  - **Definición Estricta de Día Cerrado (Regla de 9:00 AM)**: Un día calendárico (ej. día 22) se considera **Día Cerrado** ÚNICAMENTE a partir de la ejecución automática de las 9:00 AM del día posterior (ej. día 23 a las 9:00 AM). Antes de las 9:00 AM del día posterior, el día se considera EN CURSO debido a que las salidas del Turno Noche (07:00-08:00 AM) aún no han sido registradas ni descargadas. Queda estrictamente PROHIBIDO emitir o crear el reporte diario individual en Excel de un día (ej. `Reporte_Asistencia_GZG_2026-08-22.xlsx`) antes de las 9:00 AM del día siguiente.
-- **Ubicación Exclusiva Local de Reportes Diarios (`downloads/data_procesada/diario/`)**:
-  - Los reportes diarios procesados en Excel de días cerrados (`Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx`) se guardan ÚNICAMENTE dentro de la subcarpeta oficial `downloads/data_procesada/diario/`.
-  - Queda estrictamente PROHIBIDO generar, copiar o dejar reportes diarios sueltos en la raíz del proyecto (`Sistema_Asistencia_GZG/`) o en subcarpetas intermedias (`downloads/data_procesada/`).
+    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
+  - **Subida Inmediata Triggered** (cada vez que un aprobador valida/rechaza en el app móvil) → Misma carpeta `AGOSTO` en Drive:
+    3. `Aprobaciones_GZG_YYYY-MM.xlsx` *(Registro mensual de HE y Excesos de Jornada con estados de aprobación N1/N2)*. La subida ocurre en un **hilo background** para no bloquear la UI del app. Sin horario fijo: se actualiza en Drive en el momento exacto en que se registra la acción.
+  - **Definición Estricta de Día Cerrado (Regla de 9:00 AM)**: Un día calendárico (ej. día 22) se considera **Día Cerrado** ÚNICAMENTE a partir de la ejecución automática de las 9:00 AM del día posterior (ej. día 23 a las 9:00 AM). Antes de las 9:00 AM del día posterior, el día se considera EN CURSO. Queda estrictamente PROHIBIDO emitir el reporte diario individual antes de las 9:00 AM del día siguiente.
+- **Ubicaciones Exclusivas Locales de Reportes**:
+  - Reportes diarios: `downloads/data_procesada/diario/Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx`
+  - Excel de Aprobaciones: `downloads/data_procesada/Aprobaciones_GZG_YYYY-MM.xlsx`
+  - Queda estrictamente PROHIBIDO generar o dejar reportes sueltos en la raíz del proyecto o subcarpetas no autorizadas.
 - **PROHIBIDO TOTALMENTE EN DRIVE**:
   - NO crear subcarpetas como `Data_Cruda` o `Data_Procesada` en Google Drive.
   - `Sistema_Asistencia_GZG_v1.0.xlsx` *(Archivo raíz ejecutable en la PC, NUNCA se sube a Drive)*.

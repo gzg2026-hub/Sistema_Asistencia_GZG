@@ -1060,10 +1060,17 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
 
 
 def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
-    """Regenera el Excel oficial de aprobaciones desde SQLite. Llamar tras cada aprobacion/rechazo."""
+    """
+    Regenera el Excel oficial de aprobaciones desde SQLite y lo sube inmediatamente a Google Drive.
+    Se ejecuta tras cada accion de aprobacion/rechazo en el app movil.
+    La subida a Drive ocurre en un hilo background para no bloquear la UI.
+    Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
+    """
     try:
         import sys
         import os
+        import datetime
+        import threading
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         if root_dir not in sys.path:
             sys.path.insert(0, root_dir)
@@ -1073,14 +1080,29 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
         conn.close()
         if df_aprob.empty:
             return True
-        # Nombre de archivo por mes actual
-        import datetime
+
+        # 1. Generar / actualizar Excel local en downloads/data_procesada/
         mes_str = datetime.date.today().strftime('%Y-%m')
         out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-        return exportar_aprobaciones_excel(df_aprob, out_path)
+        ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
+
+        if ok_local:
+            # 2. Subir a Google Drive en hilo background (no bloquea la UI del app)
+            def _subir_drive(filepath):
+                try:
+                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                    subir_archivo_a_gdrive(filepath)
+                except Exception as e_drive:
+                    print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+
+            hilo = threading.Thread(target=_subir_drive, args=(out_path,), daemon=True)
+            hilo.start()
+
+        return ok_local
     except Exception as e:
         print(f"[Aviso] No se pudo regenerar Excel de aprobaciones: {e}")
         return False
+
 
 
 def actualizar_estado_aprobacion(id_solicitud: int, nuevo_estado: str, aprobado_por: str, comentario: str = "", db_path: str = DB_PATH) -> bool:
