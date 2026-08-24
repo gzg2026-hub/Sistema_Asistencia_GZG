@@ -400,6 +400,7 @@ st.markdown("""
     }
 
     /* FORZAR FILA HORIZONTAL ÚNICA EN TODAS LAS PANTALLAS (MÓVIL, TABLET, PC) */
+    [data-testid="stHorizontalBlock"],
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -412,6 +413,36 @@ st.markdown("""
         box-sizing: border-box !important;
         margin: 0 0 10px 0 !important;
         padding: 0 !important;
+    }
+
+    @media (max-width: 768px), (max-width: 640px) {
+        [data-testid="stHorizontalBlock"],
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+            gap: 8px !important;
+        }
+
+        [data-testid="stHorizontalBlock"] > [data-testid="column"],
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"],
+        div[data-testid="stHorizontalBlock"] > div {
+            flex: 1 1 calc(50% - 4px) !important;
+            width: calc(50% - 4px) !important;
+            max-width: calc(50% - 4px) !important;
+            min-width: 0px !important;
+            box-sizing: border-box !important;
+        }
+
+        [data-testid="stHorizontalBlock"] .stButton,
+        [data-testid="stHorizontalBlock"] button {
+            width: 100% !important;
+            min-width: 0px !important;
+            height: 38px !important;
+            font-size: 13px !important;
+            padding: 0 4px !important;
+        }
     }
 
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
@@ -427,9 +458,7 @@ st.markdown("""
     }
 
     div[data-testid="stHorizontalBlock"] .stButton,
-    div[data-testid="stHorizontalBlock"] [data-testid="stPopover"],
-    div[data-testid="stHorizontalBlock"] button,
-    div[data-testid="stHorizontalBlock"] [data-testid="stPopover"] > button {
+    div[data-testid="stHorizontalBlock"] button {
         width: 100% !important;
         min-width: 0px !important;
         height: 38px !important;
