@@ -185,20 +185,27 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* Ocultar Barra Inferior de Streamlit Cloud (Created by / Hosted with Streamlit) */
+    /* Ocultar Barra Inferior de Streamlit Cloud y Embed (Built with Streamlit / Fullscreen) */
     footer,
     footer[data-testid="stFooter"],
+    [data-testid="stFooter"],
     div[class*="viewerBadge"],
     div[class*="styles_viewerBadge"],
     div[class*="viewerBadge_container"],
     div[class*="FloatingProfile"],
     div[data-testid="stEmbedCode"],
-    a[href*="streamlit.io"],
+    div[data-testid="stBottom"],
+    div[data-testid="stBottomBlockContainer"],
+    div[class*="stAppDeployButton"],
+    div[class*="StatusWidget"],
     div:has(> a[href*="streamlit.io"]),
-    div:has(> a[href*="github.com"]) {
+    div:has(> a[href*="github.com"]),
+    a[href*="streamlit.io"],
+    a[href*="github.com"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
+        width: 0px !important;
         opacity: 0 !important;
         pointer-events: none !important;
     }
@@ -213,9 +220,9 @@ st.markdown("""
         touch-action: pan-y !important;
     }
 
-    /* Ajustar el contenedor principal al 100% de la pantalla del celular sin márgenes desbordados */
+    /* Padding inferior para garantizar que todo el contenido y firma sean visibles */
     .main .block-container {
-        padding: 0.75rem 0.5rem !important;
+        padding: 0.75rem 0.5rem 80px 0.5rem !important;
         max-width: 500px !important;
         margin: 0 auto !important;
         width: 100% !important;
@@ -441,7 +448,7 @@ APLICACIÓN MÓVIL PARA APROBACIONES
                 st.warning("Por favor ingresa tu usuario y contraseña.")
     
     st.markdown("""
-<div style="text-align: center; font-size: 11px; color: #6E7280; margin-top: 25px; letter-spacing: 0.5px;">
+<div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 25px 0 45px 0; letter-spacing: 0.8px;">
 Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
@@ -685,7 +692,7 @@ with tab_dashboard:
         st.bar_chart(chart_df.set_index('Estado'))
 
 st.markdown("""
-<div style="text-align: center; font-size: 11px; color: #5A5E6B; margin: 35px 0 15px 0; letter-spacing: 0.5px;">
+<div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 40px 0 60px 0; letter-spacing: 0.8px;">
 Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
