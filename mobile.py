@@ -489,22 +489,29 @@ if not is_authenticated():
 """, unsafe_allow_html=True)
 
 
-    # Encabezado de Login Elevado hacia la Parte Superior
+    # 1. Cabecera Superior Corporativa (Logo y Títulos arriba)
     st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -2.2rem;">
+<div style="text-align: center; padding: 0px 0 0px 0; margin-top: -2.2rem;">
     <div style="margin-bottom: 3px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 62px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 60px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));">
     </div>
     <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.9);">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">
         APLICACION MOVIL PARA APROBACIONES
     </div>
-    <div style="text-align: left; margin-top: 2px; margin-bottom: 6px;">
-        <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">Bienvenido</div>
-        <div style="font-size: 12px; color: #C5CAD3; text-shadow: 0 1px 6px rgba(0,0,0,0.9);">Inicia sesión para continuar</div>
-    </div>
+</div>
+""", unsafe_allow_html=True)
+
+    # 2. Espacio visual para despejar la maquinaria minera del centro
+    st.markdown("<div style='height: 14vh; min-height: 90px;'></div>", unsafe_allow_html=True)
+
+    # 3. Bloque de Bienvenida bajado hacia el formulario
+    st.markdown("""
+<div style="text-align: left; margin-bottom: 8px;">
+    <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">Bienvenido</div>
+    <div style="font-size: 12px; color: #C5CAD3; text-shadow: 0 1px 6px rgba(0,0,0,0.9);">Inicia sesión para continuar</div>
 </div>
 """, unsafe_allow_html=True)
     
