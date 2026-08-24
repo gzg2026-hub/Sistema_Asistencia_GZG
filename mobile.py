@@ -487,7 +487,7 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
-        margin-bottom: 4px !important;
+        margin-bottom: 2px !important;
     }
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] p,
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] span,
