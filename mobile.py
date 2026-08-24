@@ -474,36 +474,70 @@ st.markdown("""
         justify-content: center !important;
     }
 
-    /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco a Ancho Completo */
+    /* File Uploader: Botón Upload en Tono Gris Neutro Original */
+    div[data-testid="stFileUploader"] button,
+    div[data-testid="stFileUploader"] [data-testid="baseButton-secondary"],
+    section[data-testid="stFileUploadDropzone"] button {
+        background: #1D212A !important;
+        background-color: #1D212A !important;
+        border: 1px solid #2A2F3D !important;
+        color: #FFFFFF !important;
+        box-shadow: none !important;
+        margin-bottom: 0 !important;
+    }
+    div[data-testid="stFileUploader"] button p,
+    div[data-testid="stFileUploader"] button span {
+        color: #FFFFFF !important;
+    }
+    div[data-testid="stFileUploader"] button:hover {
+        background: #262B37 !important;
+        background-color: #262B37 !important;
+        border-color: #3B4254 !important;
+    }
+
+    /* Botón Rechazar — Rojo Carmesí Sólido Sin Borde */
+    div[data-testid="stExpander"] div.stButton:not(:last-child) button,
     div[data-testid="stExpander"] button[kind="secondary"],
-    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"],
-    div[data-testid="stExpander"] button:not([kind="primary"]) {
+    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"] {
         background: linear-gradient(135deg, #C0392B 0%, #962D22 100%) !important;
         background-color: #C0392B !important;
-        border: 1px solid #E74C3C !important;
+        border: none !important;
+        outline: none !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
-        box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4) !important;
+        box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
         margin-bottom: 8px !important;
     }
-    div[data-testid="stExpander"] button[kind="secondary"] p,
-    div[data-testid="stExpander"] button[kind="secondary"] span,
-    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"] p,
-    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"] span,
-    div[data-testid="stExpander"] button:not([kind="primary"]) p,
-    div[data-testid="stExpander"] button:not([kind="primary"]) span {
+    div[data-testid="stExpander"] div.stButton:not(:last-child) button p,
+    div[data-testid="stExpander"] div.stButton:not(:last-child) button span {
         color: #FFFFFF !important;
         font-weight: 700 !important;
     }
-    div[data-testid="stExpander"] button[kind="secondary"]:hover,
-    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"]:hover,
-    div[data-testid="stExpander"] button:not([kind="primary"]):hover {
+    div[data-testid="stExpander"] div.stButton:not(:last-child) button:hover {
         background: linear-gradient(135deg, #D9383A 0%, #B02A2B 100%) !important;
         background-color: #D9383A !important;
-        border-color: #FF5A5A !important;
         color: #FFFFFF !important;
+    }
+
+    /* Botón Aprobar — Naranja Corporativo Sin Borde */
+    div[data-testid="stExpander"] button[kind="primary"],
+    div[data-testid="stExpander"] button[data-testid="baseButton-primary"] {
+        background: linear-gradient(135deg, #F58220 0%, #D35400 100%) !important;
+        background-color: #F58220 !important;
+        border: none !important;
+        outline: none !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 4px 14px rgba(245, 130, 32, 0.35) !important;
+    }
+    div[data-testid="stExpander"] button[kind="primary"] p,
+    div[data-testid="stExpander"] button[kind="primary"] span {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
     }
 
     /* PUNTO 7: Popover Clave — Respuesta Inmediata al Primer Toque */
@@ -797,9 +831,9 @@ with tab_pendientes:
         <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
         <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px;">Pendientes</div>
     </div>
-    <div style="background: #1A1D24; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 10px; text-align: center; margin-bottom: 8px;">
-        <div style="font-size: 18px; font-weight: 800; color: #F58220; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
-        <div style="font-size: 10px; font-weight: 600; color: #9A9EA7;">Aprobadas este mes</div>
+    <div style="background: linear-gradient(135deg, #0288D1 0%, #0277BD 100%); border-radius: 10px; padding: 6px 10px; text-align: center; margin-bottom: 8px; box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3);">
+        <div style="font-size: 18px; font-weight: 800; color: #FFFFFF; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
+        <div style="font-size: 10px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Aprobadas este mes</div>
     </div>
     """, unsafe_allow_html=True)
     
