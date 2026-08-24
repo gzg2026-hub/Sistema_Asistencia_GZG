@@ -425,7 +425,8 @@ st.markdown("""
         margin: 0 !important;
     }
 
-    /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco */
+    /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco a Ancho Completo */
+    button:has(p:contains("RECHAZAR")),
     div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"],
     div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"],
     div[data-testid="column"]:nth-child(1) button[kind="secondary"] {
@@ -434,19 +435,17 @@ st.markdown("""
         border: 1px solid #E74C3C !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4) !important;
+        margin-bottom: 6px !important;
     }
-    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"] p,
-    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"] p,
-    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"] span,
-    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"] span {
+    button:has(p:contains("RECHAZAR")) p,
+    button:has(p:contains("RECHAZAR")) span {
         color: #FFFFFF !important;
         font-weight: 700 !important;
     }
-    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"]:hover,
-    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"]:hover {
+    button:has(p:contains("RECHAZAR")):hover {
         background: linear-gradient(135deg, #D9383A 0%, #B02A2B 100%) !important;
         background-color: #D9383A !important;
         border-color: #FF5A5A !important;
@@ -748,39 +747,38 @@ with tab_pendientes:
                     key=f"m_file_{sol_id}"
                 )
                 
-                c_btn1, c_btn2 = st.columns(2)
-                with c_btn1:
-                    if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
-                        adjunto_rel_path = None
-                        if uploaded_file is not None:
-                            root_dir = os.path.dirname(os.path.abspath(__file__))
-                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                            os.makedirs(adj_dir, exist_ok=True)
-                            fname = f"solic_{sol_id}_{uploaded_file.name}"
-                            fpath = os.path.join(adj_dir, fname)
-                            with open(fpath, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+                # Botones de Acción Apilados a Ancho Completo para Celular
+                if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
+                    adjunto_rel_path = None
+                    if uploaded_file is not None:
+                        root_dir = os.path.dirname(os.path.abspath(__file__))
+                        adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                        os.makedirs(adj_dir, exist_ok=True)
+                        fname = f"solic_{sol_id}_{uploaded_file.name}"
+                        fpath = os.path.join(adj_dir, fname)
+                        with open(fpath, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
 
-                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador)
-                        st.success(f"Rechazado: {worker_name}")
-                        st.rerun()
-                with c_btn2:
-                    if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
-                        adjunto_rel_path = None
-                        if uploaded_file is not None:
-                            root_dir = os.path.dirname(os.path.abspath(__file__))
-                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                            os.makedirs(adj_dir, exist_ok=True)
-                            fname = f"solic_{sol_id}_{uploaded_file.name}"
-                            fpath = os.path.join(adj_dir, fname)
-                            with open(fpath, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+                    actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador)
+                    st.success(f"Rechazado: {worker_name}")
+                    st.rerun()
 
-                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador)
-                        st.success(f"Aprobado: {worker_name}")
-                        st.rerun()
+                if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
+                    adjunto_rel_path = None
+                    if uploaded_file is not None:
+                        root_dir = os.path.dirname(os.path.abspath(__file__))
+                        adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                        os.makedirs(adj_dir, exist_ok=True)
+                        fname = f"solic_{sol_id}_{uploaded_file.name}"
+                        fpath = os.path.join(adj_dir, fname)
+                        with open(fpath, "wb") as f:
+                            f.write(uploaded_file.getbuffer())
+                        adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+
+                    actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador)
+                    st.success(f"Aprobado: {worker_name}")
+                    st.rerun()
 
 # ---------------------------------------------------------
 # TAB 2: HISTORIAL DE APROBACIONES
