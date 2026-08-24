@@ -237,7 +237,7 @@ st.markdown("""
         -webkit-overflow-scrolling: touch !important;
         touch-action: pan-y !important    /* Padding compacto superior e inferior para vista móvil */
     .main .block-container {
-        padding: 0rem 0.5rem 50px 0.5rem !important;
+        padding: 0.2rem 0.5rem 50px 0.5rem !important;
         max-width: 500px !important;
         margin: 0 auto !important;
         width: 100% !important;
@@ -245,13 +245,13 @@ st.markdown("""
 
     /* Formulario de Login: Contenedor con efecto Glassmorphism */
     div[data-testid="stForm"] {
-        background: rgba(22, 25, 32, 0.90) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 16px !important;
-        padding: 16px 16px !important;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
+        background: rgba(22, 25, 32, 0.92) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        border-radius: 18px !important;
+        padding: 20px 18px !important;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75) !important;
     }
 
     /* Bordes e inputs */
@@ -269,32 +269,40 @@ st.markdown("""
 
     /* =========================================================================
        PUNTO 1: ÍCONOS PUROS NATIVOS EN LOS INPUTS DE LOGIN (USUARIO Y CONTRASEÑA)
-       Anclados al contenedor data-baseweb="input" para persistencia indestructible
+       Selectores basados en type='text' y type='password' para coincidencia 100% universal
        ========================================================================= */
     /* Input 1: Usuario (Ícono Personita 👤) */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"] {
+    div[data-baseweb="input"]:has(input[type="text"]),
+    div[data-baseweb="input"]:has(input[aria-label="Usuario"]) {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
-        background-position: 12px center !important;
+        background-position: 14px center !important;
         background-size: 18px 18px !important;
     }
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input {
-        padding-left: 40px !important;
+    div[data-baseweb="input"]:has(input[type="text"]) input,
+    div[data-baseweb="input"]:has(input[aria-label="Usuario"]) input {
+        padding-left: 42px !important;
         background: transparent !important;
         background-color: transparent !important;
+        color: #FFFFFF !important;
+        font-size: 15px !important;
     }
 
     /* Input 2: Contraseña (Ícono Candadito 🔒) */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {
+    div[data-baseweb="input"]:has(input[type="password"]),
+    div[data-baseweb="input"]:has(input[aria-label="Contraseña"]) {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
-        background-position: 12px center !important;
+        background-position: 14px center !important;
         background-size: 18px 18px !important;
     }
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input {
-        padding-left: 40px !important;
+    div[data-baseweb="input"]:has(input[type="password"]) input,
+    div[data-baseweb="input"]:has(input[aria-label="Contraseña"]) input {
+        padding-left: 42px !important;
         background: transparent !important;
         background-color: transparent !important;
+        color: #FFFFFF !important;
+        font-size: 15px !important;
     }
 
     .stTextInput input, input[type="text"], input[type="password"] {
@@ -387,6 +395,35 @@ st.markdown("""
         border-radius: 10px !important;
         font-weight: 700 !important;
         height: 44px !important;
+        touch-action: manipulation !important;
+    }
+
+    /* PUNTO 5: Botón Rechazar — Rojo Carmesí Elegante con acento Coral */
+    button[key*="m_rej_"],
+    div[data-testid="column"]:first-child button[kind="secondary"] {
+        background: rgba(231, 76, 60, 0.14) !important;
+        border: 1px solid #E74C3C !important;
+        color: #FF6B6B !important;
+    }
+    button[key*="m_rej_"]:hover,
+    div[data-testid="column"]:first-child button[kind="secondary"]:hover {
+        background: rgba(231, 76, 60, 0.28) !important;
+        border-color: #FF4D4D !important;
+        color: #FFFFFF !important;
+    }
+
+    /* PUNTO 7: Popover Clave — Respuesta Inmediata al Primer Toque */
+    [data-testid="stPopover"] > button {
+        touch-action: manipulation !important;
+        cursor: pointer !important;
+        width: 100% !important;
+    }
+    div[data-testid="stPopoverBody"] {
+        z-index: 999999 !important;
+        border: 1px solid #2A2F3D !important;
+        background: #1A1D24 !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8) !important;
     }
 
     /* Estilo de pestañas superiores en celular */
@@ -438,21 +475,21 @@ if not is_authenticated():
 </style>
 """, unsafe_allow_html=True)
 
-    # PUNTO 1 & PUNTO 4: Subtítulo exacto "APLICACION MOVIL PARA APROBACIONES" y encabezado más arriba
+    # PUNTO 4: Encabezado de Login Más Proporcionado (Logo 72px, Título 26px, Subtítulo 11px)
     st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 4px 0; margin-top: -1.2rem;">
-    <div style="margin-bottom: 4px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 62px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+<div style="text-align: center; padding: 6px 0 6px 0;">
+    <div style="margin-bottom: 6px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 72px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.65));">
     </div>
-    <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+    <div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.95;">
+    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; opacity: 0.95;">
         APLICACION MOVIL PARA APROBACIONES
     </div>
-    <div style="text-align: left; margin-top: 2px; margin-bottom: 8px;">
-        <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
-        <div style="font-size: 12px; color: #9A9EA7;">Inicia sesión para continuar</div>
+    <div style="text-align: left; margin-top: 4px; margin-bottom: 10px;">
+        <div style="font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
+        <div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -465,7 +502,7 @@ if not is_authenticated():
         with col_rec:
             recordarme = st.toggle("Recordarme", value=True, key="chk_recordarme_login")
         
-        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
         btn_login = st.form_submit_button("🔑 INGRESAR", type="primary", use_container_width=True)
         if btn_login:
             if u_name and u_pass:
@@ -483,7 +520,7 @@ if not is_authenticated():
                 st.warning("Por favor ingresa tu usuario y contraseña.")
 
     st.markdown("""
-<div style="text-align: center; font-size: 11px; font-weight: 600; color: #9A9EA7; margin: 16px 0 25px 0; letter-spacing: 0.8px;">
+<div style="text-align: center; font-size: 11px; font-weight: 600; color: #9A9EA7; margin: 18px 0 25px 0; letter-spacing: 0.8px;">
 Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
@@ -497,20 +534,21 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# PUNTO 4: Cabecera Central Corporativa GZG en Dashboard — pegada arriba
+# PUNTO 4: Cabecera Central Corporativa GZG en Dashboard — Proporcionada y Elegante
 st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -1.4rem;">
-    <div style="margin-bottom: 2px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 48px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
+<div style="text-align: center; padding: 4px 0 4px 0;">
+    <div style="margin-bottom: 4px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 58px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
     </div>
-    <div style="font-size: 18px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 1px;">
+    <div style="font-size: 21px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 9px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.95;">
         CONTROL DE ASISTENCIA
     </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 # Fila de Usuario y Acciones Rápidas
 col_user, col_actions = st.columns([1.6, 1.4])
