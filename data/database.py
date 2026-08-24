@@ -809,7 +809,7 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
     """)
 
     users = [
-        ('admin', hash_fn('gzg2026*'), 'Administración (Control Total)', 'ADMINISTRACION', 'TODAS', 'Administrador de Sistema'),
+        ('admin', hash_fn('gzg2026*'), 'Administración (Control Total)', 'ADMINISTRADOR', 'TODAS', 'Administrador de Sistema'),
         ('jagreda', hash_fn('jagreda2026*'), 'Jhon Robert Ágreda Aspajo', 'JEFE', 'OPER&MTTO', 'Jefe'),
         ('jalva', hash_fn('jalva2026*'), 'Jhon Kenedy Alva Medina', 'JEFE', 'JEFATURA', 'Jefe'),
         ('jdelariva', hash_fn('jdelariva2026*'), 'Javier Adrián De La Riva Aguilar', 'JEFE', 'JEFATURA', 'Jefe'),

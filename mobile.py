@@ -475,10 +475,9 @@ st.markdown("""
     }
 
     /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco a Ancho Completo */
-    button:has(p:contains("RECHAZAR")),
-    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"],
-    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"],
-    div[data-testid="column"]:nth-child(1) button[kind="secondary"] {
+    div[data-testid="stExpander"] button[kind="secondary"],
+    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"],
+    div[data-testid="stExpander"] button:not([kind="primary"]) {
         background: linear-gradient(135deg, #C0392B 0%, #962D22 100%) !important;
         background-color: #C0392B !important;
         border: 1px solid #E74C3C !important;
@@ -487,14 +486,20 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4) !important;
-        margin-bottom: 6px !important;
+        margin-bottom: 8px !important;
     }
-    button:has(p:contains("RECHAZAR")) p,
-    button:has(p:contains("RECHAZAR")) span {
+    div[data-testid="stExpander"] button[kind="secondary"] p,
+    div[data-testid="stExpander"] button[kind="secondary"] span,
+    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"] p,
+    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"] span,
+    div[data-testid="stExpander"] button:not([kind="primary"]) p,
+    div[data-testid="stExpander"] button:not([kind="primary"]) span {
         color: #FFFFFF !important;
         font-weight: 700 !important;
     }
-    button:has(p:contains("RECHAZAR")):hover {
+    div[data-testid="stExpander"] button[kind="secondary"]:hover,
+    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"]:hover,
+    div[data-testid="stExpander"] button:not([kind="primary"]):hover {
         background: linear-gradient(135deg, #D9383A 0%, #B02A2B 100%) !important;
         background-color: #D9383A !important;
         border-color: #FF5A5A !important;
@@ -654,7 +659,7 @@ def get_user_display_name(u_dict, u_name):
     if u == 'msanchez':
         return "Manuel Sánchez"
     if u == 'admin':
-        return "Administración"
+        return "admin"
     nombre_comp = u_dict.get('nombre_completo', '')
     if nombre_comp:
         partes = nombre_comp.strip().split()
@@ -744,7 +749,7 @@ if st.session_state.get("show_change_pw_box", False):
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
 
 # PUNTO 7: Filtrado por bandeja personal del usuario autenticado
-if rol not in ('ADMINISTRACION', 'ADMIN') and 'aprobador_n1' in df_all_raw.columns:
+if rol not in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN') and 'aprobador_n1' in df_all_raw.columns:
     mask = (
         df_all_raw['aprobador_n1'].fillna('').str.lower().str.strip() == username.lower().strip()
     ) | (
@@ -765,7 +770,7 @@ tab_pendientes, tab_historial, tab_dashboard = st.tabs([
 # ---------------------------------------------------------
 with tab_pendientes:
     u_lower = username.lower().strip()
-    if rol in ('ADMINISTRACION', 'ADMIN'):
+    if rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'):
         df_pendientes = df_all[df_all['estado'] == 'PENDIENTE'].copy()
         df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO'].copy()
     else:
