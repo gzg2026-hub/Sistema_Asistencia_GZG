@@ -1,5 +1,5 @@
-// CACHE v18 - Limpieza total inmediata
-const CACHE_NAME = 'gzg-pwa-v18.0.0';
+// CACHE v19 - Limpieza total inmediata
+const CACHE_NAME = 'gzg-asistencia-v19.0.0';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

@@ -601,25 +601,23 @@ st.markdown(f"""
         CONTROL DE ASISTENCIA
     </div>
 </div>
-""", unsafe_allow_html=True)
 
-# Barra Única Horizontal de Usuario y Acciones (1 Sola Línea sin apilamiento)
-col_usr, col_ref, col_pw, col_out = st.columns([2.0, 0.8, 1.1, 1.1])
-with col_usr:
-    st.markdown(f"""
-<div style="padding-top: 2px; line-height: 1.2;">
-    <div style="font-size: 12px; font-weight: 800; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 7px 12px 6px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">
         👋 {username}
     </div>
-    <div style="font-size: 9px; font-weight: 700; color: #F58220; text-transform: uppercase; letter-spacing: 0.5px;">
+    <div style="font-size: 10px; font-weight: 700; color: #F58220; background: rgba(245, 130, 32, 0.15); border: 1px solid rgba(245, 130, 32, 0.3); border-radius: 6px; padding: 2px 8px; letter-spacing: 0.5px; text-transform: uppercase;">
         {rol}
     </div>
 </div>
 """, unsafe_allow_html=True)
-with col_ref:
-    if st.button("🔄", key="btn_refresh_bar", help="Actualizar solicitudes", use_container_width=True):
+
+# 3 Botones de Acción Equilibrados en 1 Sola Línea (33% c/u)
+col_b1, col_b2, col_b3 = st.columns([1, 1, 1])
+with col_b1:
+    if st.button("🔄 Refrescar", key="btn_refresh_bar", help="Actualizar solicitudes", use_container_width=True):
         st.rerun()
-with col_pw:
+with col_b2:
     with st.popover("🔑 Clave", use_container_width=True):
         st.markdown("##### 🔑 Cambiar Contraseña")
         with st.form("form_header_change_pw"):
@@ -642,7 +640,7 @@ with col_pw:
                         st.rerun()
                     else:
                         st.error("Error al actualizar la contraseña.")
-with col_out:
+with col_b3:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
         if "token" in st.query_params:
             eliminar_token_sesion(st.query_params["token"])
