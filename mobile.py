@@ -203,11 +203,14 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* Fondo oscuro nativo PWA GZG */
-    .stApp, [data-testid="stMain"] {
+    /* Fondo oscuro nativo PWA GZG y Habilitación Estricta de Scroll Táctil */
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
         background-color: #121418 !important;
         background: #121418 !important;
         color: #FFFFFF !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
     }
 
     /* Ajustar el contenedor principal al 100% de la pantalla del celular sin márgenes desbordados */
@@ -452,50 +455,57 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Cabecera Móvil GZG con Renderizado Inmediato
-col_head1, col_head2, col_head3 = st.columns([2.3, 1.2, 1.1])
-with col_head1:
-    st.markdown(f"""
-    <div style="display: flex; align-items: center; padding: 4px 0;">
-        {logo_html}
-        <div>
-            <span class="gzg-logo-text" style="font-size: 16px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 16px;">MINERALES</span>
-            <div style="font-size: 9px; color: #9A9EA7;">CONTROL DE ASISTENCIA</div>
-        </div>
+# Cabecera Central Corporativa GZG (Idéntica a la Pantalla de Inicio)
+st.markdown(f"""
+<div style="text-align: center; padding: 10px 0 6px 0;">
+    <div style="margin-bottom: 8px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 65px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
     </div>
-    """, unsafe_allow_html=True)
-with col_head2:
-    with st.popover("🔑 Mi Clave"):
-        st.markdown("##### 🔑 Cambiar Contraseña")
-        with st.form("form_header_change_pw"):
-            p_act_h = st.text_input("Contraseña Actual", type="password")
-            p_nue_h = st.text_input("Nueva Contraseña", type="password")
-            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
-            btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
-            if btn_h_pw:
-                if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
-                    st.error("La contraseña actual es incorrecta.")
-                elif not p_nue_h or len(p_nue_h) < 4:
-                    st.warning("Debe tener al menos 4 caracteres.")
-                elif p_nue_h != p_cnf_h:
-                    st.error("Las contraseñas no coinciden.")
-                else:
-                    new_h = hash_password(p_nue_h)
-                    if cambiar_password_usuario(username, new_h):
-                        st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
-                        st.success("Contraseña modificada exitosamente.")
-                        st.rerun()
-                    else:
-                        st.error("Error al actualizar la contraseña.")
-with col_head3:
-    if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        if "token" in st.query_params:
-            eliminar_token_sesion(st.query_params["token"])
-            del st.query_params["token"]
-        logout_user()
-        st.rerun()
+    <div style="font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
+        <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
+    </div>
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.95;">
+        APLICACIÓN MÓVIL PARA APROBACIONES
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-st.write(f"👋 **Hola, {username}** ({rol})")
+# Fila de Usuario y Acciones Rápidas
+col_user, col_actions = st.columns([1.6, 1.4])
+with col_user:
+    st.markdown(f"<div style='padding-top: 8px; font-size: 13px; font-weight: 600; color: #FFFFFF;'>👋 <b>Hola, {username}</b> <span style='color: #9A9EA7; font-size: 11px;'>({rol})</span></div>", unsafe_allow_html=True)
+with col_actions:
+    c_act1, c_act2 = st.columns(2)
+    with c_act1:
+        with st.popover("🔑 Clave"):
+            st.markdown("##### 🔑 Cambiar Contraseña")
+            with st.form("form_header_change_pw"):
+                p_act_h = st.text_input("Contraseña Actual", type="password")
+                p_nue_h = st.text_input("Nueva Contraseña", type="password")
+                p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
+                btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
+                if btn_h_pw:
+                    if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
+                        st.error("La contraseña actual es incorrecta.")
+                    elif not p_nue_h or len(p_nue_h) < 4:
+                        st.warning("Debe tener al menos 4 caracteres.")
+                    elif p_nue_h != p_cnf_h:
+                        st.error("Las contraseñas no coinciden.")
+                    else:
+                        new_h = hash_password(p_nue_h)
+                        if cambiar_password_usuario(username, new_h):
+                            st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
+                            st.success("Contraseña modificada exitosamente.")
+                            st.rerun()
+                        else:
+                            st.error("Error al actualizar la contraseña.")
+    with c_act2:
+        if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
+            if "token" in st.query_params:
+                eliminar_token_sesion(st.query_params["token"])
+                del st.query_params["token"]
+            logout_user()
+            st.rerun()
 
 # Cargar data de aprobaciones de forma eficiente (sin bucles de sincronización)
 if 'aprobaciones_synced' not in st.session_state:
