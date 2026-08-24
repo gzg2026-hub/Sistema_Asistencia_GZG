@@ -758,10 +758,15 @@ with col_b2:
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
     with st.expander("🔑 Cambiar mi Contraseña", expanded=True):
+        st.markdown("""
+        <div style="background: rgba(245, 130, 32, 0.08); border: 1px solid rgba(245, 130, 32, 0.25); border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; font-size: 11px; color: #D1D5DB;">
+            💡 <b>Sugerencia:</b> La nueva contraseña debe tener <b>6 o más caracteres</b> (letras, números o símbolos).
+        </div>
+        """, unsafe_allow_html=True)
         with st.form("form_header_change_pw"):
             p_act_h = st.text_input("Contraseña Actual", type="password")
-            p_nue_h = st.text_input("Nueva Contraseña", type="password")
-            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
+            p_nue_h = st.text_input("Nueva Contraseña", type="password", placeholder="Mínimo 6 caracteres", help="Debe tener al menos 6 caracteres")
+            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password", placeholder="Repite la nueva contraseña")
             col_f1, col_f2 = st.columns(2)
             with col_f1:
                 btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
@@ -774,8 +779,8 @@ if st.session_state.get("show_change_pw_box", False):
             if btn_h_pw:
                 if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
                     st.error("La contraseña actual es incorrecta.")
-                elif not p_nue_h or len(p_nue_h) < 4:
-                    st.warning("Debe tener al menos 4 caracteres.")
+                elif not p_nue_h or len(p_nue_h) < 6:
+                    st.warning("⚠️ La nueva contraseña debe tener al menos 6 caracteres.")
                 elif p_nue_h != p_cnf_h:
                     st.error("Las contraseñas no coinciden.")
                 else:
