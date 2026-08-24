@@ -1,5 +1,5 @@
-// CACHE v30 - Limpieza total inmediata
-const CACHE_NAME = 'gzg-asistencia-v30.0.0';
+// CACHE v31 - Limpieza total inmediata
+const CACHE_NAME = 'gzg-asistencia-v31.0.0';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

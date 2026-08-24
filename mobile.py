@@ -487,7 +487,7 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
-        margin-bottom: 2px !important;
+        margin-bottom: 0px !important;
     }
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] p,
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] span,
@@ -503,7 +503,7 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
-    /* Botón Aprobar — Naranja Corporativo Sin Borde */
+    /* Botón Aprobar — Naranja Corporativo Sin Borde y Pegado Sutilmente a Rechazar */
     div[data-testid="stExpander"] div.stButton button[kind="primary"],
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-primary"] {
         background: linear-gradient(135deg, #F58220 0%, #D35400 100%) !important;
@@ -516,7 +516,7 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 14px rgba(245, 130, 32, 0.35) !important;
-        margin-top: 0 !important;
+        margin-top: -3px !important;
     }
     div[data-testid="stExpander"] div.stButton button[kind="primary"] p,
     div[data-testid="stExpander"] div.stButton button[kind="primary"] span {
@@ -844,7 +844,7 @@ with tab_pendientes:
     
     # Cajones de Métricas en una Sola Fila 50% / 50% para Celular
     st.markdown(f"""
-    <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 8px; box-sizing: border-box;">
+    <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
         <!-- Izquierda 50%: Pendientes (Naranja) -->
         <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.25); box-sizing: border-box;">
             <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
