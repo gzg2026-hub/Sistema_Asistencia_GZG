@@ -465,13 +465,13 @@ if not is_authenticated():
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Inyectar fondo minero nítido y luminoso en stAppViewContainer
+    # Inyectar fondo minero de alta definición con maquinaria minera visible
     if hero_b64:
         st.markdown(f"""
 <style>
 .stApp,
 [data-testid="stAppViewContainer"] {{
-    background: linear-gradient(180deg, rgba(14, 16, 20, 0.15) 0%, rgba(14, 16, 20, 0.35) 45%, #0E1014 92%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
+    background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
     background-size: cover !important;
     background-attachment: fixed !important;
 }}
@@ -482,16 +482,16 @@ if not is_authenticated():
 """, unsafe_allow_html=True)
 
 
-    # PUNTO 4: Encabezado de Login Más Proporcionado (Logo 72px, Título 26px, Subtítulo 11px)
+    # PUNTO 4: Encabezado de Login Proporcionado sobre Maquinaria Minera
     st.markdown(f"""
-<div style="text-align: center; padding: 6px 0 6px 0;">
+<div style="text-align: center; padding: 4px 0 6px 0;">
     <div style="margin-bottom: 6px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 72px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.65));">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 68px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.75));">
     </div>
-    <div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
+    <div style="font-size: 25px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; opacity: 0.95;">
+    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
         APLICACION MOVIL PARA APROBACIONES
     </div>
     <div style="text-align: left; margin-top: 4px; margin-bottom: 10px;">
@@ -541,11 +541,11 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# PUNTO 4: Cabecera Central Corporativa GZG en Dashboard — Proporcionada y Elegante
+# PUNTO 4: Cabecera Central Corporativa GZG en Dashboard
 st.markdown(f"""
 <div style="text-align: center; padding: 4px 0 4px 0;">
     <div style="margin-bottom: 4px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 58px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 56px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
     </div>
     <div style="font-size: 21px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
@@ -557,12 +557,15 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# Fila de Usuario y Acciones Rápidas
-col_user, col_actions = st.columns([1.6, 1.4])
+# Fila de Usuario y Acciones Rápidas (Actualizar, Clave, Salir)
+col_user, col_actions = st.columns([1.3, 1.7])
 with col_user:
     st.markdown(f"<div style='padding-top: 6px; font-size: 13px; font-weight: 600; color: #FFFFFF;'>👋 <b>Hola, {username}</b> <span style='color: #9A9EA7; font-size: 11px;'>({rol})</span></div>", unsafe_allow_html=True)
 with col_actions:
-    c_act1, c_act2 = st.columns(2)
+    c_act0, c_act1, c_act2 = st.columns([1, 1.2, 1.2])
+    with c_act0:
+        if st.button("🔄", key="btn_refresh_data", help="Actualizar datos", use_container_width=True):
+            st.rerun()
     with c_act1:
         with st.popover("🔑 Clave"):
             st.markdown("##### 🔑 Cambiar Contraseña")
@@ -593,6 +596,7 @@ with col_actions:
                 del st.query_params["token"]
             logout_user()
             st.rerun()
+
 
 
 
