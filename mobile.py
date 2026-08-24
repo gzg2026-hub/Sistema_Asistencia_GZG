@@ -474,33 +474,12 @@ st.markdown("""
         justify-content: center !important;
     }
 
-    /* File Uploader: Botón Upload en Tono Gris Neutro Original */
-    div[data-testid="stFileUploader"] button,
-    div[data-testid="stFileUploader"] [data-testid="baseButton-secondary"],
-    section[data-testid="stFileUploadDropzone"] button {
-        background: #1D212A !important;
-        background-color: #1D212A !important;
-        border: 1px solid #2A2F3D !important;
-        color: #FFFFFF !important;
-        box-shadow: none !important;
-        margin-bottom: 0 !important;
-    }
-    div[data-testid="stFileUploader"] button p,
-    div[data-testid="stFileUploader"] button span {
-        color: #FFFFFF !important;
-    }
-    div[data-testid="stFileUploader"] button:hover {
-        background: #262B37 !important;
-        background-color: #262B37 !important;
-        border-color: #3B4254 !important;
-    }
-
-    /* Botón Rechazar — Rojo Carmesí Sólido Sin Borde */
-    div[data-testid="stExpander"] div.stButton:not(:last-child) button,
-    div[data-testid="stExpander"] button[kind="secondary"],
-    div[data-testid="stExpander"] button[data-testid="baseButton-secondary"] {
+    /* Botón Rechazar — Rojo Carmesí Sólido Sin Borde (Solo st.button dentro de Expander) */
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"],
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"] {
         background: linear-gradient(135deg, #C0392B 0%, #962D22 100%) !important;
         background-color: #C0392B !important;
+        background-image: linear-gradient(135deg, #C0392B 0%, #962D22 100%) !important;
         border: none !important;
         outline: none !important;
         color: #FFFFFF !important;
@@ -508,24 +487,28 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 2px !important;
     }
-    div[data-testid="stExpander"] div.stButton:not(:last-child) button p,
-    div[data-testid="stExpander"] div.stButton:not(:last-child) button span {
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] p,
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] span,
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"] p,
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"] span {
         color: #FFFFFF !important;
         font-weight: 700 !important;
     }
-    div[data-testid="stExpander"] div.stButton:not(:last-child) button:hover {
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"]:hover,
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"]:hover {
         background: linear-gradient(135deg, #D9383A 0%, #B02A2B 100%) !important;
         background-color: #D9383A !important;
         color: #FFFFFF !important;
     }
 
     /* Botón Aprobar — Naranja Corporativo Sin Borde */
-    div[data-testid="stExpander"] button[kind="primary"],
-    div[data-testid="stExpander"] button[data-testid="baseButton-primary"] {
+    div[data-testid="stExpander"] div.stButton button[kind="primary"],
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-primary"] {
         background: linear-gradient(135deg, #F58220 0%, #D35400 100%) !important;
         background-color: #F58220 !important;
+        background-image: linear-gradient(135deg, #F58220 0%, #D35400 100%) !important;
         border: none !important;
         outline: none !important;
         color: #FFFFFF !important;
@@ -533,11 +516,40 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 14px rgba(245, 130, 32, 0.35) !important;
+        margin-top: 0 !important;
     }
-    div[data-testid="stExpander"] button[kind="primary"] p,
-    div[data-testid="stExpander"] button[kind="primary"] span {
+    div[data-testid="stExpander"] div.stButton button[kind="primary"] p,
+    div[data-testid="stExpander"] div.stButton button[kind="primary"] span {
         color: #FFFFFF !important;
         font-weight: 700 !important;
+    }
+
+    /* File Uploader: Botón Upload en Tono Gris Neutro Original (Garantizado) */
+    div[data-testid="stFileUploader"] button,
+    div[data-testid="stFileUploader"] [data-testid="baseButton-secondary"],
+    section[data-testid="stFileUploadDropzone"] button,
+    div[data-testid="stExpander"] div[data-testid="stFileUploader"] button,
+    div[data-testid="stExpander"] section[data-testid="stFileUploadDropzone"] button {
+        background: #1D212A !important;
+        background-color: #1D212A !important;
+        background-image: none !important;
+        border: 1px solid #2A2F3D !important;
+        color: #FFFFFF !important;
+        box-shadow: none !important;
+        margin-bottom: 0 !important;
+    }
+    div[data-testid="stFileUploader"] button p,
+    div[data-testid="stFileUploader"] button span,
+    div[data-testid="stExpander"] div[data-testid="stFileUploader"] button p,
+    div[data-testid="stExpander"] div[data-testid="stFileUploader"] button span {
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+    }
+    div[data-testid="stFileUploader"] button:hover,
+    div[data-testid="stExpander"] div[data-testid="stFileUploader"] button:hover {
+        background: #262B37 !important;
+        background-color: #262B37 !important;
+        border-color: #3B4254 !important;
     }
 
     /* PUNTO 7: Popover Clave — Respuesta Inmediata al Primer Toque */
@@ -825,15 +837,19 @@ with tab_pendientes:
         df_aprobadas_mes = df_all[is_app_by_me].copy()
 
     
-    # Cajones de Métricas Reducidos y Compactos para Celular
+    # Cajones de Métricas en una Sola Fila 50% / 50% para Celular
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 10px; text-align: center; margin-bottom: 5px; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.2);">
-        <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
-        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px;">Pendientes</div>
-    </div>
-    <div style="background: linear-gradient(135deg, #0288D1 0%, #0277BD 100%); border-radius: 10px; padding: 6px 10px; text-align: center; margin-bottom: 8px; box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3);">
-        <div style="font-size: 18px; font-weight: 800; color: #FFFFFF; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
-        <div style="font-size: 10px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Aprobadas este mes</div>
+    <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 8px; box-sizing: border-box;">
+        <!-- Izquierda 50%: Pendientes (Naranja) -->
+        <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.25); box-sizing: border-box;">
+            <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
+            <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Pendientes</div>
+        </div>
+        <!-- Derecha 50%: Aprobadas este mes (Celeste) -->
+        <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #0288D1 0%, #0277BD 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3); box-sizing: border-box;">
+            <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
+            <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Aprobadas este mes</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
     
