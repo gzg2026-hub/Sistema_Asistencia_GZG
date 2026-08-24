@@ -96,3 +96,10 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * El sistema debe capturar `PermissionError`, emitir una advertencia clara indicando que el archivo está abierto en Excel, y continuar la ejecución sin interrupciones bruscas.
   * Para visualizar las actualizaciones procesadas en segundo plano por el sistema, el usuario simplemente debe cerrar y volver a abrir la ventana de Excel en su computadora.
 
+---
+
+## 7. ESTÁNDARES DE INTERFAZ MÓVIL PWA Y EXPERIENCIA DE USUARIO
+- **Eliminación Total de Watermarks de Streamlit (Sin Parches ni Máscaras)**: En el visor PWA (`docs/index.html`), el iframe se dimensiona a `height: calc(100% + 44px)` con `#app-container { overflow: hidden; height: 100dvh; }` para expulsar físicamente fuera de pantalla el pie de página de Streamlit sin añadir máscaras que recorten la interfaz.
+- **Persistencia Indestructible de Íconos en Inputs Móviles**: Los íconos SVG de los inputs de usuario/contraseña deben anclarse obligatoriamente en el contenedor padre (`div[data-baseweb="input"]:has(...)`) y el `<input>` interno debe ser transparente con `padding-left: 42px; text-align: left;`, evitando que el teclado de Android o el autocompletado del navegador oculten o borren el ícono al escribir.
+
+
