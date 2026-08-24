@@ -58,7 +58,7 @@ st.set_page_config(
 init_db()
 init_auth()
 
-# Inyectar metas para icono, manifiesto y registro Service Worker PWA
+# Inyectar metas para icono y PWA
 st.markdown(f"""
 <head>
     <meta name="apple-mobile-web-app-title" content="GZG Minerales">
@@ -70,32 +70,36 @@ st.markdown(f"""
     <link rel="apple-touch-icon" href="data:image/png;base64,{logo_b64}">
     <link rel="icon" type="image/png" href="data:image/png;base64,{logo_b64}">
     <link rel="shortcut icon" href="data:image/png;base64,{logo_b64}">
-    <link rel="manifest" href="/manifest.json">
 </head>
-
-<script>
-if ('serviceWorker' in navigator) {{
-    window.addEventListener('load', function() {{
-        navigator.serviceWorker.register('/sw.js').then(function(reg) {{
-            console.log('[PWA GZG Mobile] ServiceWorker registrado:', reg.scope);
-        }}).catch(function(err) {{
-            console.warn('[PWA GZG Mobile] Registro ServiceWorker diferido:', err);
-        }});
-    }});
-}}
-</script>
 """, unsafe_allow_html=True)
 
-# CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements)
+# CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements & prevents flickering)
 st.markdown("""
 <style>
+    /* Desactivar parpadeo, oscurecimiento y animaciones de recarga de Streamlit */
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    .main,
+    div[data-testid="stVerticalBlock"] {
+        opacity: 1 !important;
+        transition: none !important;
+        animation: none !important;
+    }
+    .stApp[data-test-script-state="running"] {
+        opacity: 1 !important;
+    }
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stDecoration"],
+    div[data-testid="stToolbar"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     /* Ocultar completamente Sidebar, Header de Streamlit y Footers */
     section[data-testid="stSidebar"],
     div[data-testid="stSidebarCollapsedControl"],
     header[data-testid="stHeader"],
-    div[data-testid="stDecoration"],
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stToolbar"],
     footer,
     .stDeployButton {
         display: none !important;

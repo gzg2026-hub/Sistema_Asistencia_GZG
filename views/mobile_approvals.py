@@ -34,6 +34,26 @@ def render_mobile_approvals():
     # 1. Inyectar CSS personalizado para replicar exactamente las capturas (Dark Mode GZG Mining)
     st.markdown("""
     <style>
+    /* Desactivar parpadeo, oscurecimiento y animaciones de recarga de Streamlit */
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    .main,
+    div[data-testid="stVerticalBlock"] {
+        opacity: 1 !important;
+        transition: none !important;
+        animation: none !important;
+    }
+    .stApp[data-test-script-state="running"] {
+        opacity: 1 !important;
+    }
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stDecoration"],
+    div[data-testid="stToolbar"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     /* Estilos globales Móvil GZG */
     .stApp {
         background-color: #121418 !important;
