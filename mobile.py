@@ -133,18 +133,36 @@ st.markdown(f"""
 # CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements & prevents flickering)
 st.markdown("""
 <style>
-    /* Desactivar parpadeo, oscurecimiento y animaciones de recarga de Streamlit */
+    /* ELIMINAR 100% EL PARPADEO, DESVANECIMIENTO Y OSCURECIMIENTO DE STREAMLIT */
+    *,
+    *::before,
+    *::after {
+        transition-property: background-color, border-color, color, fill, stroke !important;
+        transition-duration: 0s !important;
+    }
     .stApp,
     [data-testid="stAppViewContainer"],
     [data-testid="stMain"],
     .main,
-    div[data-testid="stVerticalBlock"] {
+    div[data-testid="stVerticalBlock"],
+    div[data-testid="stTabs"],
+    div[data-baseweb="tab-panel"],
+    div[data-baseweb="tab-list"],
+    div[data-baseweb="tab-border"] {
         opacity: 1 !important;
         transition: none !important;
         animation: none !important;
     }
-    .stApp[data-test-script-state="running"] {
+    [data-test-script-state="running"],
+    [data-test-script-state="running"] *,
+    .stApp[data-test-script-state="running"],
+    .stApp[data-test-script-state="running"] *,
+    div[data-testid="stAppViewContainer"][data-test-script-state="running"],
+    div[data-testid="stAppViewContainer"][data-test-script-state="running"] * {
         opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+        animation: none !important;
     }
     /* Ocultar skeletons, parches y artefactos de carga preliminar */
     [data-testid="stSkeleton"],
