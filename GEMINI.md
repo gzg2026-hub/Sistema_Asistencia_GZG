@@ -109,7 +109,10 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 ---
 
 ## 7. ESTÁNDARES DE INTERFAZ MÓVIL PWA Y EXPERIENCIA DE USUARIO
-- **Eliminación Total de Watermarks de Streamlit (Sin Parches ni Máscaras)**: En el visor PWA (`docs/index.html`), el iframe se dimensiona a `height: calc(100% + 44px)` con `#app-container { overflow: hidden; height: 100dvh; }` para expulsar físicamente fuera de pantalla el pie de página de Streamlit sin añadir máscaras que recorten la interfaz.
+- **Prohibición Total y Permanente de "Built with Streamlit", Fullscreen y Footers (Doble Blindaje)**:
+  * Queda estrictamente PROHIBIDO mostrar cualquier pie de página ("Built with Streamlit"), botones de fullscreen, menús de deploy o badges en cualquier ventana o vista del sistema.
+  * **Capa 1 (mobile.py)**: Ocultación absoluta vía CSS estático de `footer`, `[data-testid="stFooter"]`, `div[data-testid="stBottom"]`, `div[class*="viewerBadge"]`, `div[data-testid="StyledFullScreenButton"]` y `button[title="View fullscreen"]` con `display: none !important; height: 0px !important;`.
+  * **Capa 2 (docs/index.html)**: El iframe PWA debe dimensionarse obligatoriamente a `height: calc(100% + 44px)` y `width: 100vw` bajo `#app-container { overflow: hidden; height: 100dvh; position: fixed; }` expulsando físicamente cualquier barra residual fuera de la pantalla.
 - **Persistencia Indestructible de Íconos en Inputs Móviles (Selectores HTML Nativos Universales)**:
   * Los íconos SVG de los inputs de login (Usuario 👤 y Contraseña 🔒) deben anclarse obligatoriamente mediante selectores universales estándar de HTML nativo (`div[data-testid="stForm"] input[type="text"]` e `input[type="password"]` / `input[aria-label="Usuario"]` e `input[aria-label="Contraseña"]`).
   * Cada input debe llevar `background-image` en SVG, `background-position: 14px center`, `background-size: 18px 18px`, `padding-left: 44px !important;`, `background-color: #1A1D24 !important;` y `color: #FFFFFF !important;`.
