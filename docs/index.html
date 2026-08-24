@@ -19,43 +19,38 @@
   <link rel="shortcut icon" href="assets/favicon.png?v=18">
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     html, body {
-      width: 100%;
-      height: 100%;
-      background-color: #121418;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      width: 100%; height: 100%;
+      background: #121418;
       overflow: hidden;
       -webkit-tap-highlight-color: transparent;
     }
 
     #app-container {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100dvh;
+      top: 0; left: 0;
+      width: 100vw; height: 100dvh;
       overflow: hidden;
       background: #121418;
     }
 
+    /* El iframe empieza invisible — solo se muestra cuando el overlay se oculta */
     #app-frame {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       width: 100vw;
       height: calc(100% + 44px);
-      border: 0;
-      outline: 0;
+      border: 0; outline: 0;
       display: block;
-      background-color: #121418;
+      background: #121418;
+      opacity: 0;
+      transition: opacity 0.4s ease;
     }
+    #app-frame.visible { opacity: 1; }
 
-    /* Overlay oscuro que cubre el iframe mientras carga — elimina el flash blanco */
+    /* Overlay oscuro GZG — cubre mientras Streamlit carga */
     #loading-overlay {
       position: fixed;
       top: 0; left: 0;
@@ -66,39 +61,56 @@
       align-items: center;
       justify-content: center;
       flex-direction: column;
-      gap: 12px;
-      transition: opacity 0.3s ease;
-    }
-    #loading-overlay.hidden {
-      opacity: 0;
+      gap: 16px;
       pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+    #loading-overlay.fade-out {
+      opacity: 0;
     }
 
-    /* Spinner GZG */
-    .gzg-spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid rgba(245,130,32,0.2);
-      border-top: 3px solid #F58220;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
+    /* Logo GZG */
+    .gzg-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
     }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .gzg-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: #FFFFFF;
     }
-    .gzg-label {
-      color: rgba(255,255,255,0.5);
-      font-size: 11px;
+    .gzg-title span { color: #F58220; }
+    .gzg-sub {
+      font-size: 9px;
       letter-spacing: 2px;
+      color: rgba(255,255,255,0.4);
       text-transform: uppercase;
     }
+
+    /* Spinner naranja */
+    .gzg-spinner {
+      width: 32px; height: 32px;
+      border: 2.5px solid rgba(245,130,32,0.2);
+      border-top: 2.5px solid #F58220;
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
-  <!-- Overlay de carga que oculta el flash blanco del iframe -->
+
+  <!-- Overlay de carga — elimina parches/skeleton de Streamlit durante inicio -->
   <div id="loading-overlay">
+    <div class="gzg-logo">
+      <div class="gzg-title">GZG <span>MINERALES</span></div>
+      <div class="gzg-sub">Control de Asistencia</div>
+    </div>
     <div class="gzg-spinner"></div>
-    <div class="gzg-label">GZG MINERALES</div>
   </div>
 
   <div id="app-container">
@@ -111,30 +123,46 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=35').then(reg => {
+      navigator.serviceWorker.register('sw.js?v=35').then(function(reg) {
         reg.update();
-      }).catch(() => {});
+      }).catch(function() {});
     }
 
-    // Ocultar overlay cuando el iframe termina de cargar
-    var frame = document.getElementById('app-frame');
     var overlay = document.getElementById('loading-overlay');
+    var frame   = document.getElementById('app-frame');
+    var shown   = false;
 
-    function hideOverlay() {
-      overlay.classList.add('hidden');
-      // Remover completamente tras la transición
+    function showApp() {
+      if (shown) return;
+      shown = true;
+      // Mostrar el iframe
+      frame.classList.add('visible');
+      // Desvanecer overlay
+      overlay.classList.add('fade-out');
+      // Remover overlay del DOM tras la animacion
       setTimeout(function() {
         overlay.style.display = 'none';
-      }, 350);
+      }, 450);
     }
 
-    frame.addEventListener('load', function() {
-      // Esperar un tick para que Streamlit pinte el primer frame
-      setTimeout(hideOverlay, 800);
+    // Estrategia 1: PostMessage de Streamlit cuando el app termino de cargar
+    window.addEventListener('message', function(ev) {
+      if (ev.data && (
+        ev.data.type === 'streamlit:ready' ||
+        ev.data.type === 'streamlit:componentReady' ||
+        (typeof ev.data === 'string' && ev.data.indexOf('ready') !== -1)
+      )) {
+        setTimeout(showApp, 300);
+      }
     });
 
-    // Fallback: ocultar siempre después de 6 segundos máximo
-    setTimeout(hideOverlay, 6000);
+    // Estrategia 2: iframe load event
+    frame.addEventListener('load', function() {
+      setTimeout(showApp, 1500);
+    });
+
+    // Estrategia 3: Fallback garantizado — max 5 segundos
+    setTimeout(showApp, 5000);
   </script>
 </body>
 </html>
