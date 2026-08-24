@@ -873,7 +873,7 @@ with tab_pendientes:
             
             with st.expander(f"👤 **{worker_name}** ({fecha_sol})", expanded=True):
                 st.markdown(f"""
-                <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 12px 0;">
+                <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                     <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
                     <div>
                         <div style="font-size: 15px; font-weight: 700; color: #FFFFFF;">{worker_name}</div>
@@ -881,10 +881,12 @@ with tab_pendientes:
                     </div>
                 </div>
 
-                - 🕒 **Entrada**: `{row.get('entrada', '-')}` | **Salida**: `{row.get('salida', '-')}`
-                - ⏱️ **Jornada trabajada**: {row.get('jornada_trabajada_hhmm', '-')}
-                - ⏰ **Horas extras**: <b style="color: #F58220;">{he_hhmm}</b>
-                - ⚠️ **Exceso de jornada**: <b style="color: #E67E22;">{exceso_hhmm}</b>
+                <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
+                    <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
+                    <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {row.get('jornada_trabajada_hhmm', '-')}</div>
+                    <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b></div>
+                    <div>⚠️ <strong style="color: #FFFFFF;">Exceso de jornada:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
+                </div>
                 """, unsafe_allow_html=True)
                 
                 comentario_aprobador = st.text_input(
