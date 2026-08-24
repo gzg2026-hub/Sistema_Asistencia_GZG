@@ -487,7 +487,7 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
-        margin-bottom: 2px !important;
+        margin-bottom: 4px !important;
     }
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] p,
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"] span,
@@ -503,10 +503,7 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
-    /* Botón Aprobar — Naranja Corporativo Sin Borde y Pegado a Rechazar */
-    div[data-testid="stExpander"] div.stButton:has(button[kind="primary"]) {
-        margin-top: -8px !important;
-    }
+    /* Botón Aprobar — Naranja Corporativo Sin Borde */
     div[data-testid="stExpander"] div.stButton button[kind="primary"],
     div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-primary"] {
         background: linear-gradient(135deg, #F58220 0%, #D35400 100%) !important;
@@ -519,7 +516,7 @@ st.markdown("""
         font-size: 14px !important;
         letter-spacing: 0.5px !important;
         box-shadow: 0 4px 14px rgba(245, 130, 32, 0.35) !important;
-        margin-top: -6px !important;
+        margin-top: 0 !important;
     }
     div[data-testid="stExpander"] div.stButton button[kind="primary"] p,
     div[data-testid="stExpander"] div.stButton button[kind="primary"] span {
