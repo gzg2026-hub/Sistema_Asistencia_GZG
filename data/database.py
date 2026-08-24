@@ -4,7 +4,8 @@ import os
 import streamlit as st
 from typing import Tuple, Dict, Any, Optional
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "asistencia.db")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_PATH = os.path.join(ROOT_DIR, "data", "asistencia.db")
 
 def get_connection(db_path: str = DB_PATH):
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
