@@ -249,46 +249,131 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 import streamlit.components.v1 as components
+
+# ===========================================================================
+# JS: MutationObserver para limpiar parches de Streamlit (sin setInterval)
+# + Inyección de íconos SVG reales en los inputs de login (persistentes)
+# + localStorage para token "Recordarme" entre sesiones PWA
+# ===========================================================================
 components.html("""
 <script>
-function cleanupStreamlitElements() {
-    try {
-        const doc = window.parent.document;
-        if (!doc) return;
-        
-        const targets = [
-            'footer',
-            '[data-testid="stFooter"]',
-            '[data-testid="stToolbar"]',
-            '[data-testid="stDecoration"]',
-            '[data-testid="stStatusWidget"]',
-            '[data-testid="stEmbedCode"]',
-            '[class*="viewerBadge"]',
-            '[class*="styles_viewerBadge"]',
-            '[class*="FloatingProfile"]',
-            '[class*="stAppDeployButton"]',
-            '[class*="StatusWidget"]',
-            'a[href*="streamlit.io"]',
-            'a[href*="github.com"]'
-        ];
-        
-        targets.forEach(selector => {
-            doc.querySelectorAll(selector).forEach(el => {
-                el.style.display = 'none';
-                el.style.visibility = 'hidden';
-                el.style.opacity = '0';
-                el.style.height = '0px';
-                el.style.pointerEvents = 'none';
-                try { el.remove(); } catch(e){}
-            });
-        });
-    } catch(e) {}
-}
+(function() {
+    // ---------- 1. Limpieza de elementos Streamlit via MutationObserver ----------
+    var TARGETS_TO_HIDE = [
+        'footer',
+        '[data-testid="stFooter"]',
+        '[data-testid="stToolbar"]',
+        '[data-testid="stDecoration"]',
+        '[data-testid="stStatusWidget"]',
+        '[data-testid="stEmbedCode"]',
+        '[class*="viewerBadge"]',
+        '[class*="FloatingProfile"]',
+        '[class*="stAppDeployButton"]',
+        'a[href*="streamlit.io"]'
+    ];
 
-cleanupStreamlitElements();
-setInterval(cleanupStreamlitElements, 250);
+    function hideTargets(doc) {
+        TARGETS_TO_HIDE.forEach(function(sel) {
+            try {
+                doc.querySelectorAll(sel).forEach(function(el) {
+                    el.style.setProperty('display', 'none', 'important');
+                    el.style.setProperty('visibility', 'hidden', 'important');
+                    el.style.setProperty('height', '0px', 'important');
+                    el.style.setProperty('opacity', '0', 'important');
+                    el.style.setProperty('pointer-events', 'none', 'important');
+                });
+            } catch(e) {}
+        });
+    }
+
+    function startObserver(doc) {
+        hideTargets(doc);
+        var obs = new MutationObserver(function(mutations) {
+            var needsClean = false;
+            mutations.forEach(function(m) { if (m.addedNodes.length) needsClean = true; });
+            if (needsClean) hideTargets(doc);
+        });
+        obs.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
+    }
+
+    try { startObserver(window.parent.document); } catch(e) {}
+    try { startObserver(document); } catch(e) {}
+
+    // ---------- 2. Auto-login con token desde localStorage ----------
+    // Si existe token en localStorage y NO en la URL, lo inyecta en la URL para activar auto-login
+    function checkLocalStorageToken() {
+        try {
+            var doc = window.parent.document;
+            var pwin = window.parent;
+            var stored = localStorage.getItem('gzg_auth_token');
+            if (stored && stored.length > 10) {
+                var url = new URL(pwin.location.href);
+                if (!url.searchParams.get('token')) {
+                    url.searchParams.set('token', stored);
+                    pwin.history.replaceState({}, '', url.toString());
+                    pwin.location.reload();
+                }
+            }
+        } catch(e) {}
+    }
+    // Solo ejecutar al inicio (no en loop)
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', checkLocalStorageToken);
+    } else {
+        setTimeout(checkLocalStorageToken, 200);
+    }
+
+    // ---------- 3. Íconos persistentes en inputs de login ----------
+    var ICON_USER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9A9EA7" style="width:18px;height:18px;position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:10;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
+    var ICON_LOCK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9A9EA7" style="width:18px;height:18px;position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:10;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>';
+
+    function injectIcons(doc) {
+        try {
+            var form = doc.querySelector('[data-testid="stForm"]');
+            if (!form) return;
+            var inputs = form.querySelectorAll('[data-testid="stTextInput"]');
+            inputs.forEach(function(inp, idx) {
+                var container = inp.querySelector('[data-baseweb="input"]');
+                if (!container) return;
+                // Evitar doble inyección
+                if (container.querySelector('.gzg-icon-svg')) return;
+                container.style.position = 'relative';
+                var iconWrap = doc.createElement('span');
+                iconWrap.className = 'gzg-icon-svg';
+                iconWrap.style.cssText = 'position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:10;display:flex;align-items:center;';
+                iconWrap.innerHTML = (idx === 0) ? ICON_USER_SVG : ICON_LOCK_SVG;
+                container.appendChild(iconWrap);
+                // Dar padding al input interno para no solaparse
+                var inner = container.querySelector('input');
+                if (inner) {
+                    inner.style.paddingLeft = '42px';
+                    inner.style.background = 'transparent';
+                }
+            });
+        } catch(e) {}
+    }
+
+    // Intentar inyectar icons cada vez que el DOM cambie (MutationObserver para forms)
+    function startIconObserver(doc) {
+        var iconObs = new MutationObserver(function() {
+            injectIcons(doc);
+        });
+        try {
+            iconObs.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
+            // Intento inicial
+            setTimeout(function() { injectIcons(doc); }, 300);
+            setTimeout(function() { injectIcons(doc); }, 800);
+            setTimeout(function() { injectIcons(doc); }, 1500);
+        } catch(e) {}
+    }
+
+    try { startIconObserver(window.parent.document); } catch(e) {}
+    try { startIconObserver(document); } catch(e) {}
+
+})();
 </script>
 """, height=0, width=0)
+
 
 st.markdown("""
 <style>
@@ -388,59 +473,28 @@ st.markdown("""
     }
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
-    }
-
-    /* Ocultar permanentemente la instrucción "Press Enter to submit form" */
-    [data-testid="InputInstructions"], div[data-testid="InputInstructions"], .stInputInstructions {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        opacity: 0 !important;
-    }
-    /* Usuario Icon (Primer input del formulario) */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"],
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input,
-    input[aria-label="Usuario"],
-    input[aria-label="Usuario"]:focus {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: 14px center !important;
-        background-size: 18px 18px !important;
-        padding-left: 42px !important;
-        text-align: left !important;
-    }
-
-    /* Contraseña Icon (Segundo input del formulario) */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"],
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input,
-    input[aria-label="Contraseña"],
-    input[aria-label="Contraseña"]:focus {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: 14px center !important;
-        background-size: 18px 18px !important;
-        padding-left: 42px !important;
-        text-align: left !important;
-    }
-    
-    div[data-baseweb="input"] input,
-    .stTextInput input,
-    input[type="text"],
-    input[type="password"] {
         background: transparent !important;
         background-color: transparent !important;
         font-size: 15px !important;
-        padding: 10px 14px 10px 42px !important;
         text-align: left !important;
-        color: #FFFFFF !important;
     }
     .stTextInput label p {
         color: #FFFFFF !important;
         font-weight: 600 !important;
         font-size: 13px !important;
     }
+    /* Ocultar instruccion "Press Enter to submit form" */
+    [data-testid="InputInstructions"], .stInputInstructions {
+        display: none !important; visibility: hidden !important;
+        height: 0px !important; opacity: 0 !important;
+    }
+    /* Contenedor de input con position relative para iconos JS */
+    div[data-baseweb="input"] {
+        position: relative !important;
+    }
 </style>
 """, unsafe_allow_html=True)
+
 
 # ---------------------------------------------------------
 # AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
@@ -523,11 +577,25 @@ CONTROL DE ASISTENCIA
                     if recordarme:
                         new_token = crear_token_sesion(u_name.strip())
                         st.query_params["token"] = new_token
+                        # Guardar tambien en localStorage via JS para persistencia PWA
+                        components.html(f"""
+<script>
+try {{ localStorage.setItem('gzg_auth_token', '{new_token}'); }} catch(e) {{}}
+</script>
+""", height=0, width=0)
+                    else:
+                        # No Recordarme: limpiar localStorage
+                        components.html("""
+<script>
+try {{ localStorage.removeItem('gzg_auth_token'); }} catch(e) {{}}
+</script>
+""", height=0, width=0)
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
             else:
                 st.warning("Por favor ingresa tu usuario y contraseña.")
+
     
     st.markdown("""
 <div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 20px 0 35px 0; letter-spacing: 0.8px;">
@@ -544,20 +612,21 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Cabecera Central Corporativa GZG (Idéntica a la Pantalla de Inicio)
+# Cabecera Central Corporativa GZG — pegada arriba sin espacio extra
 st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 2px 0;">
-    <div style="margin-bottom: 6px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 60px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -0.8rem;">
+    <div style="margin-bottom: 4px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 55px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
     </div>
-    <div style="font-size: 22px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+    <div style="font-size: 20px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; opacity: 0.95;">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
         CONTROL DE ASISTENCIA
     </div>
 </div>
 """, unsafe_allow_html=True)
+
 
 # Fila de Usuario y Acciones Rápidas
 col_user, col_actions = st.columns([1.6, 1.4])
@@ -590,18 +659,39 @@ with col_actions:
                             st.error("Error al actualizar la contraseña.")
     with c_act2:
         if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
+            # Limpiar token de localStorage antes del logout
+            components.html("""
+<script>
+try { localStorage.removeItem('gzg_auth_token'); } catch(e) {}
+try { window.parent.history.replaceState({}, '', window.parent.location.pathname); } catch(e) {}
+</script>
+""", height=0, width=0)
             if "token" in st.query_params:
                 eliminar_token_sesion(st.query_params["token"])
                 del st.query_params["token"]
             logout_user()
             st.rerun()
 
-# Cargar data de aprobaciones de forma eficiente (sin bucles de sincronización)
+
+# Cargar data de aprobaciones — sincronizar solo en primera carga de sesión
 if 'aprobaciones_synced' not in st.session_state:
     sincronizar_aprobaciones_desde_asistencia()
     st.session_state['aprobaciones_synced'] = True
 
-df_all = obtener_solicitudes_aprobacion('TODAS')
+df_all_raw = obtener_solicitudes_aprobacion('TODAS')
+
+# PUNTO 7: Filtrado por bandeja personal del usuario autenticado
+# Admin ve TODO. Aprobadores N1/N2 ven solo sus trabajadores asignados en el Padron.
+if rol not in ('ADMINISTRACION', 'ADMIN') and 'aprobador_n1' in df_all_raw.columns:
+    mask = (
+        df_all_raw['aprobador_n1'].fillna('').str.lower().str.strip() == username.lower().strip()
+    ) | (
+        df_all_raw['aprobador_n2'].fillna('').str.lower().str.strip() == username.lower().strip()
+    )
+    df_all = df_all_raw[mask].copy()
+else:
+    df_all = df_all_raw.copy()
+
 
 # 3 Pestañas Móviles PWA
 tab_pendientes, tab_historial, tab_dashboard = st.tabs([

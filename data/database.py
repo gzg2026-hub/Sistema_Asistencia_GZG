@@ -1042,9 +1042,9 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     conn.close()
 
 
+@st.cache_data(ttl=30, show_spinner=False)
 def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_PATH) -> pd.DataFrame:
-    """Obtener DataFrame de solicitudes de aprobación."""
-    sincronizar_aprobaciones_desde_asistencia(db_path)
+    """Obtener DataFrame de solicitudes de aprobacion con caché de 30s para reducir latencia en el app móvil."""
     conn = get_connection(db_path)
     
     query = "SELECT * FROM aprobaciones"
@@ -1059,9 +1059,43 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
     return df
 
 
+def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
+    """Regenera el Excel oficial de aprobaciones desde SQLite. Llamar tras cada aprobacion/rechazo."""
+    try:
+        import sys
+        import os
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if root_dir not in sys.path:
+            sys.path.insert(0, root_dir)
+        from data.exporter import exportar_aprobaciones_excel
+        conn = get_connection(db_path)
+        df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
+        conn.close()
+        if df_aprob.empty:
+            return True
+        # Nombre de archivo por mes actual
+        import datetime
+        mes_str = datetime.date.today().strftime('%Y-%m')
+        out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+        return exportar_aprobaciones_excel(df_aprob, out_path)
+    except Exception as e:
+        print(f"[Aviso] No se pudo regenerar Excel de aprobaciones: {e}")
+        return False
+
+
 def actualizar_estado_aprobacion(id_solicitud: int, nuevo_estado: str, aprobado_por: str, comentario: str = "", db_path: str = DB_PATH) -> bool:
-    """Actualizar estado de aprobación directa (compatibilidad legacy / Admin)."""
-    return actualizar_estado_aprobacion_nivel(id_solicitud, 1, nuevo_estado, aprobado_por, comentario, db_path)
+    """Actualizar estado de aprobacion directa y regenerar Excel de aprobaciones automaticamente."""
+    resultado = actualizar_estado_aprobacion_nivel(id_solicitud, 1, nuevo_estado, aprobado_por, comentario, db_path)
+    # Invalidar caché y regenerar Excel de aprobaciones
+    try:
+        obtener_solicitudes_aprobacion.clear()
+    except Exception:
+        pass
+    try:
+        regenerar_aprobaciones_excel(db_path)
+    except Exception:
+        pass
+    return resultado
 
 
 def actualizar_estado_aprobacion_nivel(
@@ -1129,6 +1163,15 @@ def actualizar_estado_aprobacion_nivel(
 
         conn.commit()
         conn.close()
+        # Invalidar caché de solicitudes y regenerar Excel de aprobaciones automáticamente
+        try:
+            obtener_solicitudes_aprobacion.clear()
+        except Exception:
+            pass
+        try:
+            regenerar_aprobaciones_excel(db_path)
+        except Exception as e_excel:
+            print(f"[Aviso] Excel de aprobaciones no regenerado: {e_excel}")
         return True
     except Exception as e:
         conn.close()

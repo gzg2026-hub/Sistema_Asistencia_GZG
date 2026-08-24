@@ -438,3 +438,160 @@ def guardar_transacciones_acumuladas_excel(df: pd.DataFrame, target_path: str) -
         print(f"[Error] Error al guardar Transacciones_Acumuladas.xlsx formateado: {e}")
         return False
 
+
+def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str) -> bool:
+    """
+    Genera el Excel oficial de Aprobaciones de HE y Excesos de Jornada con formato
+    corporativo Azul Oscuro (#1F4E78) en downloads/data_procesada/Aprobaciones_GZG_YYYY-MM.xlsx.
+    Se actualiza automáticamente cada vez que se aprueba/rechaza una solicitud en el app.
+    REGLA: Usa OBLIGATORIAMENTE esta función, nunca pandas.to_excel directo.
+    """
+    try:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Aprobaciones HE"
+        ws.views.sheetView[0].showGridLines = True
+
+        fill_header_dark = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
+        fill_header_calc = PatternFill(start_color="2F5597", end_color="2F5597", fill_type="solid")
+        fill_banner = PatternFill(start_color="1B365D", end_color="1B365D", fill_type="solid")
+        fill_approved = PatternFill(start_color="E2EFDA", end_color="E2EFDA", fill_type="solid")
+        fill_rejected = PatternFill(start_color="FCE4D6", end_color="FCE4D6", fill_type="solid")
+        fill_pending = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
+
+        font_banner = Font(name="Calibri", size=13, bold=True, color="FFFFFF")
+        font_banner_sub = Font(name="Calibri", size=10, italic=True, bold=True, color="1F4E78")
+        font_header = Font(name="Calibri", size=10, bold=True, color="FFFFFF")
+        font_data = Font(name="Calibri", size=10)
+        font_estado_ok = Font(name="Calibri", size=10, bold=True, color="375623")
+        font_estado_no = Font(name="Calibri", size=10, bold=True, color="843C0C")
+        font_estado_pend = Font(name="Calibri", size=10, bold=True, color="7F6000")
+
+        align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        align_left = Alignment(horizontal="left", vertical="center")
+        thin = Side(style="thin", color="D9D9D9")
+        thin_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+        # Fila 1: Banner
+        ws.merge_cells("A1:S1")
+        ws.row_dimensions[1].height = 30
+        mes_str = ""
+        if df_aprobaciones is not None and not df_aprobaciones.empty and 'fecha' in df_aprobaciones.columns:
+            try:
+                mes_str = f" — {str(df_aprobaciones['fecha'].iloc[0])[:7]}"
+            except Exception:
+                pass
+        ws["A1"] = f"REGISTRO DE APROBACIONES DE HORAS EXTRAS Y EXCESOS DE JORNADA - GZG MINERALES{mes_str}"
+        ws["A1"].fill = fill_banner
+        ws["A1"].font = font_banner
+        ws["A1"].alignment = align_center
+
+        # Fila 2: Sub-banner
+        ws.merge_cells("A2:S2")
+        ws.row_dimensions[2].height = 18
+        fill_sub = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
+        ws["A2"] = "GZG Minerales | Sistema Integrado de Control de Asistencia y Aprobaciones v1.0 | Generado automaticamente"
+        ws["A2"].fill = fill_sub
+        ws["A2"].font = font_banner_sub
+        ws["A2"].alignment = align_center
+
+        # Fila 3: separación
+        ws.append([])
+        ws.row_dimensions[3].height = 8
+
+        # Fila 4: Encabezados (19 columnas A..S)
+        ws.row_dimensions[4].height = 30
+        headers = [
+            "DNI", "Apellidos", "Nombres", "Cargo", "Area",
+            "Fecha Turno", "Turno", "Hora Entrada", "Hora Salida",
+            "Horas Trabajadas", "Horas Extras (HH:MM)", "Exceso Jornada (HH:MM)",
+            "Estado Final", "Aprobador N1", "Estado N1",
+            "Aprobador N2", "Estado N2",
+            "Fecha Aprobacion", "Comentario Supervisor"
+        ]
+        ws.append(headers)
+        for c_idx, cell in enumerate(ws[4], 1):
+            cell.fill = fill_header_calc if c_idx in (11, 12) else fill_header_dark
+            cell.font = font_header
+            cell.alignment = align_center
+            cell.border = thin_border
+
+        # Filas de datos
+        if df_aprobaciones is not None and not df_aprobaciones.empty:
+            for _, row in df_aprobaciones.iterrows():
+                dni_val = str(row.get('dni', '')).strip()
+                if dni_val.endswith('.0'):
+                    dni_val = dni_val[:-2]
+                if dni_val.isdigit():
+                    dni_val = dni_val.zfill(8)
+
+                estado = str(row.get('estado', 'PENDIENTE')).strip().upper()
+                fecha_aprob = ""
+                raw_fa = row.get('fecha_aprobacion')
+                if raw_fa and str(raw_fa).strip() not in ('', 'None', 'nan'):
+                    try:
+                        fecha_aprob = str(raw_fa)[:16]
+                    except Exception:
+                        pass
+
+                row_data = [
+                    dni_val,
+                    quitar_tildes(str(row.get('apellidos', '') or '')),
+                    quitar_tildes(str(row.get('nombres', '') or '')),
+                    str(row.get('cargo', '') or ''),
+                    str(row.get('area', '') or ''),
+                    str(row.get('fecha', '') or ''),
+                    str(row.get('turno', '') or ''),
+                    str(row.get('entrada', '') or ''),
+                    str(row.get('salida', '') or ''),
+                    str(row.get('jornada_trabajada_hhmm', '') or ''),
+                    str(row.get('horas_extras_hhmm', '0h 00m') or '0h 00m'),
+                    str(row.get('exceso_jornada_hhmm', '0h 00m') or '0h 00m'),
+                    estado,
+                    str(row.get('aprobador_n1', '') or ''),
+                    str(row.get('estado_n1', 'PENDIENTE') or 'PENDIENTE'),
+                    str(row.get('aprobador_n2', '') or ''),
+                    str(row.get('estado_n2', '-') or '-'),
+                    fecha_aprob,
+                    str(row.get('comentario_supervisor', '') or ''),
+                ]
+
+                ws.append(row_data)
+                r_idx = ws.max_row
+                ws.row_dimensions[r_idx].height = 20
+
+                est_fill = fill_approved if estado == 'APROBADO' else (fill_rejected if estado == 'RECHAZADO' else fill_pending)
+                est_font = font_estado_ok if estado == 'APROBADO' else (font_estado_no if estado == 'RECHAZADO' else font_estado_pend)
+
+                for c_idx in range(1, len(row_data) + 1):
+                    cell = ws.cell(row=r_idx, column=c_idx)
+                    cell.font = est_font if c_idx == 13 else font_data
+                    cell.fill = est_fill if c_idx == 13 else PatternFill()
+                    cell.border = thin_border
+                    cell.alignment = align_center if c_idx in (1, 6, 8, 9, 14, 16, 18) else align_left
+                    if c_idx == 1:
+                        cell.number_format = '@'
+
+        # Anchos de columna
+        for c_idx, w in {
+            1: 14, 2: 28, 3: 26, 4: 24, 5: 16,
+            6: 16, 7: 10, 8: 14, 9: 14,
+            10: 18, 11: 20, 12: 22,
+            13: 16, 14: 16, 15: 14,
+            16: 16, 17: 14, 18: 20, 19: 36
+        }.items():
+            ws.column_dimensions[get_column_letter(c_idx)].width = w
+
+        ws.auto_filter.ref = ws.dimensions
+        os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
+        try:
+            wb.save(target_path)
+            return True
+        except PermissionError:
+            print(f"[Aviso] No se pudo sobrescribir '{target_path}' porque esta abierto en Excel. Cierralo para guardar.")
+            return False
+    except Exception as e:
+        print(f"[Error] Error al exportar aprobaciones Excel: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
