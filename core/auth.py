@@ -38,10 +38,12 @@ def login_user(username: str, password: str) -> bool:
     return False
 
 def logout_user():
-    """Cierra la sesión del usuario actual sin romper el estado interno de widgets de Streamlit."""
+    """Cierra la sesión del usuario actual y limpia completamente el estado."""
     st.session_state['authenticated'] = False
     st.session_state['user'] = None
-    st.session_state.pop('aprobaciones_synced', None)
+    for k in list(st.session_state.keys()):
+        if k not in ('authenticated', 'user'):
+            st.session_state.pop(k, None)
 
 def get_current_user():
     """Retorna la información del usuario autenticado o None."""

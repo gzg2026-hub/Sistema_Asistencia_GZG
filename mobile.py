@@ -750,9 +750,16 @@ with col_b1:
 with col_b2:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
         if "token" in st.query_params:
-            eliminar_token_sesion(st.query_params["token"])
-            del st.query_params["token"]
+            try:
+                eliminar_token_sesion(st.query_params["token"])
+            except Exception:
+                pass
+        st.query_params.clear()
         logout_user()
+        for k in list(st.session_state.keys()):
+            del st.session_state[k]
+        st.session_state['authenticated'] = False
+        st.session_state['user'] = None
         st.rerun()
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
