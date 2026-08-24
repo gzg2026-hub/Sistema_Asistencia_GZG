@@ -489,11 +489,11 @@ if not is_authenticated():
 """, unsafe_allow_html=True)
 
 
-    # 1. Cabecera Superior Corporativa (Logo y Títulos arriba)
+    # 1. Cabecera Superior Corporativa (Logo y Títulos arriba bien pegados al tope)
     st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 0px 0; margin-top: -2.2rem;">
-    <div style="margin-bottom: 3px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 60px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));">
+<div style="text-align: center; padding: 0px 0 0px 0; margin-top: -3.8rem;">
+    <div style="margin-bottom: 2px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 58px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));">
     </div>
     <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.9);">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
