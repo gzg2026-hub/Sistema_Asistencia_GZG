@@ -210,15 +210,18 @@ def render_mobile_approvals():
         font-weight: bold;
     }
 
-    /* Bordes finos uniformes idénticos al botón popover nativo */
+    /* Bordes sutiles 1px idénticos a los botones secundarios, cards y uploader */
     div[data-testid="stForm"],
     div[data-baseweb="input"],
-    .stTextInput > div > div {
-        border: 1px solid rgba(255, 255, 255, 0.4) !important;
-        border-radius: 8px !important;
+    .stTextInput > div > div,
+    div[data-testid="stFileUploader"] {
+        border: 1px solid #2A2F3D !important;
+        border-radius: 10px !important;
+        background-color: #1A1D24 !important;
     }
     div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        border: 1px solid #F58220 !important;
+        box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.3) !important;
     }
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;

@@ -204,15 +204,18 @@ st.markdown("""
         gap: 4px !important;
         margin-bottom: 12px !important;
     }
-    /* Bordes finos uniformes idénticos al botón popover nativo */
+    /* Bordes sutiles 1px idénticos a los botones secundarios, cards y uploader */
     div[data-testid="stForm"],
     div[data-baseweb="input"],
-    .stTextInput > div > div {
-        border: 1px solid rgba(255, 255, 255, 0.4) !important;
-        border-radius: 8px !important;
+    .stTextInput > div > div,
+    div[data-testid="stFileUploader"] {
+        border: 1px solid #2A2F3D !important;
+        border-radius: 10px !important;
+        background-color: #1A1D24 !important;
     }
     div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        border: 1px solid #F58220 !important;
+        box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.3) !important;
     }
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
@@ -229,61 +232,58 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# PANTALLA DE LOGIN MÓVIL (SI NO ESTÁ AUTENTICADO)
+# AUTO-LOGIN SI "RECORDARME" ESTÁ ACTIVO
+# ---------------------------------------------------------
+if not is_authenticated():
+    saved_user = st.query_params.get("user", "")
+    if saved_user and f"auth_token_{saved_user}" in st.session_state:
+        # Re-autenticar automáticamente
+        st.session_state["authenticated"] = True
+        st.session_state["current_user"] = st.session_state[f"auth_token_{saved_user}"]
+
+# ---------------------------------------------------------
+# PANTALLA DE LOGIN MÓVIL ESTILO IMAGEN 2 (SI NO ESTÁ AUTENTICADO)
 # ---------------------------------------------------------
 if not is_authenticated():
     st.markdown(f"""
-    <div style="text-align: center; padding: 20px 0 10px 0;">
-        <div style="display: inline-flex; align-items: center; justify-content: center;">
+    <div style="text-align: left; padding: 30px 4px 15px 4px;">
+        <div style="display: flex; align-items: center; margin-bottom: 20px;">
             {logo_html}
             <div>
-                <span class="gzg-logo-text">GZG</span> <span class="gzg-logo-text gzg-orange">MINERALES</span>
-                <div style="font-size: 11px; color: #9A9EA7; letter-spacing: 1px;">APLICACIÓN MÓVIL DE APROBACIONES</div>
+                <span class="gzg-logo-text" style="font-size: 20px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 20px;">MINERALES</span>
             </div>
+        </div>
+        <div style="font-size: 28px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 4px;">
+            Bienvenido
+        </div>
+        <div style="font-size: 14px; color: #9A9EA7; margin-bottom: 24px;">
+            Inicia sesión para continuar
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     with st.form("form_login_mobile"):
-        st.markdown("#### 🔐 Iniciar Sesión")
-        u_name = st.text_input("Usuario", placeholder="")
-        u_pass = st.text_input("Contraseña", type="password", placeholder="")
+        u_name = st.text_input("Usuario", placeholder="👤 Usuario")
+        u_pass = st.text_input("Contraseña", type="password", placeholder="🔒 Contraseña")
         
-        btn_login = st.form_submit_button("🔑 INGRESAR A LA APP", type="primary", use_container_width=True)
+        col_rec, _ = st.columns([1.5, 1])
+        with col_rec:
+            recordarme = st.toggle("Recordarme", value=True, key="chk_recordarme_login")
+        
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        btn_login = st.form_submit_button("🔑 INGRESAR", type="primary", use_container_width=True)
         if btn_login:
             if u_name and u_pass:
-                if login_user(u_name, u_pass):
-                    st.success("Acceso concedido")
+                if login_user(u_name.strip(), u_pass.strip()):
+                    if recordarme:
+                        st.query_params["user"] = u_name.strip().lower()
+                        st.session_state[f"auth_token_{u_name.strip().lower()}"] = get_current_user()
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
             else:
-                st.warning("Ingresa usuario y contraseña")
-
-    with st.popover("🔑 Cambiar mi contraseña"):
-        st.markdown("##### 🔑 Cambiar Contraseña")
-        with st.form("form_login_change_pw"):
-            u_target = st.text_input("Usuario", placeholder="")
-            p_actual = st.text_input("Contraseña Actual", type="password")
-            p_nueva = st.text_input("Nueva Contraseña", type="password")
-            p_conf = st.text_input("Confirmar Nueva Contraseña", type="password")
-            btn_save_pw = st.form_submit_button("💾 Guardar Nueva Contraseña", type="primary", use_container_width=True)
-            if btn_save_pw:
-                u_obj = obtener_usuario_by_username(u_target.strip())
-                if not u_obj:
-                    st.error("El usuario ingresado no existe.")
-                elif not verify_password(p_actual, u_obj.get('password_hash', '')):
-                    st.error("La contraseña actual es incorrecta.")
-                elif not p_nueva or len(p_nueva) < 4:
-                    st.warning("La contraseña debe tener al menos 4 caracteres.")
-                elif p_nueva != p_conf:
-                    st.error("Las contraseñas no coinciden.")
-                else:
-                    new_h = hash_password(p_nueva)
-                    if cambiar_password_usuario(u_target.strip(), new_h):
-                        st.success("🎉 ¡Contraseña actualizada exitosamente! Ya puedes iniciar sesión.")
-                    else:
-                        st.error("Error al actualizar la contraseña.")
+                st.warning("Por favor ingresa tu usuario y contraseña.")
+    
     st.stop()
 
 # ---------------------------------------------------------
@@ -293,11 +293,11 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Cabecera Móvil GZG con Logo Corporativo Oficial
-col_head1, col_head2, col_head3 = st.columns([2.5, 1.2, 1])
+# Cabecera Móvil GZG con Renderizado Inmediato
+col_head1, col_head2, col_head3 = st.columns([2.3, 1.2, 1.1])
 with col_head1:
     st.markdown(f"""
-    <div style="display: flex; align-items: center;">
+    <div style="display: flex; align-items: center; padding: 4px 0;">
         {logo_html}
         <div>
             <span class="gzg-logo-text" style="font-size: 16px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 16px;">MINERALES</span>
@@ -330,6 +330,8 @@ with col_head2:
                         st.error("Error al actualizar la contraseña.")
 with col_head3:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
+        if "user" in st.query_params:
+            del st.query_params["user"]
         logout_user()
         st.rerun()
 
