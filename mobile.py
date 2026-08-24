@@ -134,22 +134,7 @@ st.markdown(f"""
 st.markdown("""
 <style>
     /* =====================================================================
-       CAPA 1: OCULTAR COMPLETAMENTE TODO EL CONTENIDO DURANTE ESTADO RUNNING
-       Esto elimina todos los parches/skeletons en: carga inicial, login,
-       logout y cualquier st.rerun(). Solo se muestra fondo oscuro puro.
-       ===================================================================== */
-    .stApp[data-test-script-state="running"] .main,
-    .stApp[data-test-script-state="running"] [data-testid="stMain"],
-    .stApp[data-test-script-state="running"] [data-testid="stAppViewContainer"] > section,
-    .stApp[data-test-script-state="running"] .block-container,
-    .stApp[data-test-script-state="running"] [data-testid="stVerticalBlock"],
-    .stApp[data-test-script-state="running"] [data-testid="stVerticalBlockBorderWrapper"] {
-        visibility: hidden !important;
-        opacity: 0 !important;
-    }
-
-    /* =====================================================================
-       CAPA 2: OCULTAR SKELETONS Y PLACEHOLDERS EN TODOS LOS ESTADOS
+       CAPA 1: OCULTAR SKELETONS Y PLACEHOLDERS (sin ocultar contenido real)
        ===================================================================== */
     [data-testid="stSkeleton"],
     .stSkeleton,
@@ -167,15 +152,13 @@ st.markdown("""
     }
 
     /* =====================================================================
-       CAPA 3: ELIMINAR TRANSICIONES Y ANIMACIONES EN TODO (ZERO FLASH)
+       CAPA 2: ELIMINAR TRANSICIONES - ZERO FLASH (sin tocar animaciones SVG)
        ===================================================================== */
     *,
     *::before,
     *::after {
-        transition-property: none !important;
+        transition-property: background-color, border-color, color, fill, stroke !important;
         transition-duration: 0s !important;
-        animation-duration: 0s !important;
-        animation: none !important;
     }
     .stApp,
     [data-testid="stAppViewContainer"],
