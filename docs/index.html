@@ -66,23 +66,8 @@
   </div>
 
   <script>
-    const frame = document.getElementById('app-frame');
-    const btnRef = document.getElementById('btn-refresh');
-
-    btnRef.addEventListener('click', () => {
-      btnRef.style.transform = 'rotate(360deg)';
-      try {
-        frame.contentWindow.location.reload();
-      } catch (e) {
-        frame.src = frame.src;
-      }
-      setTimeout(() => {
-        btnRef.style.transform = 'none';
-      }, 500);
-    });
-
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=18').then(reg => {
+      navigator.serviceWorker.register('sw.js?v=20').then(reg => {
         reg.update();
       }).catch(() => {});
     }
