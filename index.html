@@ -38,9 +38,22 @@
       -webkit-user-select: none;
     }
 
-    #app-frame {
+    /* Contenedor que recorta y elimina completamente el pie 'Built with Streamlit' */
+    #app-container {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100vw;
       height: 100dvh;
+      overflow: hidden;
+      background-color: #121418;
+      z-index: 1;
+    }
+
+    #app-frame {
+      width: 100vw;
+      /* 46px extra para expulsar 'Built with Streamlit' fuera de la pantalla */
+      height: calc(100dvh + 46px);
       border: none;
       outline: none;
       display: block;
@@ -48,9 +61,9 @@
       position: absolute;
       top: 0;
       left: 0;
-      z-index: 1;
+      margin-bottom: -46px;
       opacity: 0;
-      transition: opacity 0.4s ease-in;
+      transition: opacity 0.5s ease-in;
     }
     #app-frame.ready {
       opacity: 1;
@@ -141,7 +154,7 @@
 </head>
 <body>
 
-  <!-- Splash Screen con Branding GZG -->
+  <!-- Splash Screen con Branding GZG para cubrir 100% la carga interna -->
   <div id="splash-screen">
     <img src="assets/gzg_logo_transparent.png" alt="GZG Minerales" class="splash-logo">
     <div class="splash-title"><span class="gzg">GZG</span> <span class="min">MINERALES</span></div>
@@ -154,13 +167,15 @@
     📲 Instalar App GZG
   </button>
 
-  <!-- Iframe con la aplicación Streamlit limpia en modo embed -->
-  <iframe 
-    id="app-frame" 
-    src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true"
-    allow="camera; microphone; geolocation; clipboard-read; clipboard-write"
-    allowfullscreen>
-  </iframe>
+  <!-- Contenedor que recorta la barra inferior de Streamlit -->
+  <div id="app-container">
+    <iframe 
+      id="app-frame" 
+      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=disable_scrolling"
+      allow="camera; microphone; geolocation; clipboard-read; clipboard-write"
+      allowfullscreen>
+    </iframe>
+  </div>
 
   <script>
     if ('serviceWorker' in navigator) {
@@ -170,7 +185,7 @@
     const frame = document.getElementById('app-frame');
     const splash = document.getElementById('splash-screen');
 
-    // Transición suave: Mantener Splash Screen hasta que Streamlit termine de pintar todo el login
+    // Transición suave: Mantener Splash Screen exactamente hasta que Streamlit termine de pintar todo el login (evita parches)
     frame.addEventListener('load', () => {
       setTimeout(() => {
         frame.classList.add('ready');
@@ -178,7 +193,7 @@
         setTimeout(() => {
           splash.style.visibility = 'hidden';
         }, 700);
-      }, 3000);
+      }, 3500);
     });
 
     // Fallback de seguridad
@@ -188,7 +203,7 @@
       setTimeout(() => {
         splash.style.visibility = 'hidden';
       }, 700);
-    }, 5000);
+    }, 5500);
 
     // Manejo de Instalación PWA
     let deferredPrompt;
