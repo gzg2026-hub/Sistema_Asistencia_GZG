@@ -15,11 +15,11 @@
   <meta name="application-name" content="GZG MINERALES">
   
   <!-- Icons & Manifest -->
-  <link rel="manifest" href="manifest.json?v=3">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=3">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=3">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=3">
-  <link rel="shortcut icon" href="assets/favicon.png?v=3">
+  <link rel="manifest" href="manifest.json?v=4">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=4">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=4">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=4">
+  <link rel="shortcut icon" href="assets/favicon.png?v=4">
 
   <style>
     * {
@@ -32,13 +32,9 @@
       height: 100%;
       overflow: hidden;
       background-color: #121418;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      color: #FFFFFF;
-      user-select: none;
-      -webkit-user-select: none;
     }
 
-    /* Contenedor que recorta y elimina completamente el pie 'Built with Streamlit' */
+    /* Contenedor que recorta la barra inferior 'Built with Streamlit' */
     #app-container {
       position: fixed;
       top: 0;
@@ -52,8 +48,8 @@
 
     #app-frame {
       width: 100vw;
-      /* 46px extra para expulsar 'Built with Streamlit' fuera de la pantalla */
-      height: calc(100dvh + 46px);
+      /* Extra 50px para expulsar el footer de Streamlit fuera de la pantalla */
+      height: calc(100dvh + 50px);
       border: none;
       outline: none;
       display: block;
@@ -61,72 +57,6 @@
       position: absolute;
       top: 0;
       left: 0;
-      margin-bottom: -46px;
-      opacity: 0;
-      transition: opacity 0.5s ease-in;
-    }
-    #app-frame.ready {
-      opacity: 1;
-    }
-
-    #splash-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100dvh;
-      background-color: #121418;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .splash-logo {
-      width: 115px;
-      height: 115px;
-      object-fit: contain;
-      margin-bottom: 22px;
-      filter: drop-shadow(0 10px 30px rgba(245, 130, 32, 0.4));
-      animation: pulse 2s infinite ease-in-out;
-    }
-
-    .splash-title {
-      font-size: 25px;
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .splash-title span.gzg { color: #FFFFFF; }
-    .splash-title span.min { color: #F58220; }
-
-    .splash-sub {
-      font-size: 11px;
-      font-weight: 700;
-      color: #9A9EA7;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      margin-bottom: 35px;
-    }
-
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid rgba(245, 130, 32, 0.2);
-      border-top-color: #F58220;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    @keyframes pulse {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.04); }
     }
 
     #install-banner {
@@ -149,18 +79,11 @@
       border: none;
       outline: none;
       letter-spacing: 0.5px;
+      white-space: nowrap;
     }
   </style>
 </head>
 <body>
-
-  <!-- Splash Screen con Branding GZG para cubrir 100% la carga interna -->
-  <div id="splash-screen">
-    <img src="assets/gzg_logo_transparent.png" alt="GZG Minerales" class="splash-logo">
-    <div class="splash-title"><span class="gzg">GZG</span> <span class="min">MINERALES</span></div>
-    <div class="splash-sub">SISTEMA DE ASISTENCIA Y APROBACIONES</div>
-    <div class="spinner"></div>
-  </div>
 
   <!-- Botón de instalación nativa de la App -->
   <button id="install-banner" onclick="installApp()">
@@ -180,30 +103,6 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     }
-
-    const frame = document.getElementById('app-frame');
-    const splash = document.getElementById('splash-screen');
-
-    function hideSplash() {
-      frame.classList.add('ready');
-      splash.style.opacity = '0';
-      setTimeout(() => { splash.style.visibility = 'hidden'; }, 700);
-    }
-
-    // Escuchar mensajes de Streamlit (dispara cuando el app ya cargó completamente)
-    window.addEventListener('message', (e) => {
-      if (e.data && (e.data.type === 'streamlit:ready' || e.data.isStreamlitMessage)) {
-        setTimeout(hideSplash, 1200);
-      }
-    });
-
-    // Después del load del iframe, esperar 6s para que Streamlit pinte todo en modo oscuro limpio
-    frame.addEventListener('load', () => {
-      setTimeout(hideSplash, 6000);
-    });
-
-    // Fallback absoluto de seguridad: máximo 8 segundos
-    setTimeout(hideSplash, 8000);
 
     // Manejo de Instalación PWA
     let deferredPrompt;
