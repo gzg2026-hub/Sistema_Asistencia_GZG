@@ -405,20 +405,24 @@ st.markdown("""
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        align-items: stretch !important;
+        align-items: center !important;
         justify-content: space-between !important;
         width: 100% !important;
-        gap: 8px !important;
+        max-width: 100% !important;
+        gap: 10px !important;
+        box-sizing: border-box !important;
+        margin: 0 0 10px 0 !important;
     }
 
     [data-testid="stHorizontalBlock"] > [data-testid="column"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: calc(50% - 4px) !important;
+        width: 50% !important;
         min-width: 0px !important;
         max-width: 50% !important;
         flex: 1 1 50% !important;
         display: flex !important;
-        align-items: stretch !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
     }
 
     [data-testid="stHorizontalBlock"] .stButton,
@@ -426,13 +430,15 @@ st.markdown("""
     [data-testid="stHorizontalBlock"] button,
     [data-testid="stHorizontalBlock"] [data-testid="stPopover"] > button {
         width: 100% !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        padding: 0 6px !important;
-        font-size: 12px !important;
+        min-width: 100% !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 8px !important;
+        font-size: 13px !important;
         font-weight: 700 !important;
-        border-radius: 8px !important;
+        border-radius: 9px !important;
         margin: 0 !important;
+        box-sizing: border-box !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
