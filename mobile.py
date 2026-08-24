@@ -395,33 +395,45 @@ st.markdown("""
         color: #9A9EA7;
     }
 
-    /* Badges de Estado */
+    /* Badges de Estado — 100% Indestructibles y Sin Partir en Móvil */
     .badge-approved {
-        background-color: rgba(39, 174, 96, 0.2);
-        color: #27AE60;
-        border: 1px solid #27AE60;
-        padding: 3px 10px;
-        border-radius: 15px;
-        font-size: 11px;
-        font-weight: bold;
+        background-color: rgba(39, 174, 96, 0.2) !important;
+        color: #27AE60 !important;
+        border: 1px solid #27AE60 !important;
+        padding: 3px 9px !important;
+        border-radius: 12px !important;
+        font-size: 10.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.3px !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        flex-shrink: 0 !important;
     }
     .badge-rejected {
-        background-color: rgba(231, 76, 60, 0.2);
-        color: #E74C3C;
-        border: 1px solid #E74C3C;
-        padding: 3px 10px;
-        border-radius: 15px;
-        font-size: 11px;
-        font-weight: bold;
+        background-color: rgba(231, 76, 60, 0.2) !important;
+        color: #E74C3C !important;
+        border: 1px solid #E74C3C !important;
+        padding: 3px 9px !important;
+        border-radius: 12px !important;
+        font-size: 10.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.3px !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        flex-shrink: 0 !important;
     }
     .badge-pending {
-        background-color: rgba(243, 156, 18, 0.2);
-        color: #F39C12;
-        border: 1px solid #F39C12;
-        padding: 3px 10px;
-        border-radius: 15px;
-        font-size: 11px;
-        font-weight: bold;
+        background-color: rgba(243, 156, 18, 0.2) !important;
+        color: #F39C12 !important;
+        border: 1px solid #F39C12 !important;
+        padding: 3px 9px !important;
+        border-radius: 12px !important;
+        font-size: 10.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.3px !important;
+        white-space: nowrap !important;
+        display: inline-block !important;
+        flex-shrink: 0 !important;
     }
 
     /* Botones táctiles */
@@ -1044,9 +1056,9 @@ with tab_historial:
             
             cards_list.append(f"""
             <div class="approval-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div class="worker-name">{worker_name}</div>
-                    <div>{badge_html}</div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
+                    <div class="worker-name" style="flex: 1 1 auto; min-width: 0; word-break: break-word; line-height: 1.25;">{worker_name}</div>
+                    <div style="flex-shrink: 0; white-space: nowrap; padding-top: 1px;">{badge_html}</div>
                 </div>
                 <div class="worker-role">{cargo} ({fecha_sol})</div>
                 <hr style="border-color: #2A2F3D; margin: 8px 0;">
