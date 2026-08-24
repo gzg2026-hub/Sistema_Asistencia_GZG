@@ -409,20 +409,23 @@ st.markdown("""
         justify-content: space-between !important;
         width: 100% !important;
         max-width: 100% !important;
-        gap: 10px !important;
+        gap: 8px !important;
         box-sizing: border-box !important;
         margin: 0 0 10px 0 !important;
+        padding: 0 !important;
     }
 
     [data-testid="stHorizontalBlock"] > [data-testid="column"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: 50% !important;
+        flex: 1 1 0px !important;
         min-width: 0px !important;
-        max-width: 50% !important;
-        flex: 1 1 50% !important;
+        width: 100% !important;
+        max-width: 100% !important;
         display: flex !important;
         align-items: center !important;
         box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 
     [data-testid="stHorizontalBlock"] .stButton,
@@ -430,10 +433,10 @@ st.markdown("""
     [data-testid="stHorizontalBlock"] button,
     [data-testid="stHorizontalBlock"] [data-testid="stPopover"] > button {
         width: 100% !important;
-        min-width: 100% !important;
+        min-width: 0px !important;
         height: 38px !important;
         min-height: 38px !important;
-        padding: 0 8px !important;
+        padding: 0 4px !important;
         font-size: 13px !important;
         font-weight: 700 !important;
         border-radius: 9px !important;
@@ -626,7 +629,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 2 Botones de Acción Simétricos (50% Clave / 50% Salir)
-col_b1, col_b2 = st.columns([1, 1])
+col_b1, col_b2 = st.columns(2, gap="small")
 with col_b1:
     with st.popover("🔑 Clave", use_container_width=True):
         st.markdown("##### 🔑 Cambiar Contraseña")
