@@ -400,7 +400,6 @@ st.markdown("""
     }
 
     /* FORZAR FILA HORIZONTAL ÚNICA EN TODAS LAS PANTALLAS (MÓVIL, TABLET, PC) */
-    [data-testid="stHorizontalBlock"],
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
@@ -415,12 +414,11 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    [data-testid="stHorizontalBlock"] > [data-testid="column"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        flex: 1 1 0px !important;
+        flex: 1 1 50% !important;
+        width: 50% !important;
+        max-width: calc(50% - 4px) !important;
         min-width: 0px !important;
-        width: 100% !important;
-        max-width: 100% !important;
         display: flex !important;
         align-items: center !important;
         box-sizing: border-box !important;
@@ -428,15 +426,15 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    [data-testid="stHorizontalBlock"] .stButton,
-    [data-testid="stHorizontalBlock"] [data-testid="stPopover"],
-    [data-testid="stHorizontalBlock"] button,
-    [data-testid="stHorizontalBlock"] [data-testid="stPopover"] > button {
+    div[data-testid="stHorizontalBlock"] .stButton,
+    div[data-testid="stHorizontalBlock"] [data-testid="stPopover"],
+    div[data-testid="stHorizontalBlock"] button,
+    div[data-testid="stHorizontalBlock"] [data-testid="stPopover"] > button {
         width: 100% !important;
         min-width: 0px !important;
         height: 38px !important;
         min-height: 38px !important;
-        padding: 0 4px !important;
+        padding: 0 6px !important;
         font-size: 13px !important;
         font-weight: 700 !important;
         border-radius: 9px !important;
