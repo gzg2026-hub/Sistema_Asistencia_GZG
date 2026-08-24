@@ -17,6 +17,14 @@ from core.auth import init_auth, is_authenticated, login_user, logout_user, get_
 
 from PIL import Image
 
+import json
+
+def get_file_b64(path):
+    if os.path.exists(path):
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
+
 def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
     for logo_path in ["assets/gzg_logo_transparent.png", "assets/gzg_logo.png"]:
@@ -53,12 +61,43 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
 
 logo_b64 = get_logo_base64()
 hero_b64 = get_hero_base64()
+icon192_b64 = get_file_b64("assets/icon-192.png") or logo_b64
+icon512_b64 = get_file_b64("assets/icon-512.png") or logo_b64
+
+manifest_dict = {
+    "name": "GZG MINERALES",
+    "short_name": "GZG MINERALES",
+    "description": "Sistema de Control de Asistencia y Aprobaciones Móviles - GZG Minerales",
+    "start_url": "/?embed=true&embed_options=disable_scrolling",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#121418",
+    "theme_color": "#121418",
+    "lang": "es",
+    "icons": [
+        {
+            "src": f"data:image/png;base64,{icon192_b64}",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": f"data:image/png;base64,{icon512_b64}",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
+manifest_b64 = base64.b64encode(json.dumps(manifest_dict).encode()).decode()
+
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
-logo_icon = Image.open("assets/gzg_logo.png") if os.path.exists("assets/gzg_logo.png") else "📱"
+logo_icon = Image.open("assets/icon-192.png") if os.path.exists("assets/icon-192.png") else (Image.open("assets/gzg_logo.png") if os.path.exists("assets/gzg_logo.png") else "📱")
 
 # Configuración de página 100% enfocada en Celular (Centrado sin Sidebar)
 st.set_page_config(
-    page_title="GZG Minerales - Aprobaciones",
+    page_title="GZG MINERALES",
     page_icon=logo_icon,
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -71,15 +110,18 @@ init_auth()
 # Inyectar metas para icono y PWA
 st.markdown(f"""
 <head>
-    <meta name="apple-mobile-web-app-title" content="GZG Minerales">
-    <meta name="application-name" content="GZG Minerales">
-    <meta name="theme-color" content="#F58220">
+    <title>GZG MINERALES</title>
+    <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
+    <meta name="application-name" content="GZG MINERALES">
+    <meta name="theme-color" content="#121418">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="data:image/png;base64,{logo_b64}">
-    <link rel="icon" type="image/png" href="data:image/png;base64,{logo_b64}">
-    <link rel="shortcut icon" href="data:image/png;base64,{logo_b64}">
+    <link rel="manifest" href="data:application/manifest+json;base64,{manifest_b64}">
+    <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,{icon192_b64}">
+    <link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,{icon192_b64}">
+    <link rel="icon" type="image/png" sizes="512x512" href="data:image/png;base64,{icon512_b64}">
+    <link rel="shortcut icon" href="data:image/png;base64,{icon192_b64}">
 </head>
 """, unsafe_allow_html=True)
 

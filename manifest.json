@@ -1,43 +1,33 @@
 {
-  "name": "GZG Minerales - Sistema de Asistencia y Aprobaciones",
-  "short_name": "Asistencia GZG",
-  "description": "Sistema de Control de Asistencia, Tiempos y Aprobaciones de Horas Extras - GZG Minerales",
+  "name": "GZG MINERALES",
+  "short_name": "GZG MINERALES",
+  "description": "Sistema de Control de Asistencia y Aprobaciones Móviles - GZG Minerales",
   "start_url": "/?embed=true&embed_options=disable_scrolling",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#121418",
-  "theme_color": "#F58220",
+  "theme_color": "#121418",
   "lang": "es",
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/assets/gzg_logo.png",
+      "src": "/assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/gzg_logo.png",
+      "src": "/assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Aprobaciones Móviles",
-      "short_name": "Aprobaciones",
-      "description": "Ver y aprobar horas extras e incidencias del personal",
-      "url": "/?pwa_view=approvals",
-      "icons": [{ "src": "/assets/gzg_logo.png", "sizes": "192x192" }]
     },
     {
-      "name": "Dashboard Asistencia",
-      "short_name": "Dashboard",
-      "description": "Resumen ejecutivo de asistencia diaria",
-      "url": "/",
-      "icons": [{ "src": "/assets/gzg_logo.png", "sizes": "192x192" }]
+      "src": "/assets/gzg_logo.png",
+      "sizes": "180x194",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
