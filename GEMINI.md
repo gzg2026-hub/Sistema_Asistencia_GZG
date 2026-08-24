@@ -10,6 +10,9 @@
     1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
     2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados de Día Anterior)*.
   - **Definición Estricta de Día Cerrado (Regla de 9:00 AM)**: Un día calendárico (ej. día 22) se considera **Día Cerrado** ÚNICAMENTE a partir de la ejecución automática de las 9:00 AM del día posterior (ej. día 23 a las 9:00 AM). Antes de las 9:00 AM del día posterior, el día se considera EN CURSO debido a que las salidas del Turno Noche (07:00-08:00 AM) aún no han sido registradas ni descargadas. Queda estrictamente PROHIBIDO emitir o crear el reporte diario individual en Excel de un día (ej. `Reporte_Asistencia_GZG_2026-08-22.xlsx`) antes de las 9:00 AM del día siguiente.
+- **Ubicación Exclusiva Local de Reportes Diarios (`downloads/data_procesada/diario/`)**:
+  - Los reportes diarios procesados en Excel de días cerrados (`Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx`) se guardan ÚNICAMENTE dentro de la subcarpeta oficial `downloads/data_procesada/diario/`.
+  - Queda estrictamente PROHIBIDO generar, copiar o dejar reportes diarios sueltos en la raíz del proyecto (`Sistema_Asistencia_GZG/`) o en subcarpetas intermedias (`downloads/data_procesada/`).
 - **PROHIBIDO TOTALMENTE EN DRIVE**:
   - NO crear subcarpetas como `Data_Cruda` o `Data_Procesada` en Google Drive.
   - `Sistema_Asistencia_GZG_v1.0.xlsx` *(Archivo raíz ejecutable en la PC, NUNCA se sube a Drive)*.
