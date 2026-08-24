@@ -1,0 +1,17 @@
+﻿name: Keep Alive Streamlit App
+
+on:
+  schedule:
+    # Ejecutar cada 2 horas para evitar que Streamlit Cloud hiberne
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: |
+          echo "Pinging GZG Aprobaciones Móvil Streamlit App..."
+          curl -s -L --max-time 30 https://gzg-aprobaciones-movil.streamlit.app/ > /dev/null || true
+          echo "Ping completado con éxito."

@@ -727,18 +727,26 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
 
     users = [
         ('admin', hash_fn('gzg2026*'), 'Administración (Control Total)', 'ADMINISTRACION', 'TODAS', 'Administrador de Sistema'),
-        ('jagreda', hash_fn('jagreda2026*'), 'Jhon Robert Ágreda Aspajo', 'JEFE_SUPERVISOR', 'OPER&MTTO', 'Supervisor'),
-        ('jalva', hash_fn('jalva2026*'), 'Jhon Kenedy Alva Medina', 'JEFE_SUPERVISOR', 'JEFATURA', 'Jefe'),
-        ('jdelariva', hash_fn('jdelariva2026*'), 'Javier Adrián De La Riva Aguilar', 'JEFE_SUPERVISOR', 'JEFATURA', 'Supervisor'),
-        ('jhuayama', hash_fn('jhuayama2026*'), 'Josmell Waldir Huayama Adriano', 'JEFE_SUPERVISOR', 'OPER&MTTO', 'Jefe'),
+        ('jagreda', hash_fn('jagreda2026*'), 'Jhon Robert Ágreda Aspajo', 'SUPERVISOR', 'OPER&MTTO', 'Supervisor'),
+        ('jalva', hash_fn('jalva2026*'), 'Jhon Kenedy Alva Medina', 'JEFE', 'JEFATURA', 'Jefe'),
+        ('jdelariva', hash_fn('jdelariva2026*'), 'Javier Adrián De La Riva Aguilar', 'SUPERVISOR', 'JEFATURA', 'Supervisor'),
+        ('jhuayama', hash_fn('jhuayama2026*'), 'Josmell Waldir Huayama Adriano', 'JEFE', 'OPER&MTTO', 'Jefe'),
         ('msanchez', hash_fn('msanchez2026*'), 'Manuel Ysidoro Sánchez Montoya', 'SUPERINTENDENTE', 'JEFATURA', 'Superintendente')
     ]
     
     for username, pass_hash, nombre, rol, area, cargo in users:
-        cursor.execute("""
-        INSERT OR REPLACE INTO usuarios (username, password_hash, nombre_completo, rol, area_asignada, cargo)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (username, pass_hash, nombre, rol, area, cargo))
+        # Verificar si ya existe
+        cursor.execute("SELECT id FROM usuarios WHERE LOWER(username) = LOWER(?)", (username,))
+        row = cursor.fetchone()
+        if row:
+            cursor.execute("""
+            UPDATE usuarios SET rol = ?, area_asignada = ?, cargo = ? WHERE id = ?
+            """, (rol, area, cargo, row[0]))
+        else:
+            cursor.execute("""
+            INSERT INTO usuarios (username, password_hash, nombre_completo, rol, area_asignada, cargo)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """, (username, pass_hash, nombre, rol, area, cargo))
         
     conn.commit()
     conn.close()

@@ -24,6 +24,14 @@ def get_logo_base64():
                 return base64.b64encode(f.read()).decode()
     return ""
 
+def get_hero_base64():
+    """Obtiene la imagen de portada minera para el login."""
+    hero_path = "assets/login_mining_hero.jpg"
+    if os.path.exists(hero_path):
+        with open(hero_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return ""
+
 def get_worker_avatar_url(dni: str, worker_name: str) -> str:
     if dni:
         dni_clean = str(dni).strip().lstrip('0').zfill(8)
@@ -43,6 +51,7 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
     return f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
 
 logo_b64 = get_logo_base64()
+hero_b64 = get_hero_base64()
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
 logo_icon = Image.open("assets/gzg_logo.png") if os.path.exists("assets/gzg_logo.png") else "📱"
 
@@ -228,6 +237,14 @@ st.markdown("""
         height: 0px !important;
         opacity: 0 !important;
     }
+    div[data-baseweb="input"] input {
+        font-size: 15px !important;
+        padding: 10px 14px !important;
+    }
+    div[data-baseweb="input"] input::placeholder {
+        font-size: 18px !important;
+        opacity: 0.8 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -242,36 +259,44 @@ if not is_authenticated():
         st.session_state["current_user"] = st.session_state[f"auth_token_{saved_user}"]
 
 # ---------------------------------------------------------
-# PANTALLA DE LOGIN MÓVIL ESTILO IMAGEN 2 (SI NO ESTÁ AUTENTICADO)
+# PANTALLA DE LOGIN MÓVIL ESTILO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
+    hero_html = f'''
+    <div style="width: 100%; border-radius: 16px; overflow: hidden; margin: 12px 0 16px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #2A2F3D;">
+        <img src="data:image/jpeg;base64,{hero_b64}" style="width: 100%; height: 165px; object-fit: cover; display: block;">
+    </div>
+    ''' if hero_b64 else ''
+
     st.markdown(f"""
-    <div style="text-align: left; padding: 30px 4px 15px 4px;">
-        <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            {logo_html}
-            <div>
-                <span class="gzg-logo-text" style="font-size: 20px;">GZG</span> <span class="gzg-logo-text gzg-orange" style="font-size: 20px;">MINERALES</span>
-            </div>
+    <div style="text-align: center; padding: 20px 0 10px 0;">
+        <div style="margin-bottom: 8px;">
+            <img src="data:image/png;base64,{logo_b64}" style="height: 85px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
         </div>
-        <div style="font-size: 28px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; margin-bottom: 4px;">
-            Bienvenido
+        <div style="font-size: 26px; font-weight: 900; color: #F58220; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1;">
+            MINERALES
         </div>
-        <div style="font-size: 14px; color: #9A9EA7; margin-bottom: 24px;">
-            Inicia sesión para continuar
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; margin-bottom: 8px; opacity: 0.95;">
+            APLICACIÓN MÓVIL PARA APROBACIONES
+        </div>
+        {hero_html}
+        <div style="text-align: left; margin-top: 14px; margin-bottom: 8px;">
+            <div style="font-size: 24px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
+            <div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     with st.form("form_login_mobile"):
-        u_name = st.text_input("Usuario", placeholder="👤 Usuario")
-        u_pass = st.text_input("Contraseña", type="password", placeholder="🔒 Contraseña")
+        u_name = st.text_input("Usuario", placeholder="👤", label_visibility="collapsed")
+        u_pass = st.text_input("Contraseña", type="password", placeholder="🔒", label_visibility="collapsed")
         
         col_rec, _ = st.columns([1.5, 1])
         with col_rec:
             recordarme = st.toggle("Recordarme", value=True, key="chk_recordarme_login")
         
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        btn_login = st.form_submit_button("🔑 INGRESAR", type="primary", use_container_width=True)
+        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        btn_login = st.form_submit_button("INICIAR SESIÓN", type="primary", use_container_width=True)
         if btn_login:
             if u_name and u_pass:
                 if login_user(u_name.strip(), u_pass.strip()):
@@ -283,6 +308,12 @@ if not is_authenticated():
                     st.error("❌ Usuario o contraseña incorrectos.")
             else:
                 st.warning("Por favor ingresa tu usuario y contraseña.")
+    
+    st.markdown("""
+    <div style="text-align: center; font-size: 11px; color: #5A5E6B; margin-top: 25px; letter-spacing: 1px;">
+        v1.0.0
+    </div>
+    """, unsafe_allow_html=True)
     
     st.stop()
 
