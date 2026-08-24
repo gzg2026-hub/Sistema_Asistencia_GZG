@@ -398,17 +398,29 @@ st.markdown("""
         touch-action: manipulation !important;
     }
 
-    /* PUNTO 5: Botón Rechazar — Rojo Carmesí Elegante con acento Coral */
-    button[key*="m_rej_"],
-    div[data-testid="column"]:first-child button[kind="secondary"] {
-        background: rgba(231, 76, 60, 0.14) !important;
+    /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco */
+    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"],
+    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"],
+    div[data-testid="column"]:nth-child(1) button[kind="secondary"] {
+        background: linear-gradient(135deg, #C0392B 0%, #962D22 100%) !important;
+        background-color: #C0392B !important;
         border: 1px solid #E74C3C !important;
-        color: #FF6B6B !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
     }
-    button[key*="m_rej_"]:hover,
-    div[data-testid="column"]:first-child button[kind="secondary"]:hover {
-        background: rgba(231, 76, 60, 0.28) !important;
-        border-color: #FF4D4D !important;
+    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"] p,
+    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"] p,
+    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"] span,
+    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"] span {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+    }
+    div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"]:hover,
+    div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"]:hover {
+        background: linear-gradient(135deg, #D9383A 0%, #B02A2B 100%) !important;
+        background-color: #D9383A !important;
+        border-color: #FF5A5A !important;
         color: #FFFFFF !important;
     }
 
@@ -459,13 +471,13 @@ if not is_authenticated():
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Inyectar fondo minero envolvente en stAppViewContainer
+    # Inyectar fondo minero nítido y luminoso en stAppViewContainer
     if hero_b64:
         st.markdown(f"""
 <style>
 .stApp,
 [data-testid="stAppViewContainer"] {{
-    background: linear-gradient(180deg, rgba(14, 16, 20, 0.60) 0%, rgba(14, 16, 20, 0.85) 45%, #0E1014 100%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
+    background: linear-gradient(180deg, rgba(14, 16, 20, 0.15) 0%, rgba(14, 16, 20, 0.35) 45%, #0E1014 92%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
     background-size: cover !important;
     background-attachment: fixed !important;
 }}
@@ -474,6 +486,7 @@ if not is_authenticated():
 }}
 </style>
 """, unsafe_allow_html=True)
+
 
     # PUNTO 4: Encabezado de Login Más Proporcionado (Logo 72px, Título 26px, Subtítulo 11px)
     st.markdown(f"""
