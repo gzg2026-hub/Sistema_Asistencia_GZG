@@ -777,14 +777,15 @@ if st.session_state.get("show_change_pw_box", False):
                 st.session_state["show_change_pw_box"] = False
                 st.rerun()
             if btn_h_pw:
-                if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
+                db_u = obtener_usuario_by_username(username)
+                if not db_u or not verify_password(p_act_h.strip(), db_u.get('password_hash', '')):
                     st.error("La contraseña actual es incorrecta.")
-                elif not p_nue_h or len(p_nue_h) < 6:
+                elif not p_nue_h or len(p_nue_h.strip()) < 6:
                     st.warning("⚠️ La nueva contraseña debe tener al menos 6 caracteres.")
-                elif p_nue_h != p_cnf_h:
+                elif p_nue_h.strip() != p_cnf_h.strip():
                     st.error("Las contraseñas no coinciden.")
                 else:
-                    new_h = hash_password(p_nue_h)
+                    new_h = hash_password(p_nue_h.strip())
                     if cambiar_password_usuario(username, new_h):
                         st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
                         st.success("Contraseña modificada exitosamente.")
