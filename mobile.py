@@ -314,7 +314,7 @@ APLICACIÓN MÓVIL PARA APROBACIONES
             recordarme = st.toggle("Recordarme", value=True, key="chk_recordarme_login")
         
         st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
-        btn_login = st.form_submit_button("INICIAR SESIÓN", type="primary", use_container_width=True)
+        btn_login = st.form_submit_button("🔑 INGRESAR", type="primary", use_container_width=True)
         if btn_login:
             if u_name and u_pass:
                 if login_user(u_name.strip(), u_pass.strip()):
