@@ -400,29 +400,42 @@ st.markdown("""
     }
 
     /* FORZAR FILA HORIZONTAL ÚNICA EN TODAS LAS PANTALLAS (MÓVIL, TABLET, PC) */
+    [data-testid="stHorizontalBlock"],
     div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
-        align-items: center !important;
+        align-items: stretch !important;
+        justify-content: space-between !important;
         width: 100% !important;
         gap: 8px !important;
     }
 
+    [data-testid="stHorizontalBlock"] > [data-testid="column"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        width: 50% !important;
+        width: calc(50% - 4px) !important;
         min-width: 0px !important;
+        max-width: 50% !important;
         flex: 1 1 50% !important;
+        display: flex !important;
+        align-items: stretch !important;
     }
 
-    div[data-testid="stHorizontalBlock"] button,
-    div[data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button {
-        height: 38px !important;
-        min-height: 38px !important;
-        padding: 0 8px !important;
-        font-size: 13px !important;
-        border-radius: 9px !important;
+    [data-testid="stHorizontalBlock"] .stButton,
+    [data-testid="stHorizontalBlock"] [data-testid="stPopover"],
+    [data-testid="stHorizontalBlock"] button,
+    [data-testid="stHorizontalBlock"] [data-testid="stPopover"] > button {
+        width: 100% !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0 6px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
         margin: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco a Ancho Completo */
@@ -688,15 +701,15 @@ with tab_pendientes:
         df_aprobadas_mes = df_all[is_app_by_me].copy()
 
     
-    # Cajones de Métricas Apilados Verticalmente a 100% de Ancho para Celular
+    # Cajones de Métricas Reducidos y Compactos para Celular
     st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 14px; padding: 14px; text-align: center; margin-bottom: 8px; box-shadow: 0 4px 14px rgba(245, 130, 32, 0.25);">
-        <div style="font-size: 28px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
-        <div style="font-size: 12px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px;">Pendientes</div>
+    <div style="background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 10px; text-align: center; margin-bottom: 5px; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.2);">
+        <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
+        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px;">Pendientes</div>
     </div>
-    <div style="background: #1A1D24; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 12px;">
-        <div style="font-size: 24px; font-weight: 800; color: #F58220; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
-        <div style="font-size: 11px; font-weight: 600; color: #9A9EA7;">Aprobadas este mes</div>
+    <div style="background: #1A1D24; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 6px 10px; text-align: center; margin-bottom: 8px;">
+        <div style="font-size: 18px; font-weight: 800; color: #F58220; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
+        <div style="font-size: 10px; font-weight: 600; color: #9A9EA7;">Aprobadas este mes</div>
     </div>
     """, unsafe_allow_html=True)
     
