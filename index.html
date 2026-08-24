@@ -45,7 +45,7 @@
 
     #app-frame {
       width: 100vw;
-      height: 100dvh;
+      height: calc(100dvh + 48px);
       border: 0;
       outline: 0;
       display: block;
@@ -57,7 +57,7 @@
   <div id="app-container">
     <iframe 
       id="app-frame" 
-      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true"
+      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer"
       allow="camera; microphone; geolocation; clipboard-read; clipboard-write">
     </iframe>
   </div>
