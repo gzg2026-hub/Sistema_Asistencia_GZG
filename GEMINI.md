@@ -110,9 +110,10 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 
 ## 7. ESTÁNDARES DE INTERFAZ MÓVIL PWA Y EXPERIENCIA DE USUARIO
 - **Eliminación Total de Watermarks de Streamlit (Sin Parches ni Máscaras)**: En el visor PWA (`docs/index.html`), el iframe se dimensiona a `height: calc(100% + 44px)` con `#app-container { overflow: hidden; height: 100dvh; }` para expulsar físicamente fuera de pantalla el pie de página de Streamlit sin añadir máscaras que recorten la interfaz.
-- **Persistencia Indestructible de Íconos en Inputs Móviles (CSS Puro Nativo)**:
-  * Los íconos SVG de los inputs de login (Usuario 👤 y Contraseña 🔒) deben anclarse obligatoriamente mediante CSS en el contenedor padre `div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1/2) div[data-baseweb="input"]` como `background-image`.
-  * El `<input>` interno debe ser 100% transparente con `padding-left: 40px; text-align: left;`.
+- **Persistencia Indestructible de Íconos en Inputs Móviles (Selectores HTML Nativos Universales)**:
+  * Los íconos SVG de los inputs de login (Usuario 👤 y Contraseña 🔒) deben anclarse obligatoriamente mediante selectores universales estándar de HTML nativo (`div[data-testid="stForm"] input[type="text"]` e `input[type="password"]` / `input[aria-label="Usuario"]` e `input[aria-label="Contraseña"]`).
+  * Cada input debe llevar `background-image` en SVG, `background-position: 14px center`, `background-size: 18px 18px`, `padding-left: 44px !important;`, `background-color: #1A1D24 !important;` y `color: #FFFFFF !important;`.
+  * Esta regla garantiza que los íconos permanezcan 100% visibles e indestructibles antes, durante y después de escribir, en cualquier navegador y teléfono móvil sin depender de jerarquías volátiles de Streamlit.
   * Queda estrictamente PROHIBIDO usar scripts inestables en `components.html` para manipular o inyectar íconos que colisionen con el ciclo de renderizado de Streamlit.
 - **Limpieza de UI de Streamlit sin Parches**: Toda ocultación de toolbar, header, deploy buttons, footer y skeletons debe realizarse exclusivamente mediante CSS estático en `<style>`, garantizando cero parpadeos (flickering) y cero bloqueos de pantalla.
 - **Persistencia de Sesión ("Recordarme") y Cero Latencia**:
