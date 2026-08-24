@@ -1,31 +1,33 @@
 {
   "name": "GZG MINERALES",
   "short_name": "GZG MINERALES",
-  "description": "Sistema de Control de Asistencia y Aprobaciones M\u00f3viles - GZG Minerales",
-  "start_url": "/?embed=true&embed_options=disable_scrolling",
-  "scope": "/",
+  "description": "Sistema de Control de Asistencia y Aprobaciones Móviles - GZG Minerales",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#121418",
   "theme_color": "#121418",
   "lang": "es",
-  "categories": [
-    "business",
-    "productivity",
-    "utilities"
-  ],
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "app/static/icon-192.png",
+      "src": "assets/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "app/static/icon-512.png",
+      "src": "assets/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "assets/gzg_logo_transparent.png",
+      "sizes": "180x194",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
