@@ -45,11 +45,22 @@
 
     #app-frame {
       width: 100vw;
-      height: calc(100dvh + 48px);
+      height: 100dvh;
       border: 0;
       outline: 0;
       display: block;
       background-color: #121418;
+    }
+
+    #footer-mask {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100vw;
+      height: 52px;
+      background: #121418;
+      z-index: 999999;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -57,14 +68,15 @@
   <div id="app-container">
     <iframe 
       id="app-frame" 
-      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer"
+      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true"
       allow="camera; microphone; geolocation; clipboard-read; clipboard-write">
     </iframe>
+    <div id="footer-mask"></div>
   </div>
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=8').catch(() => {});
+      navigator.serviceWorker.register('sw.js?v=10').catch(() => {});
     }
   </script>
 </body>

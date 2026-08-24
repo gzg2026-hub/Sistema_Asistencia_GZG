@@ -240,7 +240,7 @@ st.markdown("""
 
     /* Padding inferior para garantizar que todo el contenido y firma sean visibles */
     .main .block-container {
-        padding: 0.75rem 0.5rem 80px 0.5rem !important;
+        padding: 0.75rem 0.5rem 100px 0.5rem !important;
         max-width: 500px !important;
         margin: 0 auto !important;
         width: 100% !important;
