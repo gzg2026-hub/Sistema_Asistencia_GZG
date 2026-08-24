@@ -4,131 +4,142 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GZG MINERALES</title>
-  
-  <!-- PWA Meta Tags -->
   <meta name="theme-color" content="#121418">
-  <meta name="background-color" content="#121418">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
   <meta name="application-name" content="GZG MINERALES">
-  
-  <!-- Icons & Manifest -->
   <link rel="manifest" href="manifest.json?v=4">
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=4">
   <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=4">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=4">
-  <link rel="shortcut icon" href="assets/favicon.png?v=4">
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     html, body {
-      width: 100%;
-      height: 100%;
+      width: 100%; height: 100%;
+      background: #121418;
       overflow: hidden;
-      background-color: #121418;
     }
 
-    /* Contenedor que recorta la barra inferior 'Built with Streamlit' */
-    #app-container {
+    /* Capa oscura que cubre los parches mientras carga Streamlit */
+    #dark-cover {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100dvh;
-      overflow: hidden;
-      background-color: #121418;
-      z-index: 1;
+      inset: 0;
+      background: #121418;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    #dark-cover.hidden {
+      opacity: 0;
+      pointer-events: none;
     }
 
-    #app-frame {
+    /* Spinner naranja minimalista */
+    .loader {
+      width: 42px; height: 42px;
+      border: 3px solid rgba(245,130,32,0.25);
+      border-top-color: #F58220;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Contenedor que oculta el footer "Built with Streamlit" */
+    #app-box {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      background: #121418;
+    }
+
+    iframe {
       width: 100vw;
-      /* Extra 50px para expulsar el footer de Streamlit fuera de la pantalla */
-      height: calc(100dvh + 50px);
+      /* 52px extra para empujar el footer fuera de pantalla */
+      height: calc(100dvh + 52px);
       border: none;
-      outline: none;
       display: block;
-      background-color: #121418;
-      position: absolute;
-      top: 0;
-      left: 0;
+      background: #121418;
     }
 
-    #install-banner {
+    /* Botón instalar */
+    #install-btn {
       position: fixed;
-      bottom: 25px;
+      bottom: 22px;
       left: 50%;
       transform: translateX(-50%);
-      background: linear-gradient(135deg, #F58220 0%, #D96A0B 100%);
-      color: #FFFFFF;
-      padding: 13px 26px;
+      background: linear-gradient(135deg,#F58220,#D96A0B);
+      color: #fff;
+      padding: 13px 28px;
       border-radius: 30px;
       font-weight: 800;
       font-size: 14px;
       display: none;
       align-items: center;
-      gap: 10px;
-      box-shadow: 0 10px 25px rgba(245, 130, 32, 0.55);
-      z-index: 10000;
+      gap: 8px;
+      box-shadow: 0 8px 20px rgba(245,130,32,0.5);
+      z-index: 1000;
       cursor: pointer;
       border: none;
-      outline: none;
-      letter-spacing: 0.5px;
       white-space: nowrap;
     }
   </style>
 </head>
 <body>
 
-  <!-- Botón de instalación nativa de la App -->
-  <button id="install-banner" onclick="installApp()">
-    📲 Instalar App GZG
-  </button>
+  <!-- Capa negra que cubre los parches de carga -->
+  <div id="dark-cover"><div class="loader"></div></div>
 
-  <!-- Contenedor que recorta la barra inferior de Streamlit -->
-  <div id="app-container">
-    <iframe 
-      id="app-frame" 
-      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer&embed_options=disable_scrolling&embed_options=dark_theme"
-      allow="camera; microphone; geolocation; clipboard-read; clipboard-write">
+  <!-- Botón instalar -->
+  <button id="install-btn" onclick="installPWA()">📲 Instalar App GZG</button>
+
+  <!-- Iframe con Streamlit embed limpio -->
+  <div id="app-box">
+    <iframe
+      id="st-frame"
+      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer&embed_options=disable_scrolling"
+      allow="camera;microphone;geolocation;clipboard-read;clipboard-write">
     </iframe>
   </div>
 
   <script>
+    // Forzar que el Service Worker se actualice y limpie el cache viejo
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.update());
+      });
+      navigator.serviceWorker.register('sw.js?v=4').catch(() => {});
     }
 
-    // Manejo de Instalación PWA
-    let deferredPrompt;
-    const installBtn = document.getElementById('install-banner');
+    const cover = document.getElementById('dark-cover');
+    const frame = document.getElementById('st-frame');
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.style.display = 'flex';
-    });
-
-    function installApp() {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            installBtn.style.display = 'none';
-          }
-          deferredPrompt = null;
-        });
-      }
+    // Quitar la capa oscura después de 5s para asegurar que Streamlit terminó de renderizar
+    function removeCover() {
+      cover.classList.add('hidden');
+      setTimeout(() => cover.remove(), 600);
     }
 
-    window.addEventListener('appinstalled', () => {
-      installBtn.style.display = 'none';
+    frame.addEventListener('load', () => setTimeout(removeCover, 5000));
+    // Fallback: máximo 9 segundos
+    setTimeout(removeCover, 9000);
+
+    // PWA Install
+    let prompt;
+    const btn = document.getElementById('install-btn');
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault(); prompt = e; btn.style.display = 'flex';
     });
+    function installPWA() {
+      if (!prompt) return;
+      prompt.prompt();
+      prompt.userChoice.then(() => { btn.style.display='none'; prompt=null; });
+    }
+    window.addEventListener('appinstalled', () => btn.style.display='none');
   </script>
 </body>
 </html>
