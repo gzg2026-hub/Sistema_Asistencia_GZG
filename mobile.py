@@ -145,6 +145,19 @@ st.markdown("""
     .stApp[data-test-script-state="running"] {
         opacity: 1 !important;
     }
+    /* Ocultar skeletons, parches y artefactos de carga preliminar */
+    [data-testid="stSkeleton"],
+    .stSkeleton,
+    div[class*="skeleton"],
+    div[class*="Skeleton"],
+    div[data-testid="stStatusWidget"],
+    div[data-testid="stDecoration"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
+    }
     /* Ocultar Barra Superior de Streamlit Cloud (Stop, Fork, GitHub, Menu, Accesibilidad) */
     header,
     header[data-testid="stHeader"],

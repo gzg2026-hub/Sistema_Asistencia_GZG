@@ -15,11 +15,11 @@
   <meta name="application-name" content="GZG MINERALES">
   
   <!-- Icons & Manifest -->
-  <link rel="manifest" href="manifest.json?v=2">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=2">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=2">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=2">
-  <link rel="shortcut icon" href="assets/favicon.png?v=2">
+  <link rel="manifest" href="manifest.json?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=3">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=3">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=3">
+  <link rel="shortcut icon" href="assets/favicon.png?v=3">
 
   <style>
     * {
@@ -49,6 +49,11 @@
       top: 0;
       left: 0;
       z-index: 1;
+      opacity: 0;
+      transition: opacity 0.4s ease-in;
+    }
+    #app-frame.ready {
+      opacity: 1;
     }
 
     #splash-screen {
@@ -63,7 +68,7 @@
       align-items: center;
       justify-content: center;
       z-index: 9999;
-      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.7s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .splash-logo {
@@ -165,19 +170,25 @@
     const frame = document.getElementById('app-frame');
     const splash = document.getElementById('splash-screen');
 
-    // Transición suave: Mantener Splash Screen hasta que Streamlit pinte el login 100% limpio (sin parches)
+    // Transición suave: Mantener Splash Screen hasta que Streamlit termine de pintar todo el login
     frame.addEventListener('load', () => {
       setTimeout(() => {
+        frame.classList.add('ready');
         splash.style.opacity = '0';
-        splash.style.visibility = 'hidden';
-      }, 2200);
+        setTimeout(() => {
+          splash.style.visibility = 'hidden';
+        }, 700);
+      }, 3000);
     });
 
     // Fallback de seguridad
     setTimeout(() => {
+      frame.classList.add('ready');
       splash.style.opacity = '0';
-      splash.style.visibility = 'hidden';
-    }, 4500);
+      setTimeout(() => {
+        splash.style.visibility = 'hidden';
+      }, 700);
+    }, 5000);
 
     // Manejo de Instalación PWA
     let deferredPrompt;
