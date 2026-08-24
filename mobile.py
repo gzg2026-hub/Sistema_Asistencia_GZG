@@ -486,21 +486,21 @@ if not is_authenticated():
 """, unsafe_allow_html=True)
 
 
-    # PUNTO 4: Encabezado de Login con Contorno Negro y Posición Más Elevada
+    # PUNTO 4: Encabezado de Login Proporcionado sobre Maquinaria Minera
     st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -1.4rem;">
-    <div style="margin-bottom: 4px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 66px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.9));">
+<div style="text-align: center; padding: 4px 0 6px 0;">
+    <div style="margin-bottom: 6px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 68px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.75));">
     </div>
-    <div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 3px; -webkit-text-stroke: 0.8px #000000; text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 3px 12px rgba(0,0,0,0.95);">
+    <div style="font-size: 25px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 11px; font-weight: 800; color: #FFFFFF; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; -webkit-text-stroke: 0.5px #000000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 8px rgba(0,0,0,0.95);">
+    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
         APLICACION MOVIL PARA APROBACIONES
     </div>
-    <div style="text-align: left; margin-top: 2px; margin-bottom: 8px;">
-        <div style="font-size: 22px; font-weight: 900; color: #FFFFFF; letter-spacing: -0.5px; -webkit-text-stroke: 0.6px #000000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 10px rgba(0,0,0,0.95);">Bienvenido</div>
-        <div style="font-size: 13px; font-weight: 600; color: #E0E2EC; -webkit-text-stroke: 0.4px #000000; text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 8px rgba(0,0,0,0.95);">Inicia sesión para continuar</div>
+    <div style="text-align: left; margin-top: 4px; margin-bottom: 10px;">
+        <div style="font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
+        <div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
