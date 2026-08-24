@@ -245,6 +245,11 @@ st.markdown("""
         font-size: 18px !important;
         opacity: 0.8 !important;
     }
+    .stTextInput label p {
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -259,37 +264,50 @@ if not is_authenticated():
         st.session_state["current_user"] = st.session_state[f"auth_token_{saved_user}"]
 
 # ---------------------------------------------------------
-# PANTALLA DE LOGIN MÓVIL ESTILO GZG CORPORATIVO
+# PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    hero_html = f'''
-    <div style="width: 100%; border-radius: 16px; overflow: hidden; margin: 12px 0 16px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid #2A2F3D;">
-        <img src="data:image/jpeg;base64,{hero_b64}" style="width: 100%; height: 165px; object-fit: cover; display: block;">
-    </div>
-    ''' if hero_b64 else ''
+    # Inyectar fondo minero envolvente con overlay oscuro
+    if hero_b64:
+        st.markdown(f"""
+<style>
+.stApp {{
+    background: linear-gradient(180deg, rgba(18, 20, 24, 0.65) 0%, rgba(18, 20, 24, 0.88) 45%, #121418 100%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top fixed !important;
+    background-size: cover !important;
+}}
+div[data-testid="stForm"] {{
+    background: rgba(22, 25, 32, 0.88) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    padding: 22px 18px !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
     st.markdown(f"""
-    <div style="text-align: center; padding: 20px 0 10px 0;">
-        <div style="margin-bottom: 8px;">
-            <img src="data:image/png;base64,{logo_b64}" style="height: 85px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
-        </div>
-        <div style="font-size: 26px; font-weight: 900; color: #F58220; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1;">
-            MINERALES
-        </div>
-        <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 6px; margin-bottom: 8px; opacity: 0.95;">
-            APLICACIÓN MÓVIL PARA APROBACIONES
-        </div>
-        {hero_html}
-        <div style="text-align: left; margin-top: 14px; margin-bottom: 8px;">
-            <div style="font-size: 24px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
-            <div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="text-align: center; padding: 25px 0 15px 0;">
+<div style="margin-bottom: 10px;">
+<img src="data:image/png;base64,{logo_b64}" style="height: 85px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+</div>
+<div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
+<span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
+</div>
+<div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 24px; opacity: 0.95;">
+APLICACIÓN MÓVIL PARA APROBACIONES
+</div>
+<div style="text-align: left; margin-top: 10px; margin-bottom: 12px;">
+<div style="font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
+<div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
     
     with st.form("form_login_mobile"):
-        u_name = st.text_input("Usuario", placeholder="👤", label_visibility="collapsed")
-        u_pass = st.text_input("Contraseña", type="password", placeholder="🔒", label_visibility="collapsed")
+        u_name = st.text_input("Usuario", placeholder="👤")
+        u_pass = st.text_input("Contraseña", type="password", placeholder="🔒")
         
         col_rec, _ = st.columns([1.5, 1])
         with col_rec:
@@ -310,10 +328,10 @@ if not is_authenticated():
                 st.warning("Por favor ingresa tu usuario y contraseña.")
     
     st.markdown("""
-    <div style="text-align: center; font-size: 11px; color: #5A5E6B; margin-top: 25px; letter-spacing: 1px;">
-        v1.0.0
-    </div>
-    """, unsafe_allow_html=True)
+<div style="text-align: center; font-size: 11px; color: #6E7280; margin-top: 25px; letter-spacing: 1px;">
+v1.0.0
+</div>
+""", unsafe_allow_html=True)
     
     st.stop()
 
