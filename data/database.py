@@ -791,6 +791,60 @@ def obtener_todos_usuarios(db_path: str = DB_PATH) -> pd.DataFrame:
     conn.close()
     return df
 
+def crear_token_sesion(username: str, db_path: str = DB_PATH) -> str:
+    """Genera y almacena un token de sesión permanente para la función Recordarme."""
+    import secrets
+    token = secrets.token_hex(24)
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_tokens (
+        token TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    cursor.execute("INSERT OR REPLACE INTO user_tokens (token, username) VALUES (?, ?)", (token, username.lower().strip()))
+    conn.commit()
+    conn.close()
+    return token
+
+def validar_token_sesion(token: str, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
+    """Valida un token de sesión y retorna el objeto usuario si existe y está activo."""
+    if not token:
+        return None
+    try:
+        conn = get_connection(db_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_tokens (
+            token TEXT PRIMARY KEY,
+            username TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+        cursor.execute("SELECT username FROM user_tokens WHERE token = ?", (token.strip(),))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            return obtener_usuario_by_username(row[0], db_path)
+    except Exception as e:
+        print(f"Error al validar token de sesion: {e}")
+    return None
+
+def eliminar_token_sesion(token: str, db_path: str = DB_PATH):
+    """Elimina un token de sesión al cerrar sesión manualmente."""
+    if not token:
+        return
+    try:
+        conn = get_connection(db_path)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM user_tokens WHERE token = ?", (token.strip(),))
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
 def crear_usuario(username: str, password_hash: str, nombre_completo: str, rol: str, area_asignada: str = 'TODAS', cargo: str = '', db_path: str = DB_PATH) -> bool:
     """Crea un nuevo usuario en la base de datos."""
     conn = get_connection(db_path)

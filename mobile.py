@@ -10,7 +10,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from data.database import (
     init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
-    sincronizar_aprobaciones_desde_asistencia, cambiar_password_usuario, obtener_usuario_by_username
+    sincronizar_aprobaciones_desde_asistencia, cambiar_password_usuario, obtener_usuario_by_username,
+    crear_token_sesion, validar_token_sesion, eliminar_token_sesion
 )
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password, verify_password
 
@@ -246,111 +247,70 @@ st.markdown("""
         font-weight: 600 !important;
         font-size: 13px !important;
     }
+    /* Íconos SVG fijos integrados a la izquierda en los inputs */
+    input[aria-label="Usuario"] {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: 14px center !important;
+        background-size: 18px 18px !important;
+        padding-left: 42px !important;
+    }
+    input[aria-label="Contraseña"] {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: 14px center !important;
+        background-size: 18px 18px !important;
+        padding-left: 42px !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# AUTO-LOGIN SI "RECORDARME" ESTÁ ACTIVO
+# AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    saved_user = st.query_params.get("user", "")
-    if saved_user and f"auth_token_{saved_user}" in st.session_state:
-        # Re-autenticar automáticamente
-        st.session_state["authenticated"] = True
-        st.session_state["current_user"] = st.session_state[f"auth_token_{saved_user}"]
+    persisted_token = st.query_params.get("token", "")
+    if persisted_token:
+        user_data = validar_token_sesion(persisted_token)
+        if user_data and user_data.get("activo", 1) == 1:
+            st.session_state["authenticated"] = True
+            st.session_state["user"] = {
+                "id": user_data["id"],
+                "username": user_data["username"],
+                "nombre_completo": user_data["nombre_completo"],
+                "rol": user_data["rol"],
+                "area_asignada": user_data["area_asignada"],
+                "cargo": user_data.get("cargo", "")
+            }
 
 # ---------------------------------------------------------
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Inyectar fondo minero envolvente en stAppViewContainer e iconos fijos a la izquierda
-    bg_css = f"""
-    <style>
-    .stApp,
-    [data-testid="stAppViewContainer"] {{
-        background: linear-gradient(180deg, rgba(14, 16, 20, 0.60) 0%, rgba(14, 16, 20, 0.85) 45%, #0E1014 100%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
-        background-size: cover !important;
-        background-attachment: fixed !important;
-    }}
-    [data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
-        background-color: transparent !important;
-    }}
-    div[data-testid="stForm"] {{
-        background: rgba(22, 25, 32, 0.88) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        border-radius: 16px !important;
-        padding: 22px 18px !important;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
-    }}
-    /* Posicionamiento relativo para cajones de login */
-    div[data-testid="stForm"] div[data-baseweb="input"] {{
-        position: relative !important;
-    }}
-    /* Ícono permanente de Usuario a la izquierda */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"]::before {{
-        content: "👤";
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 15px;
-        opacity: 0.8;
-        z-index: 5;
-        pointer-events: none;
-    }}
-    /* Ícono permanente de Contraseña a la izquierda */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"]::before {{
-        content: "🔒";
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 15px;
-        opacity: 0.8;
-        z-index: 5;
-        pointer-events: none;
-    }}
-    /* El cursor y el texto ingresado inician limpiamente después del ícono */
-    div[data-testid="stForm"] div[data-baseweb="input"] input {{
-        padding-left: 42px !important;
-    }}
-    </style>
-    """ if hero_b64 else """
-    <style>
-    /* Posicionamiento relativo para cajones de login */
-    div[data-testid="stForm"] div[data-baseweb="input"] {
-        position: relative !important;
-    }
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"]::before {
-        content: "👤";
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 15px;
-        opacity: 0.8;
-        z-index: 5;
-        pointer-events: none;
-    }
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"]::before {
-        content: "🔒";
-        position: absolute;
-        left: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 15px;
-        opacity: 0.8;
-        z-index: 5;
-        pointer-events: none;
-    }
-    div[data-testid="stForm"] div[data-baseweb="input"] input {
-        padding-left: 42px !important;
-    }
-    </style>
-    """
-    st.markdown(bg_css, unsafe_allow_html=True)
+    # Inyectar fondo minero envolvente en stAppViewContainer
+    if hero_b64:
+        st.markdown(f"""
+<style>
+.stApp,
+[data-testid="stAppViewContainer"] {{
+    background: linear-gradient(180deg, rgba(14, 16, 20, 0.60) 0%, rgba(14, 16, 20, 0.85) 45%, #0E1014 100%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+}}
+[data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
+    background-color: transparent !important;
+}}
+div[data-testid="stForm"] {{
+    background: rgba(22, 25, 32, 0.88) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    padding: 22px 18px !important;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
     st.markdown(f"""
 <div style="text-align: center; padding: 25px 0 15px 0;">
@@ -384,8 +344,8 @@ APLICACIÓN MÓVIL PARA APROBACIONES
             if u_name and u_pass:
                 if login_user(u_name.strip(), u_pass.strip()):
                     if recordarme:
-                        st.query_params["user"] = u_name.strip().lower()
-                        st.session_state[f"auth_token_{u_name.strip().lower()}"] = get_current_user()
+                        new_token = crear_token_sesion(u_name.strip())
+                        st.query_params["token"] = new_token
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
@@ -444,8 +404,9 @@ with col_head2:
                         st.error("Error al actualizar la contraseña.")
 with col_head3:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        if "user" in st.query_params:
-            del st.query_params["user"]
+        if "token" in st.query_params:
+            eliminar_token_sesion(st.query_params["token"])
+            del st.query_params["token"]
         logout_user()
         st.rerun()
 
