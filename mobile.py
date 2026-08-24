@@ -41,6 +41,7 @@ def get_hero_base64():
             return base64.b64encode(f.read()).decode()
     return ""
 
+@st.cache_data(show_spinner=False)
 def get_worker_avatar_url(dni: str, worker_name: str) -> str:
     if dni:
         dni_clean = str(dni).strip().lstrip('0').zfill(8)
@@ -623,7 +624,7 @@ with tab_historial:
     if df_hist.empty:
         st.info("No hay registros en el historial para este filtro.")
     else:
-        root_dir = os.path.dirname(os.path.abspath(__file__))
+        cards_list = []
         for idx, row in df_hist.iterrows():
             worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
             cargo = row.get('cargo', '')
@@ -632,14 +633,12 @@ with tab_historial:
             he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
             aprobador = row.get('aprobado_por', 'Sistema')
-            c_aprob = row.get('comentario_n1', '') or row.get('comentario_n2', '')
-            adjunto = row.get('adjuntos', '')
             
             badge_html = f'<span class="badge-approved">APROBADO</span>' if estado == 'APROBADO' else (
                 f'<span class="badge-rejected">RECHAZADO</span>' if estado == 'RECHAZADO' else f'<span class="badge-pending">PENDIENTE</span>'
             )
             
-            st.markdown(f"""
+            cards_list.append(f"""
             <div class="approval-card">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="worker-name">{worker_name}</div>
@@ -653,7 +652,8 @@ with tab_historial:
                 </div>
                 <div style="font-size: 10px; color: #6C727F; margin-top: 6px;">Por: {aprobador}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
+        st.markdown("".join(cards_list), unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 3: DASHBOARD DE ESTADÍSTICAS

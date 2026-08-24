@@ -53,21 +53,23 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* Contenedor que oculta el footer 'Built with Streamlit' */
     #app-box {
-      position: fixed;
-      inset: 0;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
       background: #121418;
     }
 
     iframe {
-      width: 100vw;
-      /* Extra 52px para expulsar el footer de Streamlit fuera de pantalla */
-      height: calc(100dvh + 52px);
+      width: 100%;
+      height: calc(100% + 46px);
       border: none;
       display: block;
       background: #121418;
+      margin-bottom: -46px;
     }
 
     /* Barra flotante superior de instalación (discreta y cerrable) */
@@ -135,7 +137,7 @@
   <div id="app-box">
     <iframe
       id="st-frame"
-      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer&embed_options=disable_scrolling"
+      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer"
       allow="camera;microphone;geolocation;clipboard-read;clipboard-write">
     </iframe>
   </div>
