@@ -171,9 +171,8 @@
   <div id="app-container">
     <iframe 
       id="app-frame" 
-      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=disable_scrolling"
-      allow="camera; microphone; geolocation; clipboard-read; clipboard-write"
-      allowfullscreen>
+      src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true&embed_options=hide_footer&embed_options=disable_scrolling&embed_options=dark_theme"
+      allow="camera; microphone; geolocation; clipboard-read; clipboard-write">
     </iframe>
   </div>
 
@@ -185,25 +184,26 @@
     const frame = document.getElementById('app-frame');
     const splash = document.getElementById('splash-screen');
 
-    // Transición suave: Mantener Splash Screen exactamente hasta que Streamlit termine de pintar todo el login (evita parches)
-    frame.addEventListener('load', () => {
-      setTimeout(() => {
-        frame.classList.add('ready');
-        splash.style.opacity = '0';
-        setTimeout(() => {
-          splash.style.visibility = 'hidden';
-        }, 700);
-      }, 3500);
-    });
-
-    // Fallback de seguridad
-    setTimeout(() => {
+    function hideSplash() {
       frame.classList.add('ready');
       splash.style.opacity = '0';
-      setTimeout(() => {
-        splash.style.visibility = 'hidden';
-      }, 700);
-    }, 5500);
+      setTimeout(() => { splash.style.visibility = 'hidden'; }, 700);
+    }
+
+    // Escuchar mensajes de Streamlit (dispara cuando el app ya cargó completamente)
+    window.addEventListener('message', (e) => {
+      if (e.data && (e.data.type === 'streamlit:ready' || e.data.isStreamlitMessage)) {
+        setTimeout(hideSplash, 1200);
+      }
+    });
+
+    // Después del load del iframe, esperar 6s para que Streamlit pinte todo en modo oscuro limpio
+    frame.addEventListener('load', () => {
+      setTimeout(hideSplash, 6000);
+    });
+
+    // Fallback absoluto de seguridad: máximo 8 segundos
+    setTimeout(hideSplash, 8000);
 
     // Manejo de Instalación PWA
     let deferredPrompt;
