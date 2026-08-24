@@ -99,23 +99,48 @@ st.markdown("""
     .stApp[data-test-script-state="running"] {
         opacity: 1 !important;
     }
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stDecoration"],
-    div[data-testid="stToolbar"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-
-    /* Ocultar completamente Sidebar, Header de Streamlit y Footers */
-    section[data-testid="stSidebar"],
-    div[data-testid="stSidebarCollapsedControl"],
+    /* Ocultar Barra Superior de Streamlit Cloud (Stop, Fork, GitHub, Menu, Accesibilidad) */
+    header,
     header[data-testid="stHeader"],
-    footer,
-    .stDeployButton {
+    [data-testid="stHeader"],
+    #MainMenu,
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    .stDeployButton,
+    div[class*="viewerBadge"],
+    div[class*="StatusWidget"],
+    div[class*="Toolbar"],
+    div[class*="Header"],
+    div[class*="accessibility"],
+    button[aria-label="Manage app"],
+    div[data-testid="stDecoration"],
+    section[data-testid="stSidebar"],
+    div[data-testid="stSidebarCollapsedControl"] {
         display: none !important;
         visibility: hidden !important;
         width: 0px !important;
         height: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* Ocultar Barra Inferior de Streamlit Cloud (Created by / Hosted with Streamlit) */
+    footer,
+    footer[data-testid="stFooter"],
+    div[class*="viewerBadge"],
+    div[class*="styles_viewerBadge"],
+    div[class*="viewerBadge_container"],
+    div[class*="FloatingProfile"],
+    div[data-testid="stEmbedCode"],
+    a[href*="streamlit.io"],
+    div:has(> a[href*="streamlit.io"]),
+    div:has(> a[href*="github.com"]) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
     }
 
     /* Fondo oscuro nativo PWA GZG */
@@ -485,7 +510,7 @@ with tab_pendientes:
                 )
                 
                 uploaded_file = st.file_uploader(
-                    "📷 Adjuntar Foto / Imagen de Sustento (opcional)",
+                    "📷 Adjuntar Foto",
                     type=["png", "jpg", "jpeg"],
                     key=f"m_file_{sol_id}"
                 )
