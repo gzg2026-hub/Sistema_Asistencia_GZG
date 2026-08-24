@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GZG MINERALES</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#121418">
+  <meta name="background-color" content="#121418">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
+  <meta name="application-name" content="GZG MINERALES">
+  
+  <!-- Icons & Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
+  <link rel="shortcut icon" href="assets/favicon.png">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #121418;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #FFFFFF;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    #app-frame {
+      width: 100vw;
+      height: 100dvh;
+      border: none;
+      outline: none;
+      display: block;
+      background-color: #121418;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      background-color: #121418;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out, visibility 0.5s ease-out;
+    }
+
+    .splash-logo {
+      width: 110px;
+      height: 110px;
+      object-fit: contain;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 8px 24px rgba(245, 130, 32, 0.35));
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    .splash-title {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .splash-title span.gzg { color: #FFFFFF; }
+    .splash-title span.min { color: #F58220; }
+
+    .splash-sub {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9A9EA7;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 35px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(245, 130, 32, 0.2);
+      border-top-color: #F58220;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* Botón flotante para instalar si no está instalado */
+    #install-banner {
+      position: fixed;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #F58220 0%, #D96A0B 100%);
+      color: #FFFFFF;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 14px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px rgba(245, 130, 32, 0.5);
+      z-index: 10000;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash Screen con Branding GZG -->
+  <div id="splash-screen">
+    <img src="assets/gzg_logo.png" alt="GZG Minerales" class="splash-logo">
+    <div class="splash-title"><span class="gzg">GZG</span> <span class="min">MINERALES</span></div>
+    <div class="splash-sub">SISTEMA DE ASISTENCIA Y APROBACIONES</div>
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Botón de instalación nativa de la App -->
+  <button id="install-banner" onclick="installApp()">
+    📲 Instalar App GZG
+  </button>
+
+  <!-- Iframe con la aplicación Streamlit limpia en modo embed -->
+  <iframe 
+    id="app-frame" 
+    src="https://gzg-aprobaciones-movil.streamlit.app/?embed=true"
+    allow="camera; microphone; geolocation; clipboard-read; clipboard-write"
+    allowfullscreen>
+  </iframe>
+
+  <script>
+    // Registrar Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    const frame = document.getElementById('app-frame');
+    const splash = document.getElementById('splash-screen');
+
+    // Ocultar Splash Screen cuando el iframe carga
+    frame.addEventListener('load', () => {
+      setTimeout(() => {
+        splash.style.opacity = '0';
+        splash.style.visibility = 'hidden';
+      }, 600);
+    });
+
+    // Fallback de seguridad para ocultar splash si demora
+    setTimeout(() => {
+      splash.style.opacity = '0';
+      splash.style.visibility = 'hidden';
+    }, 4500);
+
+    // Manejo de Instalación PWA (beforeinstallprompt)
+    let deferredPrompt;
+    const installBtn = document.getElementById('install-banner');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = 'flex';
+    });
+
+    function installApp() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            installBtn.style.display = 'none';
+          }
+          deferredPrompt = null;
+        });
+      }
+    }
+
+    window.addEventListener('appinstalled', () => {
+      installBtn.style.display = 'none';
+    });
+  </script>
+</body>
+</html>
