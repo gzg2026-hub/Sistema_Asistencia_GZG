@@ -399,6 +399,37 @@ st.markdown("""
         touch-action: manipulation !important;
     }
 
+    /* FORZAR FILA HORIZONTAL ÚNICA EN TODAS LAS PANTALLAS (MÓVIL, TABLET, PC) */
+    div[data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 6px !important;
+    }
+
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+        width: auto !important;
+        min-width: 0px !important;
+        flex: 1 1 0px !important;
+    }
+
+    /* Barra Superior de Usuario: Botones compactos y proporcionados */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child {
+        flex: 2 1 0px !important;
+    }
+
+    div[data-testid="stHorizontalBlock"] button,
+    div[data-testid="stHorizontalBlock"] div[data-testid="stPopover"] > button {
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0 4px !important;
+        font-size: 12px !important;
+        border-radius: 8px !important;
+        margin: 0 !important;
+    }
+
     /* PUNTO 4/5: Botón Rechazar — Rojo Carmesí Sólido con Texto Blanco */
     div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"],
     div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"],
@@ -408,7 +439,9 @@ st.markdown("""
         border: 1px solid #E74C3C !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 12px rgba(192, 57, 43, 0.35) !important;
+        font-size: 13px !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: 0 4px 12px rgba(192, 57, 43, 0.4) !important;
     }
     div[data-testid="column"]:nth-of-type(1) button[data-testid="baseButton-secondary"] p,
     div[data-testid="column"]:first-child button[data-testid="baseButton-secondary"] p,
@@ -557,28 +590,37 @@ rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
 # Cabecera Central Corporativa GZG en Dashboard
 st.markdown(f"""
-<div style="text-align: center; padding: 2px 0 4px 0;">
-    <div style="margin-bottom: 3px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 52px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
+<div style="text-align: center; padding: 2px 0 2px 0; margin-top: -1.2rem;">
+    <div style="margin-bottom: 2px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 48px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
     </div>
-    <div style="font-size: 20px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+    <div style="font-size: 19px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.95;">
         CONTROL DE ASISTENCIA
     </div>
 </div>
 """, unsafe_allow_html=True)
 
 # Barra Única Horizontal de Usuario y Acciones (1 Sola Línea sin apilamiento)
-col_usr, col_ref, col_pw, col_out = st.columns([1.8, 0.7, 1.1, 1.1])
+col_usr, col_ref, col_pw, col_out = st.columns([2.0, 0.8, 1.1, 1.1])
 with col_usr:
-    st.markdown(f"<div style='padding-top: 6px; font-size: 12px; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>👋 <b>{username}</b> <span style='color: #9A9EA7; font-size: 10px;'>({rol})</span></div>", unsafe_allow_html=True)
+    st.markdown(f"""
+<div style="padding-top: 2px; line-height: 1.2;">
+    <div style="font-size: 12px; font-weight: 800; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        👋 {username}
+    </div>
+    <div style="font-size: 9px; font-weight: 700; color: #F58220; text-transform: uppercase; letter-spacing: 0.5px;">
+        {rol}
+    </div>
+</div>
+""", unsafe_allow_html=True)
 with col_ref:
     if st.button("🔄", key="btn_refresh_bar", help="Actualizar solicitudes", use_container_width=True):
         st.rerun()
 with col_pw:
-    with st.popover("🔑 Clave"):
+    with st.popover("🔑 Clave", use_container_width=True):
         st.markdown("##### 🔑 Cambiar Contraseña")
         with st.form("form_header_change_pw"):
             p_act_h = st.text_input("Contraseña Actual", type="password")
