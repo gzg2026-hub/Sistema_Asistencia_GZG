@@ -291,89 +291,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# AUTO-LOGIN PERSISTENTE CON LOCALSTORAGE/COOKIES Y LIMPIEZA TOTAL DE STREAMLIT CLOUD
+# AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
 # ---------------------------------------------------------
-import streamlit.components.v1 as components
-
-components.html("""
-<script>
-(function() {
-    // 1. INYECTAR ESTILOS OCULTADORES EN EL DOCUMENTO PADRE (STREAMLIT CLOUD VIEWER)
-    function stripStreamlitCloudChrome() {
-        try {
-            const targets = [window.document, window.parent.document, window.top.document];
-            targets.forEach(doc => {
-                if (!doc) return;
-                if (!doc.getElementById('gzg-cloud-strip-style')) {
-                    const style = doc.createElement('style');
-                    style.id = 'gzg-cloud-strip-style';
-                    style.innerHTML = `
-                        header,
-                        header[data-testid="stHeader"],
-                        [data-testid="stHeader"],
-                        #MainMenu,
-                        [data-testid="stToolbar"],
-                        [data-testid="stDecoration"],
-                        [data-testid="stStatusWidget"],
-                        .stDeployButton,
-                        div[class*="viewerBadge"],
-                        div[class*="viewerHeader"],
-                        div[class*="StatusWidget"],
-                        div[class*="Toolbar"],
-                        div[class*="Header"],
-                        div[class*="accessibility"],
-                        div[class*="FloatingProfile"],
-                        div[class*="styles_viewerBadge"],
-                        div[class*="viewerBadge_container"],
-                        button[aria-label="Manage app"],
-                        footer,
-                        footer[data-testid="stFooter"],
-                        a[href*="streamlit.io"],
-                        div:has(> a[href*="streamlit.io"]),
-                        div:has(> a[href*="github.com"]) {
-                            display: none !important;
-                            visibility: hidden !important;
-                            height: 0px !important;
-                            width: 0px !important;
-                            opacity: 0 !important;
-                            pointer-events: none !important;
-                        }
-                    `;
-                    doc.head.appendChild(style);
-                }
-
-                // Eliminar elementos físicamente del DOM si aparecen
-                const badges = doc.querySelectorAll('div[class*="viewerBadge"], div[class*="viewerHeader"], div[class*="Toolbar"], footer, a[href*="streamlit.io"]');
-                badges.forEach(el => {
-                    el.style.setProperty('display', 'none', 'important');
-                    el.style.setProperty('visibility', 'hidden', 'important');
-                });
-            });
-        } catch(e) {}
-    }
-
-    // Ejecutar inmediatamente y periódicamente
-    stripStreamlitCloudChrome();
-    setInterval(stripStreamlitCloudChrome, 300);
-
-    // 2. SINCRONIZAR TOKEN PERSISTENTE DE RECORDARME
-    try {
-        let token = localStorage.getItem('gzg_auth_token');
-        if (!token) {
-            try { token = window.parent.localStorage.getItem('gzg_auth_token'); } catch(e) {}
-        }
-        if (token) {
-            const pUrl = new URL(window.parent.location.href);
-            if (pUrl.searchParams.get('token') !== token) {
-                pUrl.searchParams.set('token', token);
-                window.parent.location.replace(pUrl.toString());
-            }
-        }
-    } catch(e) {}
-})();
-</script>
-""", height=0, width=0)
-
 if not is_authenticated():
     persisted_token = st.query_params.get("token", "")
     if persisted_token:
@@ -452,13 +371,6 @@ APLICACIÓN MÓVIL PARA APROBACIONES
                     if recordarme:
                         new_token = crear_token_sesion(u_name.strip())
                         st.query_params["token"] = new_token
-                        components.html(f"""
-                        <script>
-                        try {{
-                            localStorage.setItem('gzg_auth_token', '{new_token}');
-                        }} catch(e) {{}}
-                        </script>
-                        """, height=0, width=0)
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
@@ -520,13 +432,6 @@ with col_head3:
         if "token" in st.query_params:
             eliminar_token_sesion(st.query_params["token"])
             del st.query_params["token"]
-        components.html("""
-        <script>
-        try {
-            localStorage.removeItem('gzg_auth_token');
-        } catch(e) {}
-        </script>
-        """, height=0, width=0)
         logout_user()
         st.rerun()
 
