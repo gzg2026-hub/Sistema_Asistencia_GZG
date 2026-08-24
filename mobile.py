@@ -578,6 +578,31 @@ st.markdown("""
 
 
 # ---------------------------------------------------------
+# LOGOUT ANTICIPADO: Se procesa ANTES de renderizar cualquier contenido
+# del dashboard para garantizar un cierre 100% limpio sin artefactos.
+# ---------------------------------------------------------
+if st.session_state.get('_do_logout', False):
+    # Eliminar token de BD si existe
+    _tok = st.session_state.get('_logout_token', '')
+    if _tok:
+        try:
+            eliminar_token_sesion(_tok)
+        except Exception:
+            pass
+    # Limpiar COMPLETAMENTE session_state
+    for _k in list(st.session_state.keys()):
+        del st.session_state[_k]
+    # Limpiar query params
+    try:
+        st.query_params.clear()
+    except Exception:
+        pass
+    # Forzar estado no autenticado y redirigir al login
+    st.session_state['authenticated'] = False
+    st.session_state['user'] = None
+    st.rerun()
+
+# ---------------------------------------------------------
 # AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
 # ---------------------------------------------------------
 if not is_authenticated():
@@ -749,17 +774,14 @@ with col_b1:
 
 with col_b2:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        if "token" in st.query_params:
-            try:
-                eliminar_token_sesion(st.query_params["token"])
-            except Exception:
-                pass
-        st.query_params.clear()
-        logout_user()
-        for k in list(st.session_state.keys()):
-            del st.session_state[k]
-        st.session_state['authenticated'] = False
-        st.session_state['user'] = None
+        # Guardar token para eliminarlo en el próximo ciclo (antes del render)
+        _cur_token = st.query_params.get('token', '')
+        # Limpiar todo el session_state ahora mismo
+        for _k in list(st.session_state.keys()):
+            del st.session_state[_k]
+        # Marcar flag de logout para que el inicio del próximo ciclo lo procese
+        st.session_state['_do_logout'] = True
+        st.session_state['_logout_token'] = _cur_token
         st.rerun()
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
