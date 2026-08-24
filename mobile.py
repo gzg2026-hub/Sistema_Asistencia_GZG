@@ -626,16 +626,37 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# 2 Botones de Acción Simétricos (50% Clave / 50% Salir)
-col_b1, col_b2 = st.columns(2, gap="small")
+# 2 Botones Nativos Gemelos Simétricos (50% Clave a la izquierda / 50% Salir a la derecha)
+col_b1, col_b2 = st.columns(2)
 with col_b1:
-    with st.popover("🔑 Clave", use_container_width=True):
-        st.markdown("##### 🔑 Cambiar Contraseña")
+    if st.button("🔑 Clave", key="btn_toggle_change_pw", use_container_width=True):
+        st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
+        st.rerun()
+
+with col_b2:
+    if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
+        if "token" in st.query_params:
+            eliminar_token_sesion(st.query_params["token"])
+            del st.query_params["token"]
+        logout_user()
+        st.rerun()
+
+# Formulario desplegable para cambiar contraseña al pulsar el botón Clave
+if st.session_state.get("show_change_pw_box", False):
+    with st.expander("🔑 Cambiar mi Contraseña", expanded=True):
         with st.form("form_header_change_pw"):
             p_act_h = st.text_input("Contraseña Actual", type="password")
             p_nue_h = st.text_input("Nueva Contraseña", type="password")
             p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
-            btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
+            with col_f2:
+                btn_h_close = st.form_submit_button("✖ Cerrar", use_container_width=True)
+            
+            if btn_h_close:
+                st.session_state["show_change_pw_box"] = False
+                st.rerun()
             if btn_h_pw:
                 if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
                     st.error("La contraseña actual es incorrecta.")
@@ -648,16 +669,10 @@ with col_b1:
                     if cambiar_password_usuario(username, new_h):
                         st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
                         st.success("Contraseña modificada exitosamente.")
+                        st.session_state["show_change_pw_box"] = False
                         st.rerun()
                     else:
                         st.error("Error al actualizar la contraseña.")
-with col_b2:
-    if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        if "token" in st.query_params:
-            eliminar_token_sesion(st.query_params["token"])
-            del st.query_params["token"]
-        logout_user()
-        st.rerun()
 
 
 
