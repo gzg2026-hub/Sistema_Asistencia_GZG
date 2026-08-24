@@ -117,11 +117,15 @@ st.markdown(f"""
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="app/static/manifest.json">
     <link rel="manifest" href="data:application/manifest+json;base64,{manifest_b64}">
+    <link rel="apple-touch-icon" sizes="180x180" href="app/static/icon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,{icon192_b64}">
+    <link rel="icon" type="image/png" sizes="192x192" href="app/static/icon-192.png">
     <link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,{icon192_b64}">
+    <link rel="icon" type="image/png" sizes="512x512" href="app/static/icon-512.png">
     <link rel="icon" type="image/png" sizes="512x512" href="data:image/png;base64,{icon512_b64}">
-    <link rel="shortcut icon" href="data:image/png;base64,{icon192_b64}">
+    <link rel="shortcut icon" href="app/static/favicon.png">
 </head>
 """, unsafe_allow_html=True)
 
