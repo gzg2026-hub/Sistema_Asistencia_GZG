@@ -221,16 +221,50 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
     if df_trabajadores.empty or 'DNI' not in df_trabajadores.columns:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), {}
 
-    # Limpieza de DNI
+    # Limpieza de DNI y normalización de padrón de trabajadores
     df_trabajadores['DNI_STR'] = df_trabajadores['DNI'].astype(str).str.strip().str.replace(r'\.0$', '', regex=True)
     workers_dict = {}
     for _, tr in df_trabajadores.iterrows():
         d_str = str(tr['DNI_STR']).strip()
         d_clean = d_str.lstrip('0') or '0'
+        d_8 = d_str.lstrip('0').zfill(8)
         tr_info = tr.to_dict()
-        tr_info['OFFICIAL_DNI'] = d_str
+        
+        # Normalización robusta de aliases de columna para Padrón de Trabajadores
+        apellidos_val = ''
+        for k_ap in ['APELLIDOS', 'Apellidos', 'Apellido', 'APELLIDO']:
+            if k_ap in tr_info and pd.notna(tr_info[k_ap]) and str(tr_info[k_ap]).strip() and str(tr_info[k_ap]).strip().lower() != 'nan':
+                apellidos_val = str(tr_info[k_ap]).strip()
+                break
+                
+        nombres_val = ''
+        for k_nom in ['NOMBRES', 'Nombres', 'Nombre', 'NOMBRE']:
+            if k_nom in tr_info and pd.notna(tr_info[k_nom]) and str(tr_info[k_nom]).strip() and str(tr_info[k_nom]).strip().lower() != 'nan':
+                nombres_val = str(tr_info[k_nom]).strip()
+                break
+
+        cargo_val = ''
+        for k_c in ['CARGO', 'Cargo', 'Posición / Cargo', 'Posicion / Cargo', 'Posición', 'Posicion', 'POSICION', 'POSICIÓN']:
+            if k_c in tr_info and pd.notna(tr_info[k_c]) and str(tr_info[k_c]).strip() and str(tr_info[k_c]).strip().lower() != 'nan':
+                cargo_val = str(tr_info[k_c]).strip()
+                break
+                
+        area_val = ''
+        for k_a in ['ÁREA', 'AREA', 'Área', 'Area', 'Departamento / Área', 'Departamento / Area', 'Departamento', 'DEPARTAMENTO']:
+            if k_a in tr_info and pd.notna(tr_info[k_a]) and str(tr_info[k_a]).strip() and str(tr_info[k_a]).strip().lower() != 'nan':
+                area_val = str(tr_info[k_a]).strip()
+                break
+
+        tr_info['APELLIDOS'] = apellidos_val
+        tr_info['NOMBRES'] = nombres_val
+        tr_info['CARGO'] = cargo_val
+        tr_info['ÁREA'] = area_val
+        tr_info['AREA'] = area_val
+        tr_info['OFFICIAL_DNI'] = d_8
+        
         workers_dict[d_str] = tr_info
         workers_dict[d_clean] = tr_info
+        workers_dict[d_8] = tr_info
     
     if df_marcaciones.empty:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), {}
@@ -524,7 +558,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     salida_next_rows = [
                         r for _, r in next_day_swipes.iterrows()
                         if 'salida' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
-                        and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) <= 21600 # <= 06:00 AM
+                        and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) <= 43200 # <= 12:00 PM del día siguiente
                     ]
                     if salida_next_rows:
                         salida_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
