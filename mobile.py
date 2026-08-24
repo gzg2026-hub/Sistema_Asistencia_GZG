@@ -555,13 +555,9 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Cabecera Corporativa con Botón de Refresh en la Esquina Superior Derecha
-col_head_left, col_head_center, col_head_right = st.columns([1, 4, 1])
-with col_head_left:
-    st.write("")
-with col_head_center:
-    st.markdown(f"""
-<div style="text-align: center; padding: 2px 0 2px 0;">
+# Cabecera Central Corporativa GZG en Dashboard
+st.markdown(f"""
+<div style="text-align: center; padding: 2px 0 4px 0;">
     <div style="margin-bottom: 3px;">
         <img src="data:image/png;base64,{logo_b64}" style="height: 52px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
     </div>
@@ -573,47 +569,44 @@ with col_head_center:
     </div>
 </div>
 """, unsafe_allow_html=True)
-with col_head_right:
-    st.markdown("<div style='padding-top: 6px;'></div>", unsafe_allow_html=True)
-    if st.button("🔄", key="btn_refresh_top_right", help="Actualizar datos", use_container_width=True):
-        st.rerun()
 
-# Fila de Información de Usuario y Botones de Clave y Salir
-col_user, col_actions = st.columns([1.5, 1.5])
-with col_user:
-    st.markdown(f"<div style='padding-top: 6px; font-size: 13px; font-weight: 600; color: #FFFFFF;'>👋 <b>Hola, {username}</b> <span style='color: #9A9EA7; font-size: 11px;'>({rol})</span></div>", unsafe_allow_html=True)
-with col_actions:
-    c_act1, c_act2 = st.columns([1.1, 1.1])
-    with c_act1:
-        with st.popover("🔑 Clave"):
-            st.markdown("##### 🔑 Cambiar Contraseña")
-            with st.form("form_header_change_pw"):
-                p_act_h = st.text_input("Contraseña Actual", type="password")
-                p_nue_h = st.text_input("Nueva Contraseña", type="password")
-                p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
-                btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
-                if btn_h_pw:
-                    if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
-                        st.error("La contraseña actual es incorrecta.")
-                    elif not p_nue_h or len(p_nue_h) < 4:
-                        st.warning("Debe tener al menos 4 caracteres.")
-                    elif p_nue_h != p_cnf_h:
-                        st.error("Las contraseñas no coinciden.")
+# Barra Única Horizontal de Usuario y Acciones (1 Sola Línea sin apilamiento)
+col_usr, col_ref, col_pw, col_out = st.columns([1.8, 0.7, 1.1, 1.1])
+with col_usr:
+    st.markdown(f"<div style='padding-top: 6px; font-size: 12px; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>👋 <b>{username}</b> <span style='color: #9A9EA7; font-size: 10px;'>({rol})</span></div>", unsafe_allow_html=True)
+with col_ref:
+    if st.button("🔄", key="btn_refresh_bar", help="Actualizar solicitudes", use_container_width=True):
+        st.rerun()
+with col_pw:
+    with st.popover("🔑 Clave"):
+        st.markdown("##### 🔑 Cambiar Contraseña")
+        with st.form("form_header_change_pw"):
+            p_act_h = st.text_input("Contraseña Actual", type="password")
+            p_nue_h = st.text_input("Nueva Contraseña", type="password")
+            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password")
+            btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
+            if btn_h_pw:
+                if current_user and not verify_password(p_act_h, current_user.get('password_hash', '')):
+                    st.error("La contraseña actual es incorrecta.")
+                elif not p_nue_h or len(p_nue_h) < 4:
+                    st.warning("Debe tener al menos 4 caracteres.")
+                elif p_nue_h != p_cnf_h:
+                    st.error("Las contraseñas no coinciden.")
+                else:
+                    new_h = hash_password(p_nue_h)
+                    if cambiar_password_usuario(username, new_h):
+                        st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
+                        st.success("Contraseña modificada exitosamente.")
+                        st.rerun()
                     else:
-                        new_h = hash_password(p_nue_h)
-                        if cambiar_password_usuario(username, new_h):
-                            st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
-                            st.success("Contraseña modificada exitosamente.")
-                            st.rerun()
-                        else:
-                            st.error("Error al actualizar la contraseña.")
-    with c_act2:
-        if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-            if "token" in st.query_params:
-                eliminar_token_sesion(st.query_params["token"])
-                del st.query_params["token"]
-            logout_user()
-            st.rerun()
+                        st.error("Error al actualizar la contraseña.")
+with col_out:
+    if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
+        if "token" in st.query_params:
+            eliminar_token_sesion(st.query_params["token"])
+            del st.query_params["token"]
+        logout_user()
+        st.rerun()
 
 
 
