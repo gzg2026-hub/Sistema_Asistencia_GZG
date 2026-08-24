@@ -660,11 +660,11 @@ nombre_saludo = get_user_display_name(current_user, username)
 
 # Cabecera Central Corporativa GZG en Dashboard
 st.markdown(f"""
-<div style="text-align: center; padding: 2px 0 2px 0; margin-top: -1.2rem;">
+<div style="text-align: center; padding: 0 0 2px 0; margin-top: -2.8rem;">
     <div style="margin-bottom: 2px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 48px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 44px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,0,0,0.55));">
     </div>
-    <div style="font-size: 19px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+    <div style="font-size: 18px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
     <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.95;">
