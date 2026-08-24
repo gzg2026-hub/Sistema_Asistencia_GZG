@@ -208,6 +208,11 @@ def init_db(db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
+    try:
+        sincronizar_padron_desde_excel(db_path)
+    except Exception:
+        pass
+
 def clean_dni(val) -> str:
     """Normaliza cualquier DNI respetando estrictamente la Regla Invariante de 8 dígitos (zfill(8))."""
     if pd.isna(val) or val is None or str(val).strip() == '':
@@ -279,11 +284,84 @@ def guardar_trabajadores(df_trabajadores: pd.DataFrame, db_path: str = DB_PATH):
         print(f"Aviso al actualizar Padron_Trabajadores_GZG.xlsx: {e_p}")
 
 
+def sincronizar_padron_desde_excel(db_path: str = DB_PATH):
+    """Lee Padron_Trabajadores_GZG.xlsx e inserta/actualiza todos los trabajadores con sus aprobadores N1 y N2."""
+    padron_path = os.path.join(ROOT_DIR, "Padron_Trabajadores_GZG.xlsx")
+    if not os.path.exists(padron_path):
+        return
+    try:
+        df_raw = pd.read_excel(padron_path, header=None, dtype=str)
+        if len(df_raw) < 3:
+            return
+        df_data = df_raw.iloc[3:].copy()
+        df_data.columns = ['dni', 'apellidos', 'nombres', 'area', 'cargo', 'estado', 'aprobador_n1', 'aprobador_n2']
+        df_data = df_data.dropna(subset=['dni'])
+        df_data['dni'] = df_data['dni'].astype(str).str.strip().str.lstrip('0').str.zfill(8)
+        df_data = df_data[df_data['dni'].str.len() == 8]
+        df_data = df_data[df_data['dni'] != '00000DNI']
+
+        conn = get_connection(db_path)
+        cursor = conn.cursor()
+
+        # Asegurar columnas
+        cols_trab = [row[1] for row in cursor.execute("PRAGMA table_info(trabajadores)").fetchall()]
+        if 'aprobador_n1' not in cols_trab:
+            cursor.execute("ALTER TABLE trabajadores ADD COLUMN aprobador_n1 TEXT")
+        if 'aprobador_n2' not in cols_trab:
+            cursor.execute("ALTER TABLE trabajadores ADD COLUMN aprobador_n2 TEXT")
+
+        for _, r in df_data.iterrows():
+            dni = r['dni']
+            ape = quitar_tildes(str(r.get('apellidos', ''))).strip()
+            nom = quitar_tildes(str(r.get('nombres', ''))).strip()
+            cargo = str(r.get('cargo', '')).strip()
+            area = str(r.get('area', '')).strip()
+            n1 = str(r.get('aprobador_n1', '')).strip().lower()
+            n2 = str(r.get('aprobador_n2', '')).strip().lower()
+            if n1 in ('nan', 'none', ''): n1 = None
+            if n2 in ('nan', 'none', ''): n2 = None
+
+            cursor.execute("""
+                INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, aprobador_n1, aprobador_n2, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(dni) DO UPDATE SET
+                    apellidos = excluded.apellidos,
+                    nombres = excluded.nombres,
+                    cargo = excluded.cargo,
+                    area = excluded.area,
+                    aprobador_n1 = excluded.aprobador_n1,
+                    aprobador_n2 = excluded.aprobador_n2,
+                    updated_at = CURRENT_TIMESTAMP
+            """, (dni, ape, nom, cargo, area, n1, n2))
+
+        conn.commit()
+
+        # Actualizar tabla aprobaciones existente
+        for _, r in df_data.iterrows():
+            dni = r['dni']
+            cargo = str(r.get('cargo', '')).strip()
+            area = str(r.get('area', '')).strip()
+            n1 = str(r.get('aprobador_n1', '')).strip().lower()
+            n2 = str(r.get('aprobador_n2', '')).strip().lower()
+            if n1 in ('nan', 'none', ''): n1 = None
+            if n2 in ('nan', 'none', ''): n2 = None
+            cursor.execute("""
+                UPDATE aprobaciones
+                SET aprobador_n1 = ?, aprobador_n2 = ?, cargo = ?, area = ?
+                WHERE dni = ?
+            """, (n1, n2, cargo, area, dni))
+
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Aviso] Sincronización Padrón desde Excel: {e}")
+
+
 def actualizar_excel_padron_trabajadores(db_path: str = DB_PATH):
-    """Sincroniza el archivo local Padron_Trabajadores_GZG.xlsx con la base de datos."""
+    """Sincroniza el archivo local Padron_Trabajadores_GZG.xlsx con la base de datos (8 columnas completas)."""
     padron_path = os.path.join(ROOT_DIR, "Padron_Trabajadores_GZG.xlsx")
     conn = get_connection(db_path)
-    df_db = pd.read_sql_query("SELECT dni, apellidos, nombres, cargo, area FROM trabajadores", conn)
+    df_db = pd.read_sql_query("SELECT dni, apellidos, nombres, cargo, area, aprobador_n1, aprobador_n2 FROM trabajadores", conn)
     conn.close()
 
     if df_db.empty:
@@ -291,7 +369,6 @@ def actualizar_excel_padron_trabajadores(db_path: str = DB_PATH):
 
     import openpyxl
     from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
-    from openpyxl.utils import get_column_letter
 
     df_db['dni'] = df_db['dni'].astype(str).str.strip().str.zfill(8)
     df_db['apellidos'] = df_db['apellidos'].astype(str).apply(quitar_tildes)
@@ -319,14 +396,14 @@ def actualizar_excel_padron_trabajadores(db_path: str = DB_PATH):
         top=Side(style='thin', color='D9D9D9'), bottom=Side(style='thin', color='D9D9D9')
     )
 
-    ws.merge_cells("A1:F1")
+    ws.merge_cells("A1:H1")
     ws.row_dimensions[1].height = 28
     ws["A1"] = "PADRÓN OFICIAL DE TRABAJADORES Y PERSONAL REGISTRADO - GZG MINERALES"
     ws["A1"].fill = fill_banner
     ws["A1"].font = font_banner
     ws["A1"].alignment = align_center
 
-    ws.merge_cells("A2:F2")
+    ws.merge_cells("A2:H2")
     ws.row_dimensions[2].height = 18
     fill_sub = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
     font_sub = Font(name="Calibri", size=10, italic=True, bold=True, color="1F4E78")
@@ -335,7 +412,7 @@ def actualizar_excel_padron_trabajadores(db_path: str = DB_PATH):
     ws["A2"].font = font_sub
     ws["A2"].alignment = align_center
 
-    headers = ["DNI", "Apellidos", "Nombres", "Departamento / Área", "Posición / Cargo", "Estado en Sistema"]
+    headers = ["DNI", "Apellidos", "Nombres", "Departamento / Área", "Posición / Cargo", "Estado en Sistema", "Nivel de Aprobacion 1", "Nivel de Aprobacion 2"]
     ws.row_dimensions[3].height = 25
     ws.append(headers)
 
@@ -352,27 +429,33 @@ def actualizar_excel_padron_trabajadores(db_path: str = DB_PATH):
         area = str(r['area']).strip()
         cargo = str(r['cargo']).strip()
         estado = "Activo"
+        n1 = str(r['aprobador_n1']).strip() if pd.notna(r['aprobador_n1']) and str(r['aprobador_n1']).strip() != 'None' else ""
+        n2 = str(r['aprobador_n2']).strip() if pd.notna(r['aprobador_n2']) and str(r['aprobador_n2']).strip() != 'None' else ""
 
-        ws.append([dni, ape, nom, area, cargo, estado])
+        ws.append([dni, ape, nom, area, cargo, estado, n1, n2])
         c_row = ws.max_row
         ws.row_dimensions[c_row].height = 20
 
-        for c_i in range(1, 7):
+        for c_i in range(1, 9):
             cell = ws.cell(row=c_row, column=c_i)
             cell.font = font_data
             cell.border = thin_border
-            if c_i in (1, 6):
+            if c_i in (1, 6, 7, 8):
                 cell.alignment = align_center
                 if c_i == 1:
                     cell.number_format = '@'
             else:
                 cell.alignment = align_left
 
-    widths = {1: 15, 2: 28, 3: 26, 4: 26, 5: 30, 6: 18}
+
+    from openpyxl.utils import get_column_letter
+
+    widths = {1: 15, 2: 28, 3: 26, 4: 26, 5: 30, 6: 18, 7: 24, 8: 24}
     for c_idx, w in widths.items():
         ws.column_dimensions[get_column_letter(c_idx)].width = w
 
     wb.save(padron_path)
+
 
 def guardar_marcaciones_raw(df_marcaciones: pd.DataFrame, archivo_origen: str = "", db_path: str = DB_PATH):
     """Inserta transacciones de marcación raw en la base de datos."""

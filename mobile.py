@@ -235,148 +235,86 @@ st.markdown("""
         color: #FFFFFF !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
-        touch-action: pan-y !important;
-    }
-
-    /* Padding compacto superior e inferior para vista móvil */
+        touch-action: pan-y !important    /* Padding compacto superior e inferior para vista móvil */
     .main .block-container {
-        padding: 0.15rem 0.5rem 60px 0.5rem !important;
+        padding: 0rem 0.5rem 50px 0.5rem !important;
         max-width: 500px !important;
         margin: 0 auto !important;
         width: 100% !important;
     }
-</style>
-""", unsafe_allow_html=True)
 
-import streamlit.components.v1 as components
-
-# ===========================================================================
-# JS: MutationObserver para limpiar parches de Streamlit (sin setInterval)
-# + Inyección de íconos SVG reales en los inputs de login (persistentes)
-# + localStorage para token "Recordarme" entre sesiones PWA
-# ===========================================================================
-components.html("""
-<script>
-(function() {
-    // ---------- 1. Limpieza de elementos Streamlit via MutationObserver ----------
-    var TARGETS_TO_HIDE = [
-        'footer',
-        '[data-testid="stFooter"]',
-        '[data-testid="stToolbar"]',
-        '[data-testid="stDecoration"]',
-        '[data-testid="stStatusWidget"]',
-        '[data-testid="stEmbedCode"]',
-        '[class*="viewerBadge"]',
-        '[class*="FloatingProfile"]',
-        '[class*="stAppDeployButton"]',
-        'a[href*="streamlit.io"]'
-    ];
-
-    function hideTargets(doc) {
-        TARGETS_TO_HIDE.forEach(function(sel) {
-            try {
-                doc.querySelectorAll(sel).forEach(function(el) {
-                    el.style.setProperty('display', 'none', 'important');
-                    el.style.setProperty('visibility', 'hidden', 'important');
-                    el.style.setProperty('height', '0px', 'important');
-                    el.style.setProperty('opacity', '0', 'important');
-                    el.style.setProperty('pointer-events', 'none', 'important');
-                });
-            } catch(e) {}
-        });
+    /* Formulario de Login: Contenedor con efecto Glassmorphism */
+    div[data-testid="stForm"] {
+        background: rgba(22, 25, 32, 0.90) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 16px !important;
+        padding: 16px 16px !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
     }
 
-    function startObserver(doc) {
-        hideTargets(doc);
-        var obs = new MutationObserver(function(mutations) {
-            var needsClean = false;
-            mutations.forEach(function(m) { if (m.addedNodes.length) needsClean = true; });
-            if (needsClean) hideTargets(doc);
-        });
-        obs.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
+    /* Bordes e inputs */
+    div[data-baseweb="input"],
+    .stTextInput > div > div,
+    div[data-testid="stFileUploader"] {
+        border: 1px solid #2A2F3D !important;
+        border-radius: 10px !important;
+        background-color: #1A1D24 !important;
+    }
+    div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
+        border: 1px solid #F58220 !important;
+        box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.3) !important;
     }
 
-    try { startObserver(window.parent.document); } catch(e) {}
-    try { startObserver(document); } catch(e) {}
-
-    // ---------- 2. Auto-login con token desde localStorage ----------
-    // Si existe token en localStorage y NO en la URL, lo inyecta en la URL para activar auto-login
-    function checkLocalStorageToken() {
-        try {
-            var doc = window.parent.document;
-            var pwin = window.parent;
-            var stored = localStorage.getItem('gzg_auth_token');
-            if (stored && stored.length > 10) {
-                var url = new URL(pwin.location.href);
-                if (!url.searchParams.get('token')) {
-                    url.searchParams.set('token', stored);
-                    pwin.history.replaceState({}, '', url.toString());
-                    pwin.location.reload();
-                }
-            }
-        } catch(e) {}
+    /* =========================================================================
+       PUNTO 1: ÍCONOS PUROS NATIVOS EN LOS INPUTS DE LOGIN (USUARIO Y CONTRASEÑA)
+       Anclados al contenedor data-baseweb="input" para persistencia indestructible
+       ========================================================================= */
+    /* Input 1: Usuario (Ícono Personita 👤) */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"] {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: 12px center !important;
+        background-size: 18px 18px !important;
     }
-    // Solo ejecutar al inicio (no en loop)
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', checkLocalStorageToken);
-    } else {
-        setTimeout(checkLocalStorageToken, 200);
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input {
+        padding-left: 40px !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
 
-    // ---------- 3. Íconos persistentes en inputs de login ----------
-    var ICON_USER_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9A9EA7" style="width:18px;height:18px;position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:10;"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>';
-    var ICON_LOCK_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#9A9EA7" style="width:18px;height:18px;position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:10;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>';
-
-    function injectIcons(doc) {
-        try {
-            var form = doc.querySelector('[data-testid="stForm"]');
-            if (!form) return;
-            var inputs = form.querySelectorAll('[data-testid="stTextInput"]');
-            inputs.forEach(function(inp, idx) {
-                var container = inp.querySelector('[data-baseweb="input"]');
-                if (!container) return;
-                // Evitar doble inyección
-                if (container.querySelector('.gzg-icon-svg')) return;
-                container.style.position = 'relative';
-                var iconWrap = doc.createElement('span');
-                iconWrap.className = 'gzg-icon-svg';
-                iconWrap.style.cssText = 'position:absolute;left:12px;top:50%;transform:translateY(-50%);pointer-events:none;z-index:10;display:flex;align-items:center;';
-                iconWrap.innerHTML = (idx === 0) ? ICON_USER_SVG : ICON_LOCK_SVG;
-                container.appendChild(iconWrap);
-                // Dar padding al input interno para no solaparse
-                var inner = container.querySelector('input');
-                if (inner) {
-                    inner.style.paddingLeft = '42px';
-                    inner.style.background = 'transparent';
-                }
-            });
-        } catch(e) {}
+    /* Input 2: Contraseña (Ícono Candadito 🔒) */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: 12px center !important;
+        background-size: 18px 18px !important;
+    }
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input {
+        padding-left: 40px !important;
+        background: transparent !important;
+        background-color: transparent !important;
     }
 
-    // Intentar inyectar icons cada vez que el DOM cambie (MutationObserver para forms)
-    function startIconObserver(doc) {
-        var iconObs = new MutationObserver(function() {
-            injectIcons(doc);
-        });
-        try {
-            iconObs.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
-            // Intento inicial
-            setTimeout(function() { injectIcons(doc); }, 300);
-            setTimeout(function() { injectIcons(doc); }, 800);
-            setTimeout(function() { injectIcons(doc); }, 1500);
-        } catch(e) {}
+    .stTextInput input, input[type="text"], input[type="password"] {
+        color: #FFFFFF !important;
+        font-size: 15px !important;
+        text-align: left !important;
+    }
+    .stTextInput label p {
+        color: #FFFFFF !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+    }
+    /* Ocultar instrucción "Press Enter to submit form" */
+    [data-testid="InputInstructions"], .stInputInstructions {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        opacity: 0 !important;
     }
 
-    try { startIconObserver(window.parent.document); } catch(e) {}
-    try { startIconObserver(document); } catch(e) {}
-
-})();
-</script>
-""", height=0, width=0)
-
-
-st.markdown("""
-<style>
     /* Cabecera Móvil GZG */
     .mobile-header {
         background: linear-gradient(185deg, #1D212A 0%, #121418 100%);
@@ -458,40 +396,6 @@ st.markdown("""
         gap: 4px !important;
         margin-bottom: 12px !important;
     }
-    /* Bordes sutiles 1px idénticos a los botones secundarios, cards y uploader */
-    div[data-testid="stForm"],
-    div[data-baseweb="input"],
-    .stTextInput > div > div,
-    div[data-testid="stFileUploader"] {
-        border: 1px solid #2A2F3D !important;
-        border-radius: 10px !important;
-        background-color: #1A1D24 !important;
-    }
-    div[data-baseweb="input"]:focus-within, .stTextInput > div > div:focus-within {
-        border: 1px solid #F58220 !important;
-        box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.3) !important;
-    }
-    .stTextInput input, input[type="text"], input[type="password"] {
-        color: #FFFFFF !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        font-size: 15px !important;
-        text-align: left !important;
-    }
-    .stTextInput label p {
-        color: #FFFFFF !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-    }
-    /* Ocultar instruccion "Press Enter to submit form" */
-    [data-testid="InputInstructions"], .stInputInstructions {
-        display: none !important; visibility: hidden !important;
-        height: 0px !important; opacity: 0 !important;
-    }
-    /* Contenedor de input con position relative para iconos JS */
-    div[data-baseweb="input"] {
-        position: relative !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -531,33 +435,25 @@ if not is_authenticated():
 [data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
     background-color: transparent !important;
 }}
-div[data-testid="stForm"] {{
-    background: rgba(22, 25, 32, 0.88) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 16px !important;
-    padding: 22px 18px !important;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7) !important;
-}}
 </style>
 """, unsafe_allow_html=True)
 
+    # PUNTO 1 & PUNTO 4: Subtítulo exacto "APLICACION MOVIL PARA APROBACIONES" y encabezado más arriba
     st.markdown(f"""
-<div style="text-align: center; padding: 12px 0 10px 0;">
-<div style="margin-bottom: 8px;">
-<img src="data:image/png;base64,{logo_b64}" style="height: 80px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
-</div>
-<div style="font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px;">
-<span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
-</div>
-<div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 18px; opacity: 0.95;">
-CONTROL DE ASISTENCIA
-</div>
-<div style="text-align: left; margin-top: 6px; margin-bottom: 10px;">
-<div style="font-size: 24px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
-<div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
-</div>
+<div style="text-align: center; padding: 0px 0 4px 0; margin-top: -1.2rem;">
+    <div style="margin-bottom: 4px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 62px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.6));">
+    </div>
+    <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+        <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
+    </div>
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; opacity: 0.95;">
+        APLICACION MOVIL PARA APROBACIONES
+    </div>
+    <div style="text-align: left; margin-top: 2px; margin-bottom: 8px;">
+        <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
+        <div style="font-size: 12px; color: #9A9EA7;">Inicia sesión para continuar</div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
     
@@ -569,7 +465,7 @@ CONTROL DE ASISTENCIA
         with col_rec:
             recordarme = st.toggle("Recordarme", value=True, key="chk_recordarme_login")
         
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
         btn_login = st.form_submit_button("🔑 INGRESAR", type="primary", use_container_width=True)
         if btn_login:
             if u_name and u_pass:
@@ -577,28 +473,17 @@ CONTROL DE ASISTENCIA
                     if recordarme:
                         new_token = crear_token_sesion(u_name.strip())
                         st.query_params["token"] = new_token
-                        # Guardar tambien en localStorage via JS para persistencia PWA
-                        components.html(f"""
-<script>
-try {{ localStorage.setItem('gzg_auth_token', '{new_token}'); }} catch(e) {{}}
-</script>
-""", height=0, width=0)
                     else:
-                        # No Recordarme: limpiar localStorage
-                        components.html("""
-<script>
-try {{ localStorage.removeItem('gzg_auth_token'); }} catch(e) {{}}
-</script>
-""", height=0, width=0)
+                        if "token" in st.query_params:
+                            del st.query_params["token"]
                     st.rerun()
                 else:
                     st.error("❌ Usuario o contraseña incorrectos.")
             else:
                 st.warning("Por favor ingresa tu usuario y contraseña.")
 
-    
     st.markdown("""
-<div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 20px 0 35px 0; letter-spacing: 0.8px;">
+<div style="text-align: center; font-size: 11px; font-weight: 600; color: #9A9EA7; margin: 16px 0 25px 0; letter-spacing: 0.8px;">
 Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
@@ -612,26 +497,25 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Cabecera Central Corporativa GZG — pegada arriba sin espacio extra
+# PUNTO 4: Cabecera Central Corporativa GZG en Dashboard — pegada arriba
 st.markdown(f"""
-<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -0.8rem;">
-    <div style="margin-bottom: 4px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 55px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
+<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -1.4rem;">
+    <div style="margin-bottom: 2px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 48px; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));">
     </div>
-    <div style="font-size: 20px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
+    <div style="font-size: 18px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 1px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
+    <div style="font-size: 9px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
         CONTROL DE ASISTENCIA
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-
 # Fila de Usuario y Acciones Rápidas
 col_user, col_actions = st.columns([1.6, 1.4])
 with col_user:
-    st.markdown(f"<div style='padding-top: 8px; font-size: 13px; font-weight: 600; color: #FFFFFF;'>👋 <b>Hola, {username}</b> <span style='color: #9A9EA7; font-size: 11px;'>({rol})</span></div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='padding-top: 6px; font-size: 13px; font-weight: 600; color: #FFFFFF;'>👋 <b>Hola, {username}</b> <span style='color: #9A9EA7; font-size: 11px;'>({rol})</span></div>", unsafe_allow_html=True)
 with col_actions:
     c_act1, c_act2 = st.columns(2)
     with c_act1:
@@ -659,18 +543,12 @@ with col_actions:
                             st.error("Error al actualizar la contraseña.")
     with c_act2:
         if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-            # Limpiar token de localStorage antes del logout
-            components.html("""
-<script>
-try { localStorage.removeItem('gzg_auth_token'); } catch(e) {}
-try { window.parent.history.replaceState({}, '', window.parent.location.pathname); } catch(e) {}
-</script>
-""", height=0, width=0)
             if "token" in st.query_params:
                 eliminar_token_sesion(st.query_params["token"])
                 del st.query_params["token"]
             logout_user()
             st.rerun()
+
 
 
 # Cargar data de aprobaciones — sincronizar solo en primera carga de sesión
