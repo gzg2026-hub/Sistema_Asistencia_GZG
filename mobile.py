@@ -631,6 +631,33 @@ current_user = get_current_user()
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
+# Formatear nombre corto para el saludo (Primer Nombre y Apellido)
+def get_user_display_name(u_dict, u_name):
+    if not u_dict:
+        return u_name.title()
+    u = u_dict.get('username', u_name).lower().strip()
+    if u == 'jdelariva':
+        return "Javier De La Riva"
+    if u == 'jagreda':
+        return "Jhon Ágreda"
+    if u == 'jalva':
+        return "Jhon Alva"
+    if u == 'jhuayama':
+        return "Josmell Huayama"
+    if u == 'msanchez':
+        return "Manuel Sánchez"
+    if u == 'admin':
+        return "Administración"
+    nombre_comp = u_dict.get('nombre_completo', '')
+    if nombre_comp:
+        partes = nombre_comp.strip().split()
+        if len(partes) >= 2:
+            return f"{partes[0]} {partes[-1]}".title()
+        return nombre_comp.title()
+    return u_name.title()
+
+nombre_saludo = get_user_display_name(current_user, username)
+
 # Cabecera Central Corporativa GZG en Dashboard
 st.markdown(f"""
 <div style="text-align: center; padding: 2px 0 2px 0; margin-top: -1.2rem;">
@@ -647,7 +674,7 @@ st.markdown(f"""
 
 <div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 7px 12px 6px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
     <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">
-        👋 {username}
+        Hola, {nombre_saludo} 👋
     </div>
     <div style="font-size: 10px; font-weight: 700; color: #F58220; background: rgba(245, 130, 32, 0.15); border: 1px solid rgba(245, 130, 32, 0.3); border-radius: 6px; padding: 2px 8px; letter-spacing: 0.5px; text-transform: uppercase;">
         {rol}
