@@ -274,9 +274,12 @@ st.markdown("""
 
     /* =========================================================================
        ÍCONOS FIJOS EN INPUTS DE LOGIN — INDESTRUCTIBLES EN TODOS LOS ESTADOS
-       Se aplican en: normal, focus, active, hover, autofill y al teclear.
        ========================================================================= */
-    /* Input Usuario 👤 — todos los estados posibles */
+    /* Input Usuario (👤) */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input,
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input:focus,
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input:active,
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input:hover,
     div[data-testid="stForm"] input[type="text"],
     div[data-testid="stForm"] input[type="text"]:focus,
     div[data-testid="stForm"] input[type="text"]:active,
@@ -285,8 +288,7 @@ st.markdown("""
     div[data-testid="stForm"] input[aria-label="Usuario"]:focus,
     div[data-testid="stForm"] input[aria-label="Usuario"]:active,
     input[aria-label="Usuario"],
-    input[aria-label="Usuario"]:focus,
-    input[aria-label="Usuario"]:active {
+    input[aria-label="Usuario"]:focus {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
@@ -299,7 +301,11 @@ st.markdown("""
         caret-color: #F58220 !important;
     }
 
-    /* Input Contraseña 🔒 — todos los estados posibles */
+    /* Input Contraseña (🔒) */
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input,
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input:focus,
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input:active,
+    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input:hover,
     div[data-testid="stForm"] input[type="password"],
     div[data-testid="stForm"] input[type="password"]:focus,
     div[data-testid="stForm"] input[type="password"]:active,
@@ -309,10 +315,7 @@ st.markdown("""
     div[data-testid="stForm"] input[aria-label="Contraseña"]:active,
     input[aria-label="Contraseña"],
     input[aria-label="Contraseña"]:focus,
-    input[aria-label="Contraseña"]:active,
-    input[type="password"],
-    input[type="password"]:focus,
-    input[type="password"]:active {
+    input[type="password"] {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
         background-repeat: no-repeat !important;
         background-position: 14px center !important;
@@ -322,6 +325,16 @@ st.markdown("""
         text-align: left !important;
         color: #FFFFFF !important;
         font-size: 15px !important;
+        caret-color: #F58220 !important;
+    }
+
+    /* Prevenir que el autofill de Android/Chrome oculte el icono o cambie el color */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 50px #1A1D24 inset !important;
+        -webkit-text-fill-color: #FFFFFF !important;
         caret-color: #F58220 !important;
     }
 
@@ -598,30 +611,6 @@ st.markdown("""
 
 
 
-# LOGOUT ANTICIPADO: Se procesa ANTES de renderizar cualquier contenido
-# del dashboard para garantizar un cierre 100% limpio sin artefactos.
-# ---------------------------------------------------------
-if st.session_state.get('_do_logout', False):
-    # Eliminar token de BD si existe
-    _tok = st.session_state.get('_logout_token', '')
-    if _tok:
-        try:
-            eliminar_token_sesion(_tok)
-        except Exception:
-            pass
-    # Limpiar COMPLETAMENTE session_state
-    for _k in list(st.session_state.keys()):
-        del st.session_state[_k]
-    # Limpiar query params
-    try:
-        st.query_params.clear()
-    except Exception:
-        pass
-    # Forzar estado no autenticado y redirigir al login
-    st.session_state['authenticated'] = False
-    st.session_state['user'] = None
-    st.rerun()
-
 # ---------------------------------------------------------
 # AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
 # ---------------------------------------------------------
@@ -794,31 +783,25 @@ with col_b1:
 
 with col_b2:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        # Eliminar token de BD
+        # 1. Eliminar token de BD si existe
         _cur_token = st.query_params.get('token', '')
         if _cur_token:
             try:
                 eliminar_token_sesion(_cur_token)
             except Exception:
                 pass
-        # Limpiar session_state
+        # 2. Limpiar query params de URL
+        try:
+            st.query_params.clear()
+        except Exception:
+            pass
+        # 3. Limpiar session_state completamente
         for _k in list(st.session_state.keys()):
             del st.session_state[_k]
         st.session_state['authenticated'] = False
         st.session_state['user'] = None
-        # Forzar reload completo del browser via JS
-        # Esto corta la conexion WebSocket y arranca desde cero sin DOM residual
-        st.components.v1.html("""
-        <script>
-            try {
-                var url = window.parent.location.href.split('?')[0];
-                window.parent.location.replace(url);
-            } catch(e) {
-                window.location.replace(window.location.href.split('?')[0]);
-            }
-        </script>
-        """, height=0, width=0)
-        st.stop()
+        # 4. Rerun inmediato y limpio al Login
+        st.rerun()
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
