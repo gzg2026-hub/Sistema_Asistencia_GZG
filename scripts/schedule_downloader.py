@@ -136,65 +136,16 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                             if (not cur_p or cur_p.lower() in ('nan', 'none', '', '-')) and d_id in cargo_dict:
                                 df_marc_master.loc[r_idx, pos_col] = cargo_dict[d_id]
 
+            from data.exporter import quitar_tildes
             for col_name in ['Nombre', 'Apellido', 'Nombres', 'Apellidos']:
                 if col_name in df_marc_master.columns:
                     df_marc_master[col_name] = df_marc_master[col_name].astype(str).apply(quitar_tildes)
 
-            # Guardar el Archivo Maestro de Data Cruda en Excel
+            # Guardar el Archivo Maestro de Data Cruda en Excel usando data.exporter
             try:
-                import openpyxl
-                from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-                from openpyxl.utils import get_column_letter
-
-                wb_m = openpyxl.Workbook()
-                ws_m = wb_m.active
-                ws_m.title = "Transacciones"
-                ws_m.views.sheetView[0].showGridLines = True
-                ws_m.freeze_panes = "A2"
-
-                fill_h = PatternFill(start_color="1F4E78", end_color="1F4E78", fill_type="solid")
-                font_h = Font(name="Calibri", size=11, bold=True, color="FFFFFF")
-                font_d = Font(name="Calibri", size=11, bold=False, color="000000")
-                align_h = Alignment(horizontal="center", vertical="center", wrap_text=True)
-                align_c = Alignment(horizontal="center", vertical="center")
-                align_l = Alignment(horizontal="left", vertical="center")
-                thin_gray = Side(border_style="thin", color="D3D3D3")
-                thin_border = Border(left=thin_gray, right=thin_gray, top=thin_gray, bottom=thin_gray)
-
-                cols_m = df_marc_master.columns.tolist()
-                ws_m.append(cols_m)
-                ws_m.row_dimensions[1].height = 28
-
-                for cell in ws_m[1]:
-                    cell.fill = fill_h
-                    cell.font = font_h
-                    cell.alignment = align_h
-                    cell.border = thin_border
-
-                for r_idx, r_m in enumerate(df_marc_master.itertuples(index=False), start=2):
-                    ws_m.append(list(r_m))
-                    ws_m.row_dimensions[r_idx].height = 20
-                    for c_idx in range(1, len(cols_m) + 1):
-                        cell = ws_m.cell(row=r_idx, column=c_idx)
-                        cell.font = font_d
-                        cell.border = thin_border
-                        if c_idx in (1, 8, 10):
-                            cell.alignment = align_c
-                            cell.number_format = '@'
-                        else:
-                            cell.alignment = align_l
-
-                for c_idx in range(1, len(cols_m) + 1):
-                    col_letter = get_column_letter(c_idx)
-                    max_len = 0
-                    for r_idx in range(1, min(ws_m.max_row + 1, 100)):
-                        v = ws_m.cell(row=r_idx, column=c_idx).value
-                        if v is not None:
-                            max_len = max(max_len, len(str(v)))
-                    ws_m.column_dimensions[col_letter].width = max(max_len + 4, 12)
-
-                wb_m.save(ruta_maestro_raw)
-                _log(f"Archivo Maestro Data Cruda guardado con formato corporativo en: {ruta_maestro_raw}")
+                from data.exporter import guardar_transacciones_acumuladas_excel
+                guardar_transacciones_acumuladas_excel(df_marc_master, ruta_maestro_raw)
+                _log(f"Archivo Maestro Data Cruda guardado con formato corporativo unificado en: {ruta_maestro_raw}")
             except Exception as e_m:
                 _log(f"Aviso guardando maestro data cruda: {e_m}")
 
@@ -215,26 +166,30 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                 os.makedirs(carp_diario, exist_ok=True)
 
                 hoy_str = datetime.date.today().strftime("%Y-%m-%d")
+                ayer_str = (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
                 if 'FECHA' in df_asis.columns:
-                    fechas_unicas = sorted([str(f) for f in df_asis['FECHA'].dropna().unique()])
-                    for f_dia in fechas_unicas:
-                        # Estrictamente SOLO días cerrados/completados (anteriores a hoy)
-                        if f_dia < hoy_str:
-                            df_asis_dia = df_asis[df_asis['FECHA'].astype(str) == f_dia]
-                            if not df_asis_dia.empty:
-                                file_name_dia = f"Reporte_Asistencia_GZG_{f_dia}.xlsx"
-                                file_path_dia = os.path.join(carp_diario, file_name_dia)
+                    # Generar y Subir a Google Drive ÚNICAMENTE el reporte del DÍA RECIÉN CERRADO (AYER)
+                    df_asis_dia = df_asis[df_asis['FECHA'].astype(str) == ayer_str]
+                    if not df_asis_dia.empty:
+                        file_name_dia = f"Reporte_Asistencia_GZG_{ayer_str}.xlsx"
+                        file_path_dia = os.path.join(carp_diario, file_name_dia)
 
-                                # Generar bytes de Excel diario completado
-                                excel_bytes = exportar_asistencia_excel(df_trab, df_marc_master, df_asis_dia, df_he_out, df_inc)
-                                with open(file_path_dia, "wb") as f_out:
-                                    f_out.write(excel_bytes)
-                                _log(f"Reporte diario completado generado para {f_dia} -> {file_path_dia}")
-
-                                # ÚNICO ARCHIVO AUTORIZADO A SUBIR A GOOGLE DRIVE: Reporte Diario Procesado de Día Cerrado (directo a AGOSTO)
-                                subir_archivo_a_gdrive(file_path_dia)
-                        else:
-                            _log(f"Día actual {f_dia} en curso: NO se genera reporte diario incompleto (se mantiene acumulado en Data Cruda).")
+                        excel_bytes = exportar_asistencia_excel(df_trab, df_marc_master, df_asis_dia, df_he_out, df_inc)
+                        try:
+                            with open(file_path_dia, "wb") as f_out:
+                                f_out.write(excel_bytes)
+                            _log(f"Reporte diario recién cerrado generado para {ayer_str} -> {file_path_dia}")
+                            subir_archivo_a_gdrive(file_path_dia)
+                        except PermissionError:
+                            ts_str = datetime.datetime.now().strftime("%H%M%S")
+                            file_path_alt = os.path.join(carp_diario, f"Reporte_Asistencia_GZG_{ayer_str}_{ts_str}.xlsx")
+                            with open(file_path_alt, "wb") as f_out:
+                                f_out.write(excel_bytes)
+                            _log(f"Aviso: {file_name_dia} abierto en Excel. Guardado copia -> {file_path_alt}")
+                            subir_archivo_a_gdrive(file_path_alt)
+                    else:
+                        _log(f"Aviso: No se encontraron registros de asistencia para el día cerrado {ayer_str}.")
                 
                 # Actualizar únicamente de forma local en la PC el archivo raíz principal Sistema_Asistencia_GZG_v1.0.xlsx
                 ruta_root_v1 = os.path.join(ROOT_DIR, "Sistema_Asistencia_GZG_v1.0.xlsx")
@@ -296,19 +251,19 @@ def _menu_manual():
     if opcion == "1":
         fecha = _hoy()
         print(f"\n  Descargando HOY: {fecha}")
-        _ejecutar_descarga(fecha, fecha)
+        _ejecutar_descarga("2026-08-17", fecha)
 
     elif opcion == "2":
         fecha = _ayer()
         print(f"\n  Descargando AYER: {fecha}")
-        _ejecutar_descarga(fecha, fecha)
+        _ejecutar_descarga("2026-08-17", fecha)
 
     elif opcion == "3":
         fecha_str = input("  Ingrese la fecha (DD/MM/YYYY, YYYY-MM-DD o YYYY/MM/DD): ").strip()
         fecha = _parsear_fecha(fecha_str)
         if fecha:
             print(f"\n  Descargando: {fecha}")
-            _ejecutar_descarga(fecha, fecha)
+            _ejecutar_descarga("2026-08-17", fecha)
         else:
             print("  Fecha inválida. Use formato DD/MM/YYYY o YYYY-MM-DD.")
 
@@ -361,8 +316,8 @@ def _iniciar_programador():
 
     def _tarea_9am():
         fecha = _ayer()
-        _log(f"Tarea programada: descargando día anterior = {fecha}")
-        _ejecutar_descarga(fecha, fecha)
+        _log(f"Tarea programada: descargando acumulado desde 2026-08-17 hasta {fecha}")
+        _ejecutar_descarga("2026-08-17", _hoy())
 
     schedule.every().day.at("09:00").do(_tarea_9am)
 
@@ -377,10 +332,10 @@ if __name__ == '__main__':
 
     if not args or args[0].lower() in ("ahora", "now", "auto", "automatico"):
         # Modo por defecto / Tarea Programada de Windows (a las 9:00 AM):
-        # Descarga el rango de AYER a HOY para incluir salidas matutinas de turno noche
-        ini = _ayer()
+        # Descarga acumulada desde la fecha base (2026-08-17) hasta HOY a las 9:00 AM
+        ini = "2026-08-17"
         fin = _hoy()
-        _log(f"Ejecución AUTOMÁTICA (9:00 AM): descargando rango {ini} -> {fin} para emparejamiento completo de Turno Noche...")
+        _log(f"Ejecución AUTOMÁTICA (9:00 AM): descargando acumulado {ini} -> {fin} para emparejamiento completo de Turno Noche...")
         _ejecutar_descarga(ini, fin)
 
     elif args[0].lower() in ("daemon", "service", "servicio"):

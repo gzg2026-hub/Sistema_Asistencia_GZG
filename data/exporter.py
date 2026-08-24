@@ -426,6 +426,8 @@ def guardar_transacciones_acumuladas_excel(df: pd.DataFrame, target_path: str) -
             max_len = max(len(str(cell.value or '')) for cell in col)
             ws.column_dimensions[col_letter].width = max(max_len + 6, 16)
 
+        ws.auto_filter.ref = ws.dimensions
+
         try:
             wb.save(target_path)
             return True
