@@ -272,63 +272,20 @@ st.markdown("""
         box-shadow: 0 0 0 1px rgba(245, 130, 32, 0.3) !important;
     }
 
-    /* =========================================================================
-       ÍCONOS FIJOS EN INPUTS DE LOGIN — INDESTRUCTIBLES EN TODOS LOS ESTADOS
-       ========================================================================= */
-    /* Input Usuario (👤) */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input,
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input:focus,
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input:active,
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(1) input:hover,
-    div[data-testid="stForm"] input[type="text"],
-    div[data-testid="stForm"] input[type="text"]:focus,
-    div[data-testid="stForm"] input[type="text"]:active,
-    div[data-testid="stForm"] input[type="text"]:hover,
-    div[data-testid="stForm"] input[aria-label="Usuario"],
-    div[data-testid="stForm"] input[aria-label="Usuario"]:focus,
-    div[data-testid="stForm"] input[aria-label="Usuario"]:active,
-    input[aria-label="Usuario"],
-    input[aria-label="Usuario"]:focus {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: 14px center !important;
-        background-size: 18px 18px !important;
-        background-color: #1A1D24 !important;
-        padding-left: 44px !important;
-        text-align: left !important;
-        color: #FFFFFF !important;
-        font-size: 15px !important;
-        caret-color: #F58220 !important;
-    }
-
-    /* Input Contraseña (🔒) */
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input,
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input:focus,
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input:active,
-    div[data-testid="stForm"] div[data-testid="stTextInput"]:nth-of-type(2) input:hover,
-    div[data-testid="stForm"] input[type="password"],
-    div[data-testid="stForm"] input[type="password"]:focus,
-    div[data-testid="stForm"] input[type="password"]:active,
-    div[data-testid="stForm"] input[type="password"]:hover,
-    div[data-testid="stForm"] input[aria-label="Contraseña"],
-    div[data-testid="stForm"] input[aria-label="Contraseña"]:focus,
-    div[data-testid="stForm"] input[aria-label="Contraseña"]:active,
-    input[aria-label="Contraseña"],
-    input[aria-label="Contraseña"]:focus,
+    /* Estilo limpio para inputs de texto en Login y Formularios */
+    .stTextInput input,
+    input[type="text"],
     input[type="password"] {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%239A9EA7'%3E%3Cpath d='M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z'/%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: 14px center !important;
-        background-size: 18px 18px !important;
-        background-color: #1A1D24 !important;
-        padding-left: 44px !important;
-        text-align: left !important;
         color: #FFFFFF !important;
         font-size: 15px !important;
+        text-align: left !important;
+        background-color: #1A1D24 !important;
+        border-radius: 10px !important;
         caret-color: #F58220 !important;
+        padding-left: 12px !important;
     }
 
-    /* Prevenir que el autofill de Android/Chrome oculte el icono o cambie el color */
+    /* Autofill limpio en navegadores móviles */
     input:-webkit-autofill,
     input:-webkit-autofill:hover,
     input:-webkit-autofill:focus,
