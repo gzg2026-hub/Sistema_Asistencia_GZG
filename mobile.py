@@ -235,7 +235,10 @@ st.markdown("""
         color: #FFFFFF !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
-        touch-action: pan-y !important    /* Padding compacto superior e inferior para vista móvil */
+        touch-action: pan-y !important;
+    }
+
+    /* Padding compacto superior e inferior para vista móvil */
     .main .block-container {
         padding: 0.2rem 0.5rem 50px 0.5rem !important;
         max-width: 500px !important;
@@ -486,21 +489,21 @@ if not is_authenticated():
 """, unsafe_allow_html=True)
 
 
-    # PUNTO 4: Encabezado de Login Proporcionado sobre Maquinaria Minera
+    # Encabezado de Login Elevado hacia la Parte Superior
     st.markdown(f"""
-<div style="text-align: center; padding: 4px 0 6px 0;">
-    <div style="margin-bottom: 6px;">
-        <img src="data:image/png;base64,{logo_b64}" style="height: 68px; object-fit: contain; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.75));">
+<div style="text-align: center; padding: 0px 0 2px 0; margin-top: -2.2rem;">
+    <div style="margin-bottom: 3px;">
+        <img src="data:image/png;base64,{logo_b64}" style="height: 62px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));">
     </div>
-    <div style="font-size: 25px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 4px; text-shadow: 0 2px 10px rgba(0,0,0,0.8);">
+    <div style="font-size: 24px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px; text-shadow: 0 2px 10px rgba(0,0,0,0.9);">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 11px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.8);">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; opacity: 0.95; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">
         APLICACION MOVIL PARA APROBACIONES
     </div>
-    <div style="text-align: left; margin-top: 4px; margin-bottom: 10px;">
-        <div style="font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">Bienvenido</div>
-        <div style="font-size: 13px; color: #9A9EA7;">Inicia sesión para continuar</div>
+    <div style="text-align: left; margin-top: 2px; margin-bottom: 6px;">
+        <div style="font-size: 20px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.9);">Bienvenido</div>
+        <div style="font-size: 12px; color: #C5CAD3; text-shadow: 0 1px 6px rgba(0,0,0,0.9);">Inicia sesión para continuar</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
