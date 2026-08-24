@@ -133,12 +133,49 @@ st.markdown(f"""
 # CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements & prevents flickering)
 st.markdown("""
 <style>
-    /* ELIMINAR 100% EL PARPADEO, DESVANECIMIENTO Y OSCURECIMIENTO DE STREAMLIT */
+    /* =====================================================================
+       CAPA 1: OCULTAR COMPLETAMENTE TODO EL CONTENIDO DURANTE ESTADO RUNNING
+       Esto elimina todos los parches/skeletons en: carga inicial, login,
+       logout y cualquier st.rerun(). Solo se muestra fondo oscuro puro.
+       ===================================================================== */
+    .stApp[data-test-script-state="running"] .main,
+    .stApp[data-test-script-state="running"] [data-testid="stMain"],
+    .stApp[data-test-script-state="running"] [data-testid="stAppViewContainer"] > section,
+    .stApp[data-test-script-state="running"] .block-container,
+    .stApp[data-test-script-state="running"] [data-testid="stVerticalBlock"],
+    .stApp[data-test-script-state="running"] [data-testid="stVerticalBlockBorderWrapper"] {
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+
+    /* =====================================================================
+       CAPA 2: OCULTAR SKELETONS Y PLACEHOLDERS EN TODOS LOS ESTADOS
+       ===================================================================== */
+    [data-testid="stSkeleton"],
+    .stSkeleton,
+    div[class*="skeleton"],
+    div[class*="Skeleton"],
+    [data-testid="stStatusWidget"],
+    div[data-testid="stDecoration"],
+    div[class*="StatusWidget"],
+    div[class*="stStatusWidget"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0px !important;
+        width: 0px !important;
+    }
+
+    /* =====================================================================
+       CAPA 3: ELIMINAR TRANSICIONES Y ANIMACIONES EN TODO (ZERO FLASH)
+       ===================================================================== */
     *,
     *::before,
     *::after {
-        transition-property: background-color, border-color, color, fill, stroke !important;
+        transition-property: none !important;
         transition-duration: 0s !important;
+        animation-duration: 0s !important;
+        animation: none !important;
     }
     .stApp,
     [data-testid="stAppViewContainer"],
@@ -153,31 +190,10 @@ st.markdown("""
         transition: none !important;
         animation: none !important;
     }
-    [data-test-script-state="running"],
-    [data-test-script-state="running"] *,
-    .stApp[data-test-script-state="running"],
-    .stApp[data-test-script-state="running"] *,
-    div[data-testid="stAppViewContainer"][data-test-script-state="running"],
-    div[data-testid="stAppViewContainer"][data-test-script-state="running"] * {
-        opacity: 1 !important;
-        filter: none !important;
-        transition: none !important;
-        animation: none !important;
-    }
-    /* Ocultar skeletons, parches y artefactos de carga preliminar */
-    [data-testid="stSkeleton"],
-    .stSkeleton,
-    div[class*="skeleton"],
-    div[class*="Skeleton"],
-    div[data-testid="stStatusWidget"],
-    div[data-testid="stDecoration"] {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0px !important;
-        width: 0px !important;
-    }
-    /* Ocultar Barra Superior de Streamlit Cloud (Stop, Fork, GitHub, Menu, Accesibilidad) */
+
+    /* =====================================================================
+       CAPA 4: OCULTAR BARRA SUPERIOR Y ELEMENTOS DE STREAMLIT CLOUD
+       ===================================================================== */
     header,
     header[data-testid="stHeader"],
     [data-testid="stHeader"],
@@ -203,7 +219,9 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* Ocultar Barra Inferior de Streamlit Cloud y Embed (Built with Streamlit / Fullscreen) */
+    /* =====================================================================
+       CAPA 5: OCULTAR FOOTER Y BADGE DE STREAMLIT CLOUD
+       ===================================================================== */
     footer,
     footer[data-testid="stFooter"],
     [data-testid="stFooter"],
@@ -215,7 +233,6 @@ st.markdown("""
     div[data-testid="stBottom"],
     div[data-testid="stBottomBlockContainer"],
     div[class*="stAppDeployButton"],
-    div[class*="StatusWidget"],
     div:has(> a[href*="streamlit.io"]),
     div:has(> a[href*="github.com"]),
     a[href*="streamlit.io"],
@@ -228,7 +245,9 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* Fondo oscuro nativo PWA GZG y Habilitación Estricta de Scroll Táctil */
+    /* =====================================================================
+       FONDO OSCURO NATIVO PWA GZG
+       ===================================================================== */
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
         background-color: #121418 !important;
         background: #121418 !important;
@@ -304,7 +323,6 @@ st.markdown("""
         color: #FFFFFF !important;
         font-size: 15px !important;
     }
-
 
     .stTextInput input, input[type="text"], input[type="password"] {
         color: #FFFFFF !important;
@@ -577,7 +595,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ---------------------------------------------------------
+
 # LOGOUT ANTICIPADO: Se procesa ANTES de renderizar cualquier contenido
 # del dashboard para garantizar un cierre 100% limpio sin artefactos.
 # ---------------------------------------------------------

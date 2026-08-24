@@ -1,5 +1,5 @@
-// CACHE v34 - Limpieza total inmediata
-const CACHE_NAME = 'gzg-asistencia-v34.0.0';
+// CACHE v35 - Anti-parches running state
+const CACHE_NAME = 'gzg-asistencia-v35.0.0';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
