@@ -526,13 +526,36 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     dni_val = dni_val.zfill(8)
 
                 estado = str(row.get('estado', 'PENDIENTE')).strip().upper()
+                if estado in ('NAN', 'NONE', ''):
+                    estado = 'PENDIENTE'
+
+                aprob_n1 = str(row.get('aprobador_n1', '') or '').strip()
+                if aprob_n1.lower() in ('nan', 'none', ''):
+                    aprob_n1 = '-'
+
+                est_n1 = str(row.get('estado_n1', 'PENDIENTE') or 'PENDIENTE').strip().upper()
+                if est_n1 in ('NAN', 'NONE', ''):
+                    est_n1 = 'PENDIENTE'
+
+                aprob_n2 = str(row.get('aprobador_n2', '') or '').strip()
+                if aprob_n2.lower() in ('nan', 'none', ''):
+                    aprob_n2 = '-'
+
+                est_n2 = str(row.get('estado_n2', '-') or '-').strip().upper()
+                if est_n2 in ('NAN', 'NONE', '') or aprob_n2 == '-':
+                    est_n2 = '-'
+
                 fecha_aprob = ""
                 raw_fa = row.get('fecha_aprobacion')
-                if raw_fa and str(raw_fa).strip() not in ('', 'None', 'nan'):
+                if raw_fa and str(raw_fa).strip().lower() not in ('', 'none', 'nan'):
                     try:
                         fecha_aprob = str(raw_fa)[:16]
                     except Exception:
                         pass
+
+                coment = str(row.get('comentario_supervisor', '') or '').strip()
+                if coment.lower() in ('nan', 'none', ''):
+                    coment = ""
 
                 row_data = [
                     dni_val,
@@ -548,12 +571,12 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     str(row.get('horas_extras_hhmm', '0h 00m') or '0h 00m'),
                     str(row.get('exceso_jornada_hhmm', '0h 00m') or '0h 00m'),
                     estado,
-                    str(row.get('aprobador_n1', '') or ''),
-                    str(row.get('estado_n1', 'PENDIENTE') or 'PENDIENTE'),
-                    str(row.get('aprobador_n2', '') or ''),
-                    str(row.get('estado_n2', '-') or '-'),
+                    aprob_n1,
+                    est_n1,
+                    aprob_n2,
+                    est_n2,
                     fecha_aprob,
-                    str(row.get('comentario_supervisor', '') or ''),
+                    coment,
                 ]
 
                 ws.append(row_data)
