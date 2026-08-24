@@ -30,6 +30,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 
 - **Ventana de Contexto Temporal Universal (Día Anterior, Día Actual y Día Posterior)**:
   * El motor analiza de forma continua la secuencia cronológica completa del trabajador (evaluando marcaciones del día anterior, día en curso y día posterior) para emparejar lógicamente entradas y salidas en turnos rotativos y de medianoche.
+- **Búsqueda Cruzada Universal de Medianoche (Salidas de Madrugada para Turno DÍA y Turno NOCHE)**:
+  * Sin importar si el trabajador pertenece a Turno DÍA o Turno NOCHE, si ingresa el día D y no registra marcación de salida durante ese mismo día calendárico, pero registra una salida en la madrugada/mañana del día D+1 (hasta las 12:00 PM) antes de su siguiente marcación de entrada, el motor vincula automáticamente esa salida como el término oficial de la jornada del día D.
+  * Aplica tanto para turnos de noche normales (ej. 19:00 PM a 07:00 AM) como para jornadas prolongadas/horas extras de Turno DÍA que concluyen pasada la medianoche (ej. Entrada 06:33 AM día D → Salida 00:38 AM día D+1, contabilizando 17:38 hrs trabajadas).
 - **Deducción Universal de Error Humano en Marcación (Caso Jhon Ágreda y similar para todo el personal)**:
   * Si un trabajador presenta una marcación matutina (05:00 AM a 09:30 AM) etiquetada como `"Inicio de horas extra"` o `"Inicio H.E."`, y posteriormente registra una salida en la tarde/noche (19:00 a 20:30 PM) sin existir otra entrada matutina previa ni marcación de fin de H.E., el motor deduce un **error humano de botón/estado en la terminal biométrica**.
   * Dicha marcación se reclasifica automáticamente en la evaluación como `"Registro de entrada"`, asignándole el **Turno DÍA** y evaluando el día limpiamente como `ASISTIO`.
