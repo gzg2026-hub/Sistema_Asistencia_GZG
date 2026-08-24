@@ -688,23 +688,17 @@ with tab_pendientes:
         df_aprobadas_mes = df_all[is_app_by_me].copy()
 
     
-    col_kpi1, col_kpi2 = st.columns(2)
-    with col_kpi1:
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 12px; padding: 12px; text-align: center;">
-            <div style="font-size: 24px; font-weight: 800; color: #FFF;">{len(df_pendientes)}</div>
-            <div style="font-size: 11px; color: #FFF;">Pendientes</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_kpi2:
-        st.markdown(f"""
-        <div style="background: #1D212A; border: 1px solid #2A2F3D; border-radius: 12px; padding: 12px; text-align: center;">
-            <div style="font-size: 24px; font-weight: 800; color: #F58220;">{len(df_aprobadas_mes)}</div>
-            <div style="font-size: 11px; color: #9A9EA7;">Aprobadas este mes</div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    st.markdown("<br>", unsafe_allow_html=True)
+    # Cajones de Métricas Apilados Verticalmente a 100% de Ancho para Celular
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 14px; padding: 14px; text-align: center; margin-bottom: 8px; box-shadow: 0 4px 14px rgba(245, 130, 32, 0.25);">
+        <div style="font-size: 28px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
+        <div style="font-size: 12px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.5px;">Pendientes</div>
+    </div>
+    <div style="background: #1A1D24; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 12px; text-align: center; margin-bottom: 12px;">
+        <div style="font-size: 24px; font-weight: 800; color: #F58220; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
+        <div style="font-size: 11px; font-weight: 600; color: #9A9EA7;">Aprobadas este mes</div>
+    </div>
+    """, unsafe_allow_html=True)
     
     if df_pendientes.empty:
         st.info("🎉 ¡Excelente! No tienes solicitudes pendientes en este momento.")
