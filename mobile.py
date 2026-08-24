@@ -866,31 +866,42 @@ tab_pendientes, tab_historial, tab_dashboard = st.tabs([
 ])
 
 # ---------------------------------------------------------
+# CÁLCULO UNIFICADO Y CORRELACIONADO DE BANDEJAS POR ROL
+# ---------------------------------------------------------
+u_lower = username.lower().strip()
+if rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'):
+    df_pendientes = df_all[df_all['estado'] == 'PENDIENTE'].copy()
+    df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO'].copy()
+    df_rechazadas_mes = df_all[df_all['estado'] == 'RECHAZADO'].copy()
+else:
+    # 1. PENDIENTES: Lo que REQUIERE acción inmediata del usuario
+    is_pend_for_me = (
+        (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'PENDIENTE')
+    ) | (
+        (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'PENDIENTE') & (df_all['estado_n1'] != 'RECHAZADO')
+    )
+    df_pendientes = df_all[is_pend_for_me & (df_all['estado'] != 'RECHAZADO')].copy()
+    
+    # 2. APROBADAS: Solicitudes donde el usuario ya dio su aprobación o terminaron aprobadas
+    is_app_by_me = (
+        (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'APROBADO')
+    ) | (
+        (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'APROBADO')
+    ) | (df_all['estado'] == 'APROBADO')
+    df_aprobadas_mes = df_all[is_app_by_me].copy()
+
+    # 3. RECHAZADAS: Solicitudes rechazadas por el usuario o en la cadena
+    is_rej_by_me = (
+        (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'RECHAZADO')
+    ) | (
+        (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'RECHAZADO')
+    ) | (df_all['estado'] == 'RECHAZADO')
+    df_rechazadas_mes = df_all[is_rej_by_me].copy()
+
+# ---------------------------------------------------------
 # TAB 1: PENDIENTES DE APROBACIÓN (EVALUACIÓN POR NIVEL)
 # ---------------------------------------------------------
 with tab_pendientes:
-    u_lower = username.lower().strip()
-    if rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'):
-        df_pendientes = df_all[df_all['estado'] == 'PENDIENTE'].copy()
-        df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO'].copy()
-    else:
-        # Pendiente para el usuario según su nivel asignado (N1 o N2):
-        is_pend_for_me = (
-            (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'PENDIENTE')
-        ) | (
-            (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'PENDIENTE') & (df_all['estado_n1'] != 'RECHAZADO')
-        )
-        df_pendientes = df_all[is_pend_for_me & (df_all['estado'] != 'RECHAZADO')].copy()
-        
-        # Aprobada por el usuario o resuelta:
-        is_app_by_me = (
-            (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'APROBADO')
-        ) | (
-            (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'APROBADO')
-        ) | (df_all['estado'] == 'APROBADO')
-        df_aprobadas_mes = df_all[is_app_by_me].copy()
-
-    
     # Cajones de Métricas en una Sola Fila 50% / 50% para Celular
     st.markdown(f"""
     <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
@@ -950,50 +961,54 @@ with tab_pendientes:
                     key=f"m_file_{sol_id}"
                 )
                 
-                # Botones de Acción Apilados a Ancho Completo para Celular
-                if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
-                    adjunto_rel_path = None
-                    if uploaded_file is not None:
-                        root_dir = os.path.dirname(os.path.abspath(__file__))
-                        adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                        os.makedirs(adj_dir, exist_ok=True)
-                        fname = f"solic_{sol_id}_{uploaded_file.name}"
-                        fpath = os.path.join(adj_dir, fname)
-                        with open(fpath, "wb") as f:
-                            f.write(uploaded_file.getbuffer())
-                        adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+                # 2 Botones Gemelos Simétricos 50% / 50% en Fila Horizontal
+                col_act1, col_act2 = st.columns(2)
+                with col_act1:
+                    if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
+                        adjunto_rel_path = None
+                        if uploaded_file is not None:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            fname = f"solic_{sol_id}_{uploaded_file.name}"
+                            fpath = os.path.join(adj_dir, fname)
+                            with open(fpath, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
 
-                    actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador)
-                    st.success(f"Rechazado: {worker_name}")
-                    st.rerun()
+                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
+                        st.success(f"Rechazado: {worker_name}")
+                        st.rerun()
 
-                if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
-                    adjunto_rel_path = None
-                    if uploaded_file is not None:
-                        root_dir = os.path.dirname(os.path.abspath(__file__))
-                        adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                        os.makedirs(adj_dir, exist_ok=True)
-                        fname = f"solic_{sol_id}_{uploaded_file.name}"
-                        fpath = os.path.join(adj_dir, fname)
-                        with open(fpath, "wb") as f:
-                            f.write(uploaded_file.getbuffer())
-                        adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+                with col_act2:
+                    if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
+                        adjunto_rel_path = None
+                        if uploaded_file is not None:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            fname = f"solic_{sol_id}_{uploaded_file.name}"
+                            fpath = os.path.join(adj_dir, fname)
+                            with open(fpath, "wb") as f:
+                                f.write(uploaded_file.getbuffer())
+                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
 
-                    actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador)
-                    st.success(f"Aprobado: {worker_name}")
-                    st.rerun()
+                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
+                        st.success(f"Aprobado: {worker_name}")
+                        st.rerun()
 
 # ---------------------------------------------------------
-# TAB 2: HISTORIAL DE APROBACIONES
+# TAB 2: HISTORIAL DE APROBACIONES (CORRELACIONADO CON USUARIO)
 # ---------------------------------------------------------
 with tab_historial:
     filtro_estado = st.radio("Estado:", ["TODAS", "APROBADAS", "RECHAZADAS"], horizontal=True, key="rad_m_hist")
     
-    df_hist = df_all.copy()
     if filtro_estado == "APROBADAS":
-        df_hist = df_hist[df_hist['estado'] == 'APROBADO']
+        df_hist = df_aprobadas_mes.copy()
     elif filtro_estado == "RECHAZADAS":
-        df_hist = df_hist[df_hist['estado'] == 'RECHAZADO']
+        df_hist = df_rechazadas_mes.copy()
+    else:
+        df_hist = df_all.copy()
         
     if df_hist.empty:
         st.info("No hay registros en el historial para este filtro.")
@@ -1003,14 +1018,29 @@ with tab_historial:
             worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
             cargo = row.get('cargo', '')
             fecha_sol = row.get('fecha', '')
-            estado = row.get('estado', 'PENDIENTE')
+            estado_global = str(row.get('estado', 'PENDIENTE')).upper()
+            estado_n1 = str(row.get('estado_n1', 'PENDIENTE')).upper()
+            estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
             he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
-            aprobador = row.get('aprobado_por', 'Sistema')
             
-            badge_html = f'<span class="badge-approved">APROBADO</span>' if estado == 'APROBADO' else (
-                f'<span class="badge-rejected">RECHAZADO</span>' if estado == 'RECHAZADO' else f'<span class="badge-pending">PENDIENTE</span>'
-            )
+            # Badge descriptivo inteligente según estado de nivel
+            if estado_global == 'APROBADO':
+                badge_html = '<span class="badge-approved">APROBADO FINAL</span>'
+            elif estado_global == 'RECHAZADO' or estado_n1 == 'RECHAZADO' or estado_n2 == 'RECHAZADO':
+                badge_html = '<span class="badge-rejected">RECHAZADO</span>'
+            elif estado_n1 == 'APROBADO':
+                badge_html = '<span class="badge-approved" style="background-color: rgba(46, 204, 113, 0.15); border-color: #2ECC71;">APROBADO N1</span>'
+            else:
+                badge_html = '<span class="badge-pending">PENDIENTE</span>'
+            
+            # Detalle de quién aprobó / validó
+            aprob_info = []
+            if row.get('aprobado_por_n1'):
+                aprob_info.append(f"N1: {row.get('aprobado_por_n1')} ({estado_n1})")
+            if row.get('aprobado_por_n2'):
+                aprob_info.append(f"N2: {row.get('aprobado_por_n2')} ({estado_n2})")
+            aprob_str = " | ".join(aprob_info) if aprob_info else f"Por: {row.get('aprobado_por') or 'Pendiente'}"
             
             cards_list.append(f"""
             <div class="approval-card">
@@ -1024,24 +1054,29 @@ with tab_historial:
                     <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b></div>
                     <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                 </div>
-                <div style="font-size: 10px; color: #6C727F; margin-top: 6px;">Por: {aprobador}</div>
+                <div style="font-size: 10px; color: #9A9EA7; margin-top: 6px;">{aprob_str}</div>
             </div>
             """)
         st.markdown("".join(cards_list), unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# TAB 3: DASHBOARD DE ESTADÍSTICAS
+# TAB 3: DASHBOARD DE ESTADÍSTICAS (100% CORRELACIONADO)
 # ---------------------------------------------------------
 with tab_dashboard:
-    n_aprob = len(df_all[df_all['estado'] == 'APROBADO'])
-    n_rech = len(df_all[df_all['estado'] == 'RECHAZADO'])
-    n_pend = len(df_all[df_all['estado'] == 'PENDIENTE'])
+    n_aprob = len(df_aprobadas_mes)
+    n_rech = len(df_rechazadas_mes)
+    n_pend = len(df_pendientes)
     
-    st.metric("HE Aprobadas", f"{n_aprob}")
-    st.metric("Excesos Aprobados", f"{n_aprob}")
-    st.metric("Pendientes", f"{n_pend}")
+    col_d1, col_d2, col_d3 = st.columns(3)
+    with col_d1:
+        st.metric("Aprobadas", f"{n_aprob}")
+    with col_d2:
+        st.metric("Rechazadas", f"{n_rech}")
+    with col_d3:
+        st.metric("Pendientes", f"{n_pend}")
     
-    if len(df_all) > 0:
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+    if (n_aprob + n_rech + n_pend) > 0:
         chart_df = pd.DataFrame({
             'Estado': ['Aprobadas', 'Rechazadas', 'Pendientes'],
             'Cantidad': [n_aprob, n_rech, n_pend]
