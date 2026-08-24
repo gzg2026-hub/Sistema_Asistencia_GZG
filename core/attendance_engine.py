@@ -514,26 +514,25 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             fecha_salida = fecha
 
             if entrada and (salida is None or time_to_seconds(salida) <= time_to_seconds(entrada)):
-                if horario == 'NOCHE' or time_to_seconds(entrada) >= 57600: # >= 16:00 PM
-                    try:
-                        fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
-                        fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
-                        next_day_swipes = df_marcaciones[
-                            (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
-                            (df_marcaciones['Fecha_Clean'] == fecha_next_str)
-                        ]
-                        salida_next_rows = [
-                            r for _, r in next_day_swipes.iterrows()
-                            if 'salida' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
-                            and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) <= 43200
-                        ]
-                        if salida_next_rows:
-                            salida_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
-                            salida = salida_next_rows[0]['Hora_Clean']
-                            fecha_salida = fecha_next_str
-                            consumed_swipes.add((dni_clean, fecha_next_str, salida.strftime('%H:%M')))
-                    except Exception as e:
-                        pass
+                try:
+                    fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
+                    fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                    next_day_swipes = df_marcaciones[
+                        (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
+                        (df_marcaciones['Fecha_Clean'] == fecha_next_str)
+                    ]
+                    salida_next_rows = [
+                        r for _, r in next_day_swipes.iterrows()
+                        if 'salida' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
+                        and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) <= 21600 # <= 06:00 AM
+                    ]
+                    if salida_next_rows:
+                        salida_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
+                        salida = salida_next_rows[0]['Hora_Clean']
+                        fecha_salida = fecha_next_str
+                        consumed_swipes.add((dni_clean, fecha_next_str, salida.strftime('%H:%M')))
+                except Exception as e:
+                    pass
 
             cargo_val = str(worker_info.get('CARGO', worker_info.get('Posición', ''))).strip().lower()
             # Estricto: Solo aplica si el cargo/posición contiene exactamente 'Mantenimiento' (como Josmell, Edin, Franco, etc.)
