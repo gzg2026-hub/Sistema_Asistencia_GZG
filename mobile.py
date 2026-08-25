@@ -714,7 +714,7 @@ if not is_authenticated():
                 st.warning("Por favor ingresa tu usuario y contraseña.")
 
     st.markdown("""
-<div style="position: fixed; bottom: 0; left: 0; width: 100vw; background: rgba(14, 16, 20, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; font-size: 11px; font-weight: 600; color: #8A8E97; padding: 6px 0 8px 0; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
+<div style="position: fixed; bottom: 12px; left: 0; width: 100vw; text-align: center; font-size: 11px; font-weight: 600; color: #8A8E97; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
     Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
@@ -1127,8 +1127,8 @@ with tab_dashboard:
         st.bar_chart(chart_df.set_index('Estado'))
 
 st.markdown("""
-<div style="position: fixed; bottom: 0; left: 0; width: 100vw; background: rgba(14, 16, 20, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; font-size: 11px; font-weight: 600; color: #8A8E97; padding: 6px 0 8px 0; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
+<div style="position: fixed; bottom: 12px; left: 0; width: 100vw; text-align: center; font-size: 11px; font-weight: 600; color: #8A8E97; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
     Creado por raules v1.0.0
 </div>
-<div style="height: 35px;"></div>
+<div style="height: 40px;"></div>
 """, unsafe_allow_html=True)

@@ -203,7 +203,9 @@ def descargar_archivo_de_gdrive(file_name: str, local_dest_path: str) -> bool:
         from googleapiclient.http import MediaIoBaseDownload
         import io
         request = service.files().get_media(fileId=file_id, supportsAllDrives=True)
-        os.makedirs(os.path.dirname(local_dest_path), exist_ok=True)
+        dest_dir = os.path.dirname(local_dest_path)
+        if dest_dir:
+            os.makedirs(dest_dir, exist_ok=True)
         with io.FileIO(local_dest_path, "wb") as fh:
             downloader = MediaIoBaseDownload(fh, request)
             done = False
