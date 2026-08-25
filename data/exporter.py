@@ -504,7 +504,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
         headers = [
             "DNI", "Apellidos", "Nombres", "Cargo", "Area",
             "Fecha Turno", "Turno", "Hora Entrada", "Hora Salida",
-            "Horas Trabajadas", "Horas Extras (HH:MM)", "Exceso Jornada (HH:MM)",
+            "Horas Trabajadas", "Horas Extras", "Exceso Jornada",
             "Estado Final", "Aprobador N1", "Estado N1",
             "Aprobador N2", "Estado N2",
             "Fecha Aprobacion", "Comentario Supervisor"
@@ -545,13 +545,38 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                 if est_n2 in ('NAN', 'NONE', '') or aprob_n2 == '-':
                     est_n2 = '-'
 
+                # Formatear Fecha Turno a DD/MM/YYYY
+                raw_fecha = row.get('fecha', '')
+                fecha_fmt = ""
+                if raw_fecha and str(raw_fecha).strip().lower() not in ('', 'none', 'nan'):
+                    f_str = str(raw_fecha).strip()
+                    if len(f_str) >= 10 and f_str[4] == '-' and f_str[7] == '-':
+                        pts = f_str[:10].split('-')
+                        fecha_fmt = f"{pts[2]}/{pts[1]}/{pts[0]}"
+                    elif len(f_str) >= 10 and f_str[2] == '/' and f_str[5] == '/':
+                        fecha_fmt = f_str[:10]
+                    else:
+                        try:
+                            dt_obj = pd.to_datetime(f_str, errors='coerce')
+                            fecha_fmt = dt_obj.strftime('%d/%m/%Y') if pd.notna(dt_obj) else f_str
+                        except Exception:
+                            fecha_fmt = f_str
+
+                # Formatear Fecha Aprobacion a DD/MM/YYYY HH:MM
                 fecha_aprob = ""
                 raw_fa = row.get('fecha_aprobacion')
                 if raw_fa and str(raw_fa).strip().lower() not in ('', 'none', 'nan'):
-                    try:
-                        fecha_aprob = str(raw_fa)[:16]
-                    except Exception:
-                        pass
+                    fa_str = str(raw_fa).strip()
+                    if len(fa_str) >= 10 and fa_str[4] == '-' and fa_str[7] == '-':
+                        pts = fa_str[:10].split('-')
+                        h_part = fa_str[11:16] if len(fa_str) >= 16 else ""
+                        fecha_aprob = f"{pts[2]}/{pts[1]}/{pts[0]} {h_part}".strip()
+                    else:
+                        try:
+                            dt_fa = pd.to_datetime(fa_str, errors='coerce')
+                            fecha_aprob = dt_fa.strftime('%d/%m/%Y %H:%M') if pd.notna(dt_fa) else fa_str
+                        except Exception:
+                            fecha_aprob = fa_str
 
                 coment = str(row.get('comentario_supervisor', '') or '').strip()
                 if coment.lower() in ('nan', 'none', ''):
@@ -563,7 +588,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     quitar_tildes(str(row.get('nombres', '') or '')),
                     str(row.get('cargo', '') or ''),
                     str(row.get('area', '') or ''),
-                    str(row.get('fecha', '') or ''),
+                    fecha_fmt,
                     str(row.get('turno', '') or ''),
                     str(row.get('entrada', '') or ''),
                     str(row.get('salida', '') or ''),
