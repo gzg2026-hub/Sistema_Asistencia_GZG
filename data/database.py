@@ -1192,6 +1192,7 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     Garantiza que la subida a Drive siempre termine con éxito antes de finalizar la transacción.
     Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
     """
+    print("🔷🔷🔷 [DIAGNOSTICO] regenerar_aprobaciones_excel() FUE LLAMADA", flush=True)
     try:
         import sys, os, datetime
         import pandas as pd
@@ -1207,9 +1208,11 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         
         ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
+        print(f"🔷🔷🔷 [DIAGNOSTICO] ok_local={ok_local} | out_path={out_path} | existe={os.path.exists(out_path)}", flush=True)
         
-        # Subida inmediata a Google Drive y Git en hilo background (cero latencia, no congela la UI)
+        # Subida inmediata a Google Drive en hilo background (cero latencia, no congela la UI)
         if ok_local and out_path and os.path.exists(out_path):
+            print("🔷🔷🔷 [DIAGNOSTICO] Entrando al bloque de subida a Drive", flush=True)
             sa_info = None
             try:
                 import streamlit as st
@@ -1219,26 +1222,17 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
                 pass
 
             import threading
-            def _async_sync(p, sa, r_dir):
-                # 1. Subida a Google Drive
+            def _async_upload(p, sa):
                 try:
                     from scripts.gdrive_uploader import subir_archivo_a_gdrive
                     subir_archivo_a_gdrive(p, sa_dict=sa)
                 except Exception as e_drive:
                     print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
 
-                # 2. Sincronización automática a GitHub para reflejo inmediato en la PC
-                try:
-                    import subprocess
-                    subprocess.run(["git", "add", "data/asistencia.db", p], cwd=r_dir, capture_output=True)
-                    subprocess.run(["git", "commit", "-m", "update: sincronizacion automatica de aprobaciones"], cwd=r_dir, capture_output=True)
-                    subprocess.run(["git", "push", "origin", "main"], cwd=r_dir, capture_output=True, timeout=25)
-                except Exception:
-                    pass
-
-            threading.Thread(target=_async_sync, args=(out_path, sa_info, root_dir), daemon=True).start()
+            threading.Thread(target=_async_upload, args=(out_path, sa_info), daemon=True).start()
         return True
     except Exception as e:
+        print(f"🔷🔷🔷 [DIAGNOSTICO] EXCEPCION CAPTURADA: {e}", flush=True)
         print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
         return False
 
