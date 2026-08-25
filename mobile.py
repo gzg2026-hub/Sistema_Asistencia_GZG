@@ -284,6 +284,16 @@ st.markdown("""
         box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75) !important;
     }
 
+    /* Respuesta táctil inmediata al 1er toque en celulares */
+    button,
+    [data-testid="baseButton-secondary"],
+    [data-testid="baseButton-primary"],
+    .stButton > button {
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent !important;
+        cursor: pointer !important;
+    }
+
     /* Bordes e inputs */
     div[data-baseweb="input"],
     .stTextInput > div > div,
@@ -741,33 +751,34 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# Callbacks atómicos para ejecución inmediata en el primer toque táctil
+def callback_logout():
+    _cur_token = st.query_params.get('token', '')
+    curr_user = get_current_user()
+    curr_uname = curr_user.get('username', '') if curr_user else ''
+    eliminar_token_sesion(token=_cur_token, username=curr_uname)
+    try:
+        if "token" in st.query_params:
+            del st.query_params["token"]
+        st.query_params.clear()
+    except Exception:
+        pass
+    logout_user()
+    st.session_state['authenticated'] = False
+    st.session_state['user'] = None
+    st.session_state['just_logged_out'] = True
+    st.session_state['show_change_pw_box'] = False
+
+def callback_toggle_pw():
+    st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
+
 # 2 Botones Nativos Gemelos Simétricos (50% Clave a la izquierda / 50% Salir a la derecha)
 col_b1, col_b2 = st.columns(2)
 with col_b1:
-    if st.button("🔑 Clave", key="btn_toggle_change_pw", use_container_width=True):
-        st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
-        st.rerun()
+    st.button("🔑 Clave", key="btn_toggle_change_pw", on_click=callback_toggle_pw, use_container_width=True)
 
 with col_b2:
-    if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        # 1. Eliminar tokens de BD tanto por token como por username
-        _cur_token = st.query_params.get('token', '')
-        eliminar_token_sesion(token=_cur_token, username=username)
-        # 2. Limpiar query params de URL
-        try:
-            if "token" in st.query_params:
-                del st.query_params["token"]
-            st.query_params.clear()
-        except Exception:
-            pass
-        # 3. Limpiar estado de autenticación de forma segura
-        logout_user()
-        st.session_state['authenticated'] = False
-        st.session_state['user'] = None
-        st.session_state['just_logged_out'] = True
-        st.session_state['show_change_pw_box'] = False
-        # 4. Rerun inmediato y limpio al Login
-        st.rerun()
+    st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
