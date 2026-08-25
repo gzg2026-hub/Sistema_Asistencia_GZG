@@ -627,13 +627,36 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                 r_idx = ws.max_row
                 ws.row_dimensions[r_idx].height = 20
 
-                est_fill = fill_approved if estado == 'APROBADO' else (fill_rejected if estado == 'RECHAZADO' else fill_pending)
-                est_font = font_estado_ok if estado == 'APROBADO' else (font_estado_no if estado == 'RECHAZADO' else font_estado_pend)
+                # Estilos por columna de estado:
+                def _get_status_style(st_val):
+                    s = str(st_val).strip().upper()
+                    if s == 'APROBADO':
+                        return fill_approved, font_estado_ok
+                    elif s == 'RECHAZADO':
+                        return fill_rejected, font_estado_no
+                    elif s == 'PENDIENTE':
+                        return fill_pending, font_estado_pend
+                    return PatternFill(), font_data
+
+                fill_13, font_13 = _get_status_style(estado)
+                fill_15, font_15 = _get_status_style(est_n1)
+                fill_17, font_17 = _get_status_style(est_n2) if est_n2 != '-' else (PatternFill(), font_data)
 
                 for c_idx in range(1, len(row_data) + 1):
                     cell = ws.cell(row=r_idx, column=c_idx)
-                    cell.font = est_font if c_idx == 13 else font_data
-                    cell.fill = est_fill if c_idx == 13 else PatternFill()
+                    if c_idx == 13:
+                        cell.font = font_13
+                        cell.fill = fill_13
+                    elif c_idx == 15:
+                        cell.font = font_15
+                        cell.fill = fill_15
+                    elif c_idx == 17:
+                        cell.font = font_17
+                        cell.fill = fill_17
+                    else:
+                        cell.font = font_data
+                        cell.fill = PatternFill()
+
                     cell.border = thin_border
                     # Columnas centradas: DNI (1), Fecha Turno (6), Turno (7), Entrada (8), Salida (9),
                     # Horas Trabajadas (10), Horas Extras (11), Exceso Jornada (12), Estado Final (13),
