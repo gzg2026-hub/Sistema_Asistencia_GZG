@@ -126,6 +126,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Fondo sólido base - SIEMPRE presente, sin importar el estado de login.
+# Esto elimina el parpadeo porque nunca se agrega ni se quita del DOM.
+st.markdown("""
+<div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #121418; pointer-events: none;"></div>
+""", unsafe_allow_html=True)
+
 # Inicializar Base de Datos y Autenticación
 if "db_initialized" not in st.session_state:
     init_db()
@@ -181,8 +187,8 @@ st.markdown("""
        FONDO OSCURO NATIVO PWA GZG (100% ESTÁTICO SIN PARPADEO)
        ===================================================================== */
     html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
-        background-color: #121418 !important;
-        background: #121418 !important;
+        background-color: transparent !important;
+        background: transparent !important;
         color: #FFFFFF !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
@@ -634,21 +640,11 @@ st.markdown("""
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Inyectar fondo minero de alta definición con maquinaria minera visible
+    # Foto minera HD que se apila sobre el fondo sólido (-1 sobre -2)
     if hero_b64:
         st.markdown(f"""
-<style>
-.stApp,
-[data-testid="stAppViewContainer"] {{
-    background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
-    background-size: cover !important;
-    background-attachment: fixed !important;
-}}
-[data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
-    background-color: transparent !important;
-}}
-</style>
-""", unsafe_allow_html=True)
+        <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url('data:image/jpeg;base64,{hero_b64}') no-repeat center top; background-size: cover; background-attachment: fixed;"></div>
+        """, unsafe_allow_html=True)
 
     # 1. Cabecera Superior Corporativa (Logo y Títulos arriba bien pegados al tope)
     st.markdown(f"""
@@ -722,20 +718,6 @@ if current_user:
     if db_user_fresh:
         current_user = db_user_fresh
         st.session_state['user'] = db_user_fresh
-
-# Forzar fondo sólido oscuro en Dashboard para tapar cualquier fondo residual
-st.markdown("""
-<style>
-.stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stMain"],
-.main {
-    background: #121418 !important;
-    background-color: #121418 !important;
-    background-image: none !important;
-}
-</style>
-""", unsafe_allow_html=True)
 
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
