@@ -582,6 +582,18 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
+    /* Cabecera uniforme en 2 líneas limpias para tarjetas de solicitud expandibles */
+    div[data-testid="stExpander"] details summary,
+    div[data-testid="stExpander"] summary {
+        padding: 8px 12px !important;
+    }
+    div[data-testid="stExpander"] details summary p,
+    div[data-testid="stExpander"] summary p,
+    div[data-testid="stExpander"] summary [data-testid="stMarkdownContainer"] {
+        white-space: pre-line !important;
+        line-height: 1.45 !important;
+    }
+
     /* File Uploader: Botón Upload en Tono Gris Neutro Original (Garantizado) */
     div[data-testid="stFileUploader"] button,
     div[data-testid="stFileUploader"] [data-testid="baseButton-secondary"],
@@ -937,7 +949,7 @@ with tab_pendientes:
             he_hhmm = row.get('horas_extras_hhmm', '00:00')
             exceso_hhmm = row.get('exceso_jornada_hhmm', '00:00')
             avatar_url = get_worker_avatar_url(row.get('dni'), worker_name)
-            with st.expander(f"👤 **{worker_name}** ({fecha_sol}) — ⏰ {he_hhmm} | ⚠️ {exceso_hhmm}", expanded=False):
+            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
                 st.markdown(f"""
                 <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                     <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
