@@ -2,6 +2,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 import pandas as pd
 import datetime
+import time
 import os
 import sys
 import base64
@@ -713,8 +714,8 @@ if not is_authenticated():
                 st.warning("Por favor ingresa tu usuario y contraseña.")
 
     st.markdown("""
-<div style="text-align: center; font-size: 11px; font-weight: 600; color: #9A9EA7; margin: 4px 0 10px 0; letter-spacing: 0.8px;">
-Creado por raules v1.0.0
+<div style="position: fixed; bottom: 0; left: 0; width: 100vw; background: rgba(14, 16, 20, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; font-size: 11px; font-weight: 600; color: #8A8E97; padding: 6px 0 8px 0; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
+    Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
     
@@ -877,10 +878,11 @@ if st.session_state.get("show_change_pw_box", False):
 
 
 
-# Sincronizar estado persistente de aprobaciones desde Google Drive / Excel al iniciar sesión
-if "aprobaciones_synced" not in st.session_state:
+# Sincronizar estado persistente de aprobaciones desde Google Drive / Excel
+ahora_ts = time.time()
+if "last_drive_sync" not in st.session_state or (ahora_ts - st.session_state.get("last_drive_sync", 0)) > 5:
     sincronizar_aprobaciones_con_gdrive()
-    st.session_state["aprobaciones_synced"] = True
+    st.session_state["last_drive_sync"] = ahora_ts
 
 # Cargar data de aprobaciones directamente de SQLite sin bucles
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
@@ -1125,7 +1127,8 @@ with tab_dashboard:
         st.bar_chart(chart_df.set_index('Estado'))
 
 st.markdown("""
-<div style="text-align: center; font-size: 12px; font-weight: 600; color: #9A9EA7; margin: 40px 0 60px 0; letter-spacing: 0.8px;">
-Creado por raules v1.0.0
+<div style="position: fixed; bottom: 0; left: 0; width: 100vw; background: rgba(14, 16, 20, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid rgba(255, 255, 255, 0.06); text-align: center; font-size: 11px; font-weight: 600; color: #8A8E97; padding: 6px 0 8px 0; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
+    Creado por raules v1.0.0
 </div>
+<div style="height: 35px;"></div>
 """, unsafe_allow_html=True)
