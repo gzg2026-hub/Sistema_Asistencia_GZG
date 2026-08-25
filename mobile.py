@@ -783,11 +783,11 @@ st.markdown(f"""
     </div>
 </div>
 
-<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 7px 12px; margin-top: 12px; margin-bottom: -4px; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">
+<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 10px 14px; margin-top: 14px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center;">
+    <div style="font-size: 14px; font-weight: 800; color: #FFFFFF;">
         Hola, {nombre_saludo} 👋
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #F58220; background: rgba(245, 130, 32, 0.15); border: 1px solid rgba(245, 130, 32, 0.3); border-radius: 6px; padding: 2px 8px; letter-spacing: 0.5px; text-transform: uppercase;">
+    <div style="font-size: 11px; font-weight: 700; color: #F58220; background: rgba(245, 130, 32, 0.15); border: 1px solid rgba(245, 130, 32, 0.3); border-radius: 6px; padding: 3px 10px; letter-spacing: 0.5px; text-transform: uppercase;">
         {rol}
     </div>
 </div>
@@ -829,6 +829,8 @@ with col_b1:
 
 with col_b2:
     st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
+
+st.markdown("<div style='margin-bottom: 14px;'></div>", unsafe_allow_html=True)
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
