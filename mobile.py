@@ -874,6 +874,69 @@ if st.session_state.get("show_change_pw_box", False):
 
 
 
+# ---------------------------------------------------------
+# SISTEMA DE NOTIFICACIONES WEB PUSH PWA
+# ---------------------------------------------------------
+try:
+    from core.push_notifications import obtener_o_crear_claves_vapid, guardar_suscripcion_push
+    vapid_k = obtener_o_crear_claves_vapid()
+    vapid_pub = vapid_k.get("public_key_b64", "")
+    
+    if "push_sub" in st.query_params:
+        try:
+            import urllib.parse
+            sub_raw = urllib.parse.unquote(st.query_params["push_sub"])
+            sub_data = json.loads(sub_raw)
+            guardar_suscripcion_push(username, sub_data)
+            del st.query_params["push_sub"]
+            st.toast("🔔 ¡Notificaciones push activadas en este dispositivo!", icon="📱")
+        except Exception:
+            pass
+
+    # Inyección de script JS para registro de Service Worker y suscripción a Web Push
+    st.components.v1.html(f"""
+    <script>
+    function urlBase64ToUint8Array(base64String) {{
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/\\-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {{
+        outputArray[i] = rawData.charCodeAt(i);
+      }}
+      return outputArray;
+    }}
+
+    async function initWebPush() {{
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      try {{
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        if (Notification.permission === 'granted') {{
+          let sub = await reg.pushManager.getSubscription();
+          if (!sub) {{
+            sub = await reg.pushManager.subscribe({{
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array("{vapid_pub}")
+            }});
+            const subStr = encodeURIComponent(JSON.stringify(sub));
+            const curUrl = new URL(window.parent.location.href);
+            if (!curUrl.searchParams.has('push_sub')) {{
+              curUrl.searchParams.set('push_sub', subStr);
+              window.parent.location.replace(curUrl.toString());
+            }}
+          }}
+        }}
+      }} catch(e) {{
+        console.log('WebPush notice:', e);
+      }}
+    }}
+    setTimeout(initWebPush, 1500);
+    </script>
+    """, height=0, width=0)
+except Exception:
+    pass
+
+
 # Cargar data de aprobaciones directamente de SQLite sin bloqueos de red
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
 
