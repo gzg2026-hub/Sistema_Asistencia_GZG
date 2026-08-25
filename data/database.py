@@ -1164,70 +1164,10 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
 
 def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
     """
-    Sincroniza el estado de aprobaciones desde Google Drive (o Excel local) hacia SQLite.
-    Garantiza que cualquier aprobación realizada en la nube persista permanentemente en todos los dispositivos.
+    No-op de seguridad: La base de datos SQLite es la fuente de verdad maestra e intocable.
+    Previene que archivos Excel antiguos de Drive sobrescriban solicitudes pendientes en SQLite.
     """
-    try:
-        import os, datetime
-        import pandas as pd
-        from scripts.gdrive_uploader import descargar_archivo_de_gdrive
-        
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        mes_str = datetime.date.today().strftime('%Y-%m')
-        file_name = f"Aprobaciones_GZG_{mes_str}.xlsx"
-        local_path = os.path.join(root_dir, 'downloads', 'data_procesada', file_name)
-        
-        # Intentar descargar desde Google Drive si existe
-        descargar_archivo_de_gdrive(file_name, local_path)
-        
-        if not os.path.exists(local_path):
-            return
-            
-        df_excel = pd.read_excel(local_path, header=3)
-        if df_excel.empty or 'DNI' not in df_excel.columns:
-            return
-            
-        conn = get_connection(db_path)
-        cursor = conn.cursor()
-        
-        for _, r in df_excel.iterrows():
-            dni_raw = str(r.get('DNI', '')).split('.')[0].strip()
-            if not dni_raw or dni_raw.lower() in ('nan', 'none'):
-                continue
-            dni = dni_raw.lstrip('0').zfill(8)
-            fecha_raw = r.get('Fecha Turno')
-            if not fecha_raw or str(fecha_raw).lower() in ('nan', 'none', ''):
-                continue
-            ts = pd.to_datetime(fecha_raw, errors='coerce', dayfirst=True)
-            fecha_iso = ts.strftime('%Y-%m-%d') if pd.notnull(ts) else str(fecha_raw)[:10]
-                
-            est_final = str(r.get('Estado Final', '')).strip().upper()
-            est_n1 = str(r.get('Estado N1', '')).strip().upper()
-            est_n2 = str(r.get('Estado N2', '')).strip().upper()
-            coment = str(r.get('Comentario Supervisor', '')).strip()
-            
-            # Solo sincronizar desde Drive hacia SQLite cuando hay una decisión definitiva.
-            # PENDIENTE en el Excel NO debe pisar la DB (la DB es la fuente de verdad de pendientes).
-            if est_final in ('APROBADO', 'RECHAZADO'):
-                cursor.execute("""
-                    UPDATE aprobaciones
-                    SET estado = ?,
-                        estado_n1 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE estado_n1 END,
-                        estado_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE estado_n2 END,
-                        comentario_supervisor = CASE WHEN ? != '' AND ? NOT IN ('NAN', 'NONE') THEN ? ELSE comentario_supervisor END
-                    WHERE fecha = ? AND dni = ?
-                """, (
-                    est_final,
-                    est_n1, est_n1,
-                    est_n2, est_n2,
-                    coment, coment, coment,
-                    fecha_iso, dni
-                ))
-                
-        conn.commit()
-        conn.close()
-    except Exception as e:
-        print(f"[Aviso] Sincronizacion Aprobaciones desde Drive: {e}")
+    pass
 
 
 def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_PATH) -> pd.DataFrame:
