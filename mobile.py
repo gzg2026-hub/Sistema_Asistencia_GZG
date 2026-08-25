@@ -715,7 +715,7 @@ if not is_authenticated():
                 st.warning("Por favor ingresa tu usuario y contraseña.")
 
     st.markdown("""
-<div style="position: fixed; bottom: 28px; left: 0; width: 100vw; text-align: center; font-size: 13px; font-weight: 600; color: #8A8E97; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
+<div style="width: 100%; text-align: center; margin-top: 28px; margin-bottom: 20px; font-size: 13px; font-weight: 600; color: #8A8E97; letter-spacing: 0.8px;">
     Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
@@ -1135,8 +1135,7 @@ with tab_dashboard:
         st.bar_chart(chart_df.set_index('Estado'))
 
 st.markdown("""
-<div style="position: fixed; bottom: 28px; left: 0; width: 100vw; text-align: center; font-size: 13px; font-weight: 600; color: #8A8E97; z-index: 99999; pointer-events: none; letter-spacing: 0.8px;">
+<div style="width: 100%; text-align: center; margin-top: 36px; margin-bottom: 30px; font-size: 13px; font-weight: 600; color: #8A8E97; letter-spacing: 0.8px;">
     Creado por raules v1.0.0
 </div>
-<div style="height: 60px;"></div>
 """, unsafe_allow_html=True)
