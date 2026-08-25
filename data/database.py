@@ -1226,42 +1226,36 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
 
 def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     """
-    Regenera el Excel oficial de aprobaciones desde SQLite y lo sube inmediatamente a Google Drive en segundo plano.
-    Se ejecuta tras cada accion de aprobacion/rechazo en el app movil sin bloquear la UI (0ms latencia).
+    Regenera el Excel oficial de aprobaciones desde SQLite y lo sube inmediatamente a Google Drive.
+    Garantiza que la subida a Drive siempre termine con éxito antes de finalizar la transacción.
     Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
     """
     try:
-        import threading
-        def _tarea_excel_background():
+        import sys, os, datetime
+        import pandas as pd
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        from data.exporter import exportar_aprobaciones_excel
+        
+        conn = get_connection(db_path)
+        df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
+        conn.close()
+        
+        mes_str = datetime.date.today().strftime('%Y-%m')
+        out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
+        
+        ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
+        
+        # Subida inmediata garantizada a Google Drive
+        if ok_local and out_path and os.path.exists(out_path):
             try:
-                import sys, os, datetime
-                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                from data.exporter import exportar_aprobaciones_excel
-                
-                conn = get_connection(db_path)
-                df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
-                conn.close()
-                
-                mes_str = datetime.date.today().strftime('%Y-%m')
-                out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-                os.makedirs(os.path.dirname(out_path), exist_ok=True)
-                
-                ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
-                
-                # Subida inmediata a Google Drive en segundo plano si el guardado local fue exitoso
-                if ok_local and out_path and os.path.exists(out_path):
-                    try:
-                        from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                        subir_archivo_a_gdrive(out_path)
-                    except Exception as e_drive:
-                        print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
-            except Exception as e_bg:
-                print(f"[Aviso] Error en background regenerar Excel: {e_bg}")
-
-        threading.Thread(target=_tarea_excel_background, daemon=True).start()
+                from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                subir_archivo_a_gdrive(out_path)
+            except Exception as e_drive:
+                print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
         return True
     except Exception as e:
-        print(f"[Aviso] No se pudo lanzar hilo de Excel de aprobaciones: {e}")
+        print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
         return False
 
 
