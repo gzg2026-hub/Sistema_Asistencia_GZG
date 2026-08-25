@@ -1208,7 +1208,7 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
         
         ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
         
-        # Subida inmediata a Google Drive en hilo background (cero latencia, no congela ni oscurece la UI)
+        # Subida inmediata a Google Drive y Git en hilo background (cero latencia, no congela la UI)
         if ok_local and out_path and os.path.exists(out_path):
             sa_info = None
             try:
@@ -1219,13 +1219,24 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
                 pass
 
             import threading
-            def _async_upload(p, sa):
+            def _async_sync(p, sa, r_dir):
+                # 1. Subida a Google Drive
                 try:
                     from scripts.gdrive_uploader import subir_archivo_a_gdrive
                     subir_archivo_a_gdrive(p, sa_dict=sa)
                 except Exception as e_drive:
                     print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
-            threading.Thread(target=_async_upload, args=(out_path, sa_info), daemon=True).start()
+
+                # 2. Sincronización automática a GitHub para reflejo inmediato en la PC
+                try:
+                    import subprocess
+                    subprocess.run(["git", "add", "data/asistencia.db", p], cwd=r_dir, capture_output=True)
+                    subprocess.run(["git", "commit", "-m", "update: sincronizacion automatica de aprobaciones"], cwd=r_dir, capture_output=True)
+                    subprocess.run(["git", "push", "origin", "main"], cwd=r_dir, capture_output=True, timeout=25)
+                except Exception:
+                    pass
+
+            threading.Thread(target=_async_sync, args=(out_path, sa_info, root_dir), daemon=True).start()
         return True
     except Exception as e:
         print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
