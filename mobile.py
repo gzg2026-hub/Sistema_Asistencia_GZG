@@ -21,7 +21,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from data.database import (
     init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
-    sincronizar_aprobaciones_desde_asistencia, cambiar_password_usuario, obtener_usuario_by_username,
+    sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive,
+    cambiar_password_usuario, obtener_usuario_by_username,
     crear_token_sesion, validar_token_sesion, eliminar_token_sesion
 )
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password, verify_password
@@ -864,6 +865,11 @@ if st.session_state.get("show_change_pw_box", False):
 
 
 
+
+# Sincronizar estado persistente de aprobaciones desde Google Drive / Excel al iniciar sesión
+if "aprobaciones_synced" not in st.session_state:
+    sincronizar_aprobaciones_con_gdrive()
+    st.session_state["aprobaciones_synced"] = True
 
 # Cargar data de aprobaciones directamente de SQLite sin bucles
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')

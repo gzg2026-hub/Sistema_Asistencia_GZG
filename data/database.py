@@ -1136,6 +1136,78 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     conn.close()
 
 
+def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
+    """
+    Sincroniza el estado de aprobaciones desde Google Drive (o Excel local) hacia SQLite.
+    Garantiza que cualquier aprobación realizada en la nube persista permanentemente en todos los dispositivos.
+    """
+    try:
+        import os, datetime
+        import pandas as pd
+        from scripts.gdrive_uploader import descargar_archivo_de_gdrive
+        
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        mes_str = datetime.date.today().strftime('%Y-%m')
+        file_name = f"Aprobaciones_GZG_{mes_str}.xlsx"
+        local_path = os.path.join(root_dir, 'downloads', 'data_procesada', file_name)
+        
+        # Intentar descargar desde Google Drive si existe
+        descargar_archivo_de_gdrive(file_name, local_path)
+        
+        if not os.path.exists(local_path):
+            return
+            
+        df_excel = pd.read_excel(local_path, header=3)
+        if df_excel.empty or 'DNI' not in df_excel.columns:
+            return
+            
+        conn = get_connection(db_path)
+        cursor = conn.cursor()
+        
+        for _, r in df_excel.iterrows():
+            dni_raw = str(r.get('DNI', '')).split('.')[0].strip()
+            if not dni_raw or dni_raw.lower() in ('nan', 'none'):
+                continue
+            dni = dni_raw.zfill(8)
+            fecha_raw = str(r.get('Fecha Turno', '')).strip()
+            if not fecha_raw or fecha_raw.lower() in ('nan', 'none'):
+                continue
+            if '/' in fecha_raw:
+                pts = fecha_raw.split('/')
+                if len(pts) == 3:
+                    fecha_iso = f"{pts[2]}-{pts[1].zfill(2)}-{pts[0].zfill(2)}"
+                else:
+                    fecha_iso = fecha_raw
+            else:
+                fecha_iso = fecha_raw[:10]
+                
+            est_final = str(r.get('Estado Final', '')).strip().upper()
+            est_n1 = str(r.get('Estado N1', '')).strip().upper()
+            est_n2 = str(r.get('Estado N2', '')).strip().upper()
+            coment = str(r.get('Comentario Supervisor', '')).strip()
+            
+            if est_final in ('APROBADO', 'RECHAZADO', 'PENDIENTE'):
+                cursor.execute("""
+                    UPDATE aprobaciones
+                    SET estado = ?,
+                        estado_n1 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO', 'PENDIENTE') THEN ? ELSE estado_n1 END,
+                        estado_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO', 'PENDIENTE') THEN ? ELSE estado_n2 END,
+                        comentario_supervisor = CASE WHEN ? != '' AND ? NOT IN ('NAN', 'NONE') THEN ? ELSE comentario_supervisor END
+                    WHERE fecha = ? AND dni = ?
+                """, (
+                    est_final,
+                    est_n1, est_n1,
+                    est_n2, est_n2,
+                    coment, coment, coment,
+                    fecha_iso, dni
+                ))
+                
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"[Aviso] Sincronizacion Aprobaciones desde Drive: {e}")
+
+
 def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_PATH) -> pd.DataFrame:
     """Obtener DataFrame de solicitudes de aprobacion directamente desde SQLite sin cache para respuesta instantanea."""
     conn = get_connection(db_path)
