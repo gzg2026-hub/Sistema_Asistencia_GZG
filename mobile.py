@@ -23,6 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from data.database import (
     init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
     sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive,
+    regenerar_aprobaciones_excel,
     cambiar_password_usuario, obtener_usuario_by_username,
     crear_token_sesion, validar_token_sesion, eliminar_token_sesion
 )
@@ -878,9 +879,16 @@ if st.session_state.get("show_change_pw_box", False):
 
 
 
-# Sincronizar estado persistente de aprobaciones desde Google Drive / Excel
+# Sincronizar estado persistente de aprobaciones con Google Drive / Excel
 ahora_ts = time.time()
-if "last_drive_sync" not in st.session_state or (ahora_ts - st.session_state.get("last_drive_sync", 0)) > 5:
+if "gdrive_clean_pushed" not in st.session_state:
+    try:
+        regenerar_aprobaciones_excel()
+    except Exception:
+        pass
+    st.session_state["gdrive_clean_pushed"] = True
+    st.session_state["last_drive_sync"] = ahora_ts
+elif (ahora_ts - st.session_state.get("last_drive_sync", 0)) > 10:
     sincronizar_aprobaciones_con_gdrive()
     st.session_state["last_drive_sync"] = ahora_ts
 

@@ -105,25 +105,28 @@ def _get_drive_service():
         from googleapiclient.discovery import build
         
         creds = None
-        creds_path = os.path.join(ROOT_DIR, "credentials.json")
-        if os.path.exists(creds_path):
-            try:
-                creds = service_account.Credentials.from_service_account_file(
-                    creds_path, scopes=["https://www.googleapis.com/auth/drive"]
+        
+        # 1. En Streamlit Cloud, priorizar siempre st.secrets["gcp_service_account"]
+        try:
+            import streamlit as st
+            if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+                creds = service_account.Credentials.from_service_account_info(
+                    dict(st.secrets["gcp_service_account"]),
+                    scopes=["https://www.googleapis.com/auth/drive"]
                 )
-            except Exception as e_cf:
-                log_drive(f"Aviso lectura credentials.json: {e_cf}")
+        except Exception:
+            pass
 
+        # 2. En PC local, intentar credentials.json si no hay st.secrets
         if not creds:
-            try:
-                import streamlit as st
-                if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
-                    creds = service_account.Credentials.from_service_account_info(
-                        dict(st.secrets["gcp_service_account"]),
-                        scopes=["https://www.googleapis.com/auth/drive"]
+            creds_path = os.path.join(ROOT_DIR, "credentials.json")
+            if os.path.exists(creds_path):
+                try:
+                    creds = service_account.Credentials.from_service_account_file(
+                        creds_path, scopes=["https://www.googleapis.com/auth/drive"]
                     )
-            except Exception:
-                pass
+                except Exception as e_cf:
+                    log_drive(f"Aviso lectura credentials.json: {e_cf}")
 
         if not creds:
             try:
