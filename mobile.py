@@ -29,7 +29,9 @@ def get_file_b64(path):
 @st.cache_data(show_spinner=False)
 def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
-    for logo_path in ["assets/gzg_logo_transparent.png", "assets/gzg_logo.png"]:
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    for logo_name in ["gzg_logo_transparent.png", "gzg_logo.png", "gzg_logo_clean.png"]:
+        logo_path = os.path.join(root_dir, "assets", logo_name)
         if os.path.exists(logo_path):
             with open(logo_path, "rb") as f:
                 return base64.b64encode(f.read()).decode()
@@ -38,10 +40,12 @@ def get_logo_base64():
 @st.cache_data(show_spinner=False)
 def get_hero_base64():
     """Obtiene la imagen de portada minera para el login."""
-    hero_path = "assets/login_mining_hero.jpg"
-    if os.path.exists(hero_path):
-        with open(hero_path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
+    root_dir = os.path.dirname(os.path.abspath(__file__))
+    for hero_name in ["login_mining_hero.jpg", "login_hero.jpg"]:
+        hero_path = os.path.join(root_dir, "assets", hero_name)
+        if os.path.exists(hero_path):
+            with open(hero_path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
     return ""
 
 @st.cache_data(show_spinner=False)
@@ -619,11 +623,21 @@ st.markdown("""
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Fondo minero HD fijo en capa trasera (0ms de latencia, cero parpadeo CSS)
+    # Inyectar fondo minero de alta definición con maquinaria minera visible
     if hero_b64:
         st.markdown(f"""
-        <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url('data:image/jpeg;base64,{hero_b64}') no-repeat center top; background-size: cover; background-attachment: fixed;"></div>
-        """, unsafe_allow_html=True)
+<style>
+.stApp,
+[data-testid="stAppViewContainer"] {{
+    background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
+    background-size: cover !important;
+    background-attachment: fixed !important;
+}}
+[data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
+    background-color: transparent !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
     # 1. Cabecera Superior Corporativa (Logo y Títulos arriba bien pegados al tope)
     st.markdown(f"""
