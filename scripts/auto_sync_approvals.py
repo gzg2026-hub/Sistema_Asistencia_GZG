@@ -30,8 +30,8 @@ def descargar_aprobaciones_actual():
         log_sync(f"{nombre_archivo} actualizado desde Drive.")
     return ok
 
-def sync_cycle(intervalo_segundos: int = 15):
-    log_sync("Iniciando descarga periódica de Aprobaciones (solo lectura desde Drive)...")
+def sync_cycle(intervalo_segundos: int = 300):
+    log_sync("Iniciando descarga periódica de Aprobaciones cada 5 minutos (solo lectura desde Drive)...")
     while True:
         try:
             descargar_aprobaciones_actual()
@@ -40,4 +40,4 @@ def sync_cycle(intervalo_segundos: int = 15):
         time.sleep(intervalo_segundos)
 
 if __name__ == "__main__":
-    sync_cycle(15)
+    sync_cycle(300)
