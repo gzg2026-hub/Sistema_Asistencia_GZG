@@ -191,6 +191,15 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                     else:
                         _log(f"Aviso: No se encontraron registros de asistencia para el día cerrado {ayer_str}.")
                 
+                # 4.5 Sincronizar y Regenerar Aprobaciones del mes y subir a Google Drive
+                try:
+                    from data.database import sincronizar_aprobaciones_desde_asistencia, regenerar_aprobaciones_excel, DB_PATH
+                    sincronizar_aprobaciones_desde_asistencia(DB_PATH)
+                    regenerar_aprobaciones_excel(DB_PATH)
+                    _log("Aprobaciones del mes sincronizadas y subidas a Google Drive con éxito.")
+                except Exception as e_aprob:
+                    _log(f"Aviso actualizando aprobaciones en schedule: {e_aprob}")
+
                 # Actualizar únicamente de forma local en la PC el archivo raíz principal Sistema_Asistencia_GZG_v1.0.xlsx
                 ruta_root_v1 = os.path.join(ROOT_DIR, "Sistema_Asistencia_GZG_v1.0.xlsx")
                 excel_bytes_root = exportar_asistencia_excel(df_trab, df_marc_master, df_asis, df_he_out, df_inc)
@@ -213,7 +222,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
     # 5. Sincronización Automática con GitHub para Streamlit Cloud
     try:
         _log("Sincronizando cambios diarios con GitHub / Streamlit Cloud...")
-        os.system('git add data/asistencia.db downloads/ && git commit -m "auto: Daily attendance update 9AM" && git push origin main')
+        os.system('git add data/asistencia.db downloads/ Padron_Trabajadores_GZG.xlsx && git commit -m "auto: Daily attendance & approvals update 9AM" && git push origin main')
         _log("[OK] Sincronizado exitosamente con GitHub.")
     except Exception as e_git:
         _log(f"Aviso en sincronización git: {e_git}")
