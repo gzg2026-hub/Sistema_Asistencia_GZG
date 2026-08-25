@@ -831,23 +831,29 @@ with col_b1:
 with col_b2:
     st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
 
+# Mensaje de confirmación de cambio de contraseña exitoso
+if st.session_state.get("pw_change_success", False):
+    st.success("✅ **¡Contraseña actualizada exitosamente!** Usa tu nueva clave en tu próximo inicio de sesión.")
+    st.session_state["pw_change_success"] = False
+
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
-    with st.expander("🔑 Cambiar mi Contraseña", expanded=True):
+    with st.container():
         st.markdown("""
-        <div style="background: rgba(245, 130, 32, 0.08); border: 1px solid rgba(245, 130, 32, 0.25); border-radius: 8px; padding: 6px 10px; margin-bottom: 8px; font-size: 11px; color: #D1D5DB;">
-            💡 <b>Sugerencia:</b> La nueva contraseña debe tener <b>6 o más caracteres</b> (letras, números o símbolos).
+        <div style="background: rgba(245, 130, 32, 0.08); border: 1px solid rgba(245, 130, 32, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
+            <div style="font-size: 14px; font-weight: 700; color: #F58220; margin-bottom: 4px;">🔑 Cambiar mi Contraseña</div>
+            <div style="font-size: 11px; color: #D1D5DB;">💡 La nueva contraseña debe tener <b>6 o más caracteres</b>.</div>
         </div>
         """, unsafe_allow_html=True)
-        with st.form("form_header_change_pw"):
-            p_act_h = st.text_input("Contraseña Actual", type="password")
-            p_nue_h = st.text_input("Nueva Contraseña", type="password", placeholder="Mínimo 6 caracteres", help="Debe tener al menos 6 caracteres")
-            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password", placeholder="Repite la nueva contraseña")
+        with st.form("form_header_change_pw", clear_on_submit=True):
+            p_act_h = st.text_input("Contraseña Actual", type="password", key="inp_pw_act")
+            p_nue_h = st.text_input("Nueva Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="inp_pw_nue")
+            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password", placeholder="Repite la nueva contraseña", key="inp_pw_cnf")
             col_f1, col_f2 = st.columns(2)
             with col_f1:
                 btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
             with col_f2:
-                btn_h_close = st.form_submit_button("✖ Cerrar", use_container_width=True)
+                btn_h_close = st.form_submit_button("✖ Cancelar", use_container_width=True)
             
             if btn_h_close:
                 st.session_state["show_change_pw_box"] = False
@@ -855,21 +861,22 @@ if st.session_state.get("show_change_pw_box", False):
             if btn_h_pw:
                 db_u = obtener_usuario_by_username(username)
                 if not db_u or not verify_password(p_act_h.strip(), db_u.get('password_hash', '')):
-                    st.error("La contraseña actual es incorrecta.")
+                    st.error("❌ La contraseña actual ingresada es incorrecta.")
                 elif not p_nue_h or len(p_nue_h.strip()) < 6:
                     st.warning("⚠️ La nueva contraseña debe tener al menos 6 caracteres.")
                 elif p_nue_h.strip() != p_cnf_h.strip():
-                    st.error("Las contraseñas no coinciden.")
+                    st.error("❌ Las nuevas contraseñas no coinciden.")
                 else:
                     new_h = hash_password(p_nue_h.strip())
                     if cambiar_password_usuario(username, new_h):
                         eliminar_token_sesion(username=username)
-                        st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
-                        st.success("Contraseña modificada exitosamente.")
+                        if st.session_state.get("user"):
+                            st.session_state["user"]["password_hash"] = new_h
                         st.session_state["show_change_pw_box"] = False
+                        st.session_state["pw_change_success"] = True
                         st.rerun()
                     else:
-                        st.error("Error al actualizar la contraseña.")
+                        st.error("❌ Error interno al actualizar la contraseña en la base de datos.")
 
 
 
