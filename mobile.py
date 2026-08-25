@@ -760,6 +760,17 @@ def get_user_display_name(u_dict, u_name):
         return nombre_comp.title()
     return u_name.title()
 
+def format_worker_name(nombres_str, apellidos_str):
+    """Retorna obligatoriamente el primer nombre y los apellidos completos (ej. Yenkli Ordoñez Arteaga)."""
+    noms = str(nombres_str or '').strip().split()
+    primer_nom = noms[0] if noms else ''
+    apells = str(apellidos_str or '').strip()
+    if primer_nom and apells:
+        return f"{primer_nom} {apells}".title()
+    elif primer_nom:
+        return primer_nom.title()
+    return apells.title()
+
 nombre_saludo = get_user_display_name(current_user, username)
 
 # Cabecera Central Corporativa GZG en Dashboard
@@ -771,12 +782,12 @@ st.markdown(f"""
     <div style="font-size: 18px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; line-height: 1.1; margin-bottom: 2px;">
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
-    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.95;">
+    <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; opacity: 0.95;">
         CONTROL DE HORAS EXTRAS
     </div>
 </div>
 
-<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 7px 12px 6px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 8px 12px; margin-top: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
     <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">
         Hola, {nombre_saludo} 👋
     </div>
@@ -953,7 +964,7 @@ with tab_pendientes:
     else:
         for idx, row in df_pendientes.iterrows():
             sol_id = row['id']
-            worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
+            worker_name = format_worker_name(row.get('nombres', ''), row.get('apellidos', ''))
             cargo = row.get('cargo', 'Operativo')
             fecha_sol = row.get('fecha', '')
             he_hhmm = row.get('horas_extras_hhmm', '00:00')
@@ -1045,7 +1056,7 @@ with tab_historial:
     else:
         cards_list = []
         for idx, row in df_hist.iterrows():
-            worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
+            worker_name = format_worker_name(row.get('nombres', ''), row.get('apellidos', ''))
             cargo = row.get('cargo', '')
             fecha_sol = row.get('fecha', '')
             estado_global = str(row.get('estado', 'PENDIENTE')).upper()
