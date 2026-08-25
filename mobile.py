@@ -874,6 +874,7 @@ if st.session_state.get("show_change_pw_box", False):
                             st.session_state["user"]["password_hash"] = new_h
                         st.session_state["show_change_pw_box"] = False
                         st.session_state["pw_change_success"] = True
+                        st.toast("🎉 ¡Contraseña actualizada exitosamente!", icon="🔑")
                         st.rerun()
                     else:
                         st.error("❌ Error interno al actualizar la contraseña en la base de datos.")
