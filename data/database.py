@@ -1180,39 +1180,23 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             est_n2 = str(r.get('Estado N2', '')).strip().upper()
             coment = str(r.get('Comentario Supervisor', '')).strip()
             
-            if est_final in ('APROBADO', 'RECHAZADO', 'PENDIENTE'):
-                if est_final == 'PENDIENTE':
-                    cursor.execute("""
-                        UPDATE aprobaciones
-                        SET estado = 'PENDIENTE',
-                            estado_n1 = 'PENDIENTE',
-                            estado_n2 = 'PENDIENTE',
-                            aprobado_por = NULL,
-                            aprobado_por_n1 = NULL,
-                            aprobado_por_n2 = NULL,
-                            comentario_n1 = NULL,
-                            comentario_n2 = NULL,
-                            comentario_supervisor = NULL,
-                            fecha_n1 = NULL,
-                            fecha_n2 = NULL,
-                            fecha_aprobacion = NULL
-                        WHERE fecha = ? AND dni = ?
-                    """, (fecha_iso, dni))
-                else:
-                    cursor.execute("""
-                        UPDATE aprobaciones
-                        SET estado = ?,
-                            estado_n1 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO', 'PENDIENTE') THEN ? ELSE estado_n1 END,
-                            estado_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO', 'PENDIENTE') THEN ? ELSE estado_n2 END,
-                            comentario_supervisor = CASE WHEN ? != '' AND ? NOT IN ('NAN', 'NONE') THEN ? ELSE comentario_supervisor END
-                        WHERE fecha = ? AND dni = ?
-                    """, (
-                        est_final,
-                        est_n1, est_n1,
-                        est_n2, est_n2,
-                        coment, coment, coment,
-                        fecha_iso, dni
-                    ))
+            # Solo sincronizar desde Drive hacia SQLite cuando hay una decisión definitiva.
+            # PENDIENTE en el Excel NO debe pisar la DB (la DB es la fuente de verdad de pendientes).
+            if est_final in ('APROBADO', 'RECHAZADO'):
+                cursor.execute("""
+                    UPDATE aprobaciones
+                    SET estado = ?,
+                        estado_n1 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE estado_n1 END,
+                        estado_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE estado_n2 END,
+                        comentario_supervisor = CASE WHEN ? != '' AND ? NOT IN ('NAN', 'NONE') THEN ? ELSE comentario_supervisor END
+                    WHERE fecha = ? AND dni = ?
+                """, (
+                    est_final,
+                    est_n1, est_n1,
+                    est_n2, est_n2,
+                    coment, coment, coment,
+                    fecha_iso, dni
+                ))
                 
         conn.commit()
         conn.close()
