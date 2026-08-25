@@ -787,7 +787,7 @@ st.markdown(f"""
     </div>
 </div>
 
-<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 8px 12px; margin-top: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+<div style="background: rgba(26, 29, 36, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 7px 12px; margin-top: 12px; margin-bottom: -4px; display: flex; justify-content: space-between; align-items: center;">
     <div style="font-size: 13px; font-weight: 800; color: #FFFFFF;">
         Hola, {nombre_saludo} 👋
     </div>
