@@ -1019,8 +1019,7 @@ with tab_pendientes:
                                 f.write(uploaded_file.getbuffer())
                             adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
 
-                        with st.spinner("Sincronizando con Google Drive..."):
-                            actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
+                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
                         st.rerun()
 
@@ -1037,8 +1036,7 @@ with tab_pendientes:
                                 f.write(uploaded_file.getbuffer())
                             adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
 
-                        with st.spinner("Sincronizando con Google Drive..."):
-                            actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
+                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
                         st.rerun()
 

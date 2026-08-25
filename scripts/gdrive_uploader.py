@@ -25,12 +25,13 @@ def log_drive(msg: str):
     print(line)
 
 
-def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bool:
+def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "", sa_dict: dict = None) -> bool:
     """
     Sube o actualiza un archivo local en la carpeta compartida de Google Drive (ID: 1YpKPT9uTbWzHguHqJrJMb8U5V3GwnEoU).
     EXCEPCIÓN AUTORIZADA POR EL USUARIO:
       1. Transacciones_Acumuladas.xlsx
       2. Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx (Reportes diarios cerrados)
+      3. Aprobaciones_GZG_YYYY-MM.xlsx (triggered inmediatamente tras cada accion de aprobacion/rechazo)
     PROHIBICIÓN STRICTA:
       - Sistema_Asistencia_GZG_v1.0.xlsx (Permanentemente local en PC)
     """
@@ -41,10 +42,6 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
     file_name = os.path.basename(local_file_path).strip()
     file_name_lower = file_name.lower()
 
-    # FILTRO DE EXCEPCION AUTORIZADA:
-    #   1. Transacciones_Acumuladas.xlsx
-    #   2. Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx (reportes diarios cerrados)
-    #   3. Aprobaciones_GZG_YYYY-MM.xlsx (triggered inmediatamente tras cada accion de aprobacion/rechazo)
     es_transacciones = (file_name_lower == "transacciones_acumuladas.xlsx")
     es_reporte_diario = file_name_lower.startswith("reporte_asistencia_gzg_") and file_name_lower.endswith(".xlsx")
     es_aprobaciones = file_name_lower.startswith("aprobaciones_gzg_") and file_name_lower.endswith(".xlsx")
@@ -56,12 +53,11 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
     log_drive(f"Iniciando subida autorizada de {file_name} a Google Drive (Folder ID: {DRIVE_FOLDER_ID})...")
     try:
         from googleapiclient.http import MediaFileUpload
-        service = _get_drive_service()
+        service = _get_drive_service(sa_dict=sa_dict)
         if not service:
             log_drive("Error: No se pudo autenticar con Google Drive API")
             return False
 
-        # Buscar si el archivo ya existe en la carpeta (soportando unidades compartidas de organización)
         query = f"'{DRIVE_FOLDER_ID}' in parents and name = '{file_name}' and trashed = false"
         results = service.files().list(
             q=query,
@@ -98,24 +94,35 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "") -> bo
         return False
 
 
-def _get_drive_service():
+def _get_drive_service(sa_dict: dict = None):
     """Construye y retorna el cliente oficial de Google Drive v3 con credenciales seguras."""
     try:
         from google.oauth2 import service_account
         from googleapiclient.discovery import build
         
         creds = None
-        
-        # 1. En Streamlit Cloud, priorizar siempre st.secrets["gcp_service_account"]
-        try:
-            import streamlit as st
-            if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+
+        # 0. Si se pasó sa_dict explícito (ej. desde hilo principal seguro)
+        if sa_dict:
+            try:
                 creds = service_account.Credentials.from_service_account_info(
-                    dict(st.secrets["gcp_service_account"]),
+                    sa_dict,
                     scopes=["https://www.googleapis.com/auth/drive"]
                 )
-        except Exception:
-            pass
+            except Exception:
+                pass
+        
+        # 1. En Streamlit Cloud, priorizar siempre st.secrets["gcp_service_account"]
+        if not creds:
+            try:
+                import streamlit as st
+                if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+                    creds = service_account.Credentials.from_service_account_info(
+                        dict(st.secrets["gcp_service_account"]),
+                        scopes=["https://www.googleapis.com/auth/drive"]
+                    )
+            except Exception:
+                pass
 
         # 2. En PC local, intentar credentials.json si no hay st.secrets
         if not creds:

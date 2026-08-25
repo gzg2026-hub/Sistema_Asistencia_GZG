@@ -1268,14 +1268,22 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
         
         # Subida inmediata a Google Drive en hilo background (cero latencia, no congela ni oscurece la UI)
         if ok_local and out_path and os.path.exists(out_path):
+            sa_info = None
+            try:
+                import streamlit as st
+                if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+                    sa_info = dict(st.secrets["gcp_service_account"])
+            except Exception:
+                pass
+
             import threading
-            def _async_upload(p):
+            def _async_upload(p, sa):
                 try:
                     from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                    subir_archivo_a_gdrive(p)
+                    subir_archivo_a_gdrive(p, sa_dict=sa)
                 except Exception as e_drive:
                     print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
-            threading.Thread(target=_async_upload, args=(out_path,), daemon=True).start()
+            threading.Thread(target=_async_upload, args=(out_path, sa_info), daemon=True).start()
         return True
     except Exception as e:
         print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
@@ -1386,7 +1394,7 @@ def actualizar_estado_aprobacion_nivel(
             if e1 == 'RECHAZADO' or e2 == 'RECHAZADO':
                 final_state = 'RECHAZADO'
             # Si no hay aprobador_n2 asignado -> el estado global depende de N1
-            elif not app_n2 or str(app_n2).strip().lower() in ('nan', 'none', ''):
+            elif not app_n2 or str(app_n2).strip().lower() in ('nan', 'none', '', '-'):
                 final_state = e1 or 'PENDIENTE'
             # Si hay aprobador_n2 -> requiere que ambos N1 y N2 estén APROBADOS
             elif e1 == 'APROBADO' and e2 == 'APROBADO':
