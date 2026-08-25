@@ -901,10 +901,14 @@ if rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'):
     df_rechazadas_mes = df_all[df_all['estado'] == 'RECHAZADO'].copy()
 else:
     # 1. PENDIENTES: Lo que REQUIERE acción inmediata del usuario
+    # Regla Jerárquica Estricta: Nivel 2 solo visualiza y puede aprobar cuando Nivel 1 ya aprobó
+    tiene_n1 = df_all['aprobador_n1'].fillna('').str.strip().ne('') & ~df_all['aprobador_n1'].fillna('').str.lower().isin(['-', 'none', 'nan'])
+    n1_aprobado_o_inexistente = (df_all['estado_n1'] == 'APROBADO') | (~tiene_n1)
+
     is_pend_for_me = (
         (df_all['aprobador_n1'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n1'] == 'PENDIENTE')
     ) | (
-        (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'PENDIENTE') & (df_all['estado_n1'] != 'RECHAZADO')
+        (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'PENDIENTE') & (df_all['estado_n1'] != 'RECHAZADO') & n1_aprobado_o_inexistente
     )
     df_pendientes = df_all[is_pend_for_me & (df_all['estado'] != 'RECHAZADO')].copy()
     

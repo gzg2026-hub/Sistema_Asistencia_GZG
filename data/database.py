@@ -1327,6 +1327,16 @@ def actualizar_estado_aprobacion_nivel(
     cursor = conn.cursor()
     try:
         st_upper = nuevo_estado.upper()
+        if nivel == 2 and st_upper == 'APROBADO':
+            cursor.execute("SELECT aprobador_n1, estado_n1 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+            check_row = cursor.fetchone()
+            if check_row:
+                app_n1, est_n1 = check_row[0], check_row[1]
+                if app_n1 and str(app_n1).strip().lower() not in ('nan', 'none', '-', '') and est_n1 != 'APROBADO':
+                    print(f"[Bloqueo de Seguridad] N2 no puede aprobar la solicitud {id_solicitud} sin que N1 ({app_n1}) haya aprobado primero.")
+                    conn.close()
+                    return False
+
         if nivel == 1:
             cursor.execute("""
                 UPDATE aprobaciones
