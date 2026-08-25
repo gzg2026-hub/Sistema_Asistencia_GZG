@@ -569,8 +569,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     pass
 
             cargo_val = str(worker_info.get('CARGO', worker_info.get('Posición', ''))).strip().lower()
-            # Estricto: Solo aplica si el cargo/posición contiene exactamente 'Mantenimiento' (como Josmell, Edin, Franco, etc.)
-            es_mantenimiento = "mantenimiento" in cargo_val
+            # Regla de Mantenimiento: Aplica para personal de Mantenimiento y para Josmell Huayama (DNI 46671923 - Jefe)
+            es_mantenimiento = "mantenimiento" in cargo_val or dni_clean == "46671923"
 
             # Cálculo de horas trabajadas (Regla Mantenimiento 06:25 AM vs Candado General 07:00/19:00)
             horas_trabajadas = 0.0

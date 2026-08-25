@@ -45,7 +45,7 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Asignación Universal de Turnos (DÍA / NOCHE / MANTENIMIENTO)**:
   * **Turno DÍA**: Entrada 07:00 AM (tolerancia hasta 07:15 AM). Salida 19:00 PM (12 Horas de Turno).
   * **Turno NOCHE**: Entrada 19:00 PM (tolerancia hasta 19:15 PM). Salida 07:00 AM del día siguiente (12 Horas de Turno).
-  * **Regla de Mantenimiento**: Para el personal cuyo cargo contenga la palabra "Mantenimiento", si la entrada ocurre antes de las 06:25 AM, se considera su marcación real de entrada. Si ingresa entre las 06:25 AM y 07:00 AM, su inicio oficial se ajusta a las 07:00 AM.
+  * **Regla de Mantenimiento**: Aplica para el personal cuyo cargo contenga la palabra "Mantenimiento" y para **Josmell Waldir Huayama Adriano (DNI `46671923` - Jefe de Mantenimiento)**. Si la entrada ocurre antes de las 06:25 AM, se considera su marcación real de entrada. Si ingresa entre las 06:25 AM y 07:00 AM, su inicio oficial se ajusta a las 07:00 AM.
   * **Lógica de Cambio de Guardia y Previos de Turno (Ciclos de 10 Días - ej. 20 de Agosto)**:
     - El cambio oficial de guardia ocurre cada 10 días e involucra únicamente a un grupo/cuadrilla específica (el resto del personal mantiene su horario normal 07:00-19:00 / 19:00-07:00).
     - **Turno Previo Noche (1-2 días antes del cambio)**: 19:00 PM a 05:00 AM del día siguiente (10 Horas). Permite que el turno entrante empiece a las 05:00 AM.
