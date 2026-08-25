@@ -1192,7 +1192,7 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     Garantiza que la subida a Drive siempre termine con éxito antes de finalizar la transacción.
     Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
     """
-    print("🔷🔷🔷 [DIAGNOSTICO] regenerar_aprobaciones_excel() FUE LLAMADA", flush=True)
+    print("[DIAGNOSTICO] regenerar_aprobaciones_excel() FUE LLAMADA", flush=True)
     try:
         import sys, os, datetime
         import pandas as pd
@@ -1208,11 +1208,11 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         
         ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
-        print(f"🔷🔷🔷 [DIAGNOSTICO] ok_local={ok_local} | out_path={out_path} | existe={os.path.exists(out_path)}", flush=True)
+        print(f"[DIAGNOSTICO] ok_local={ok_local} | out_path={out_path} | existe={os.path.exists(out_path)}", flush=True)
         
         # Subida inmediata a Google Drive en hilo background (cero latencia, no congela la UI)
         if ok_local and out_path and os.path.exists(out_path):
-            print("🔷🔷🔷 [DIAGNOSTICO] Entrando al bloque de subida a Drive", flush=True)
+            print("[DIAGNOSTICO] Entrando al bloque de subida a Drive", flush=True)
             sa_info = None
             try:
                 import streamlit as st
@@ -1232,7 +1232,7 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
             threading.Thread(target=_async_upload, args=(out_path, sa_info), daemon=True).start()
         return True
     except Exception as e:
-        print(f"🔷🔷🔷 [DIAGNOSTICO] EXCEPCION CAPTURADA: {e}", flush=True)
+        print(f"[DIAGNOSTICO] EXCEPCION CAPTURADA: {e}", flush=True)
         print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
         return False
 
@@ -1285,6 +1285,20 @@ def actualizar_estado_aprobacion(
     return resultado
 
 
+def obtener_hora_peru_str() -> str:
+    """Retorna la fecha y hora oficial de Perú (America/Lima / UTC-5) en formato YYYY-MM-DD HH:MM:SS."""
+    try:
+        import datetime
+        from zoneinfo import ZoneInfo
+        tz_peru = ZoneInfo("America/Lima")
+        return datetime.datetime.now(tz_peru).strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        import datetime
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        now_peru = now_utc - datetime.timedelta(hours=5)
+        return now_peru.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def actualizar_estado_aprobacion_nivel(
     id_solicitud: int,
     nivel: int,
@@ -1294,11 +1308,13 @@ def actualizar_estado_aprobacion_nivel(
     adjunto_path: str = None,
     db_path: str = DB_PATH
 ) -> bool:
-    """Actualiza la aprobación especificando Nivel 1 o Nivel 2, guarda adjuntos y evalúa el estado global."""
+    """Actualiza la aprobación especificando Nivel 1 o Nivel 2, guarda adjuntos y evalúa el estado global en hora local de Perú."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
     try:
         st_upper = nuevo_estado.upper()
+        hora_peru = obtener_hora_peru_str()
+
         if nivel == 2 and st_upper == 'APROBADO':
             cursor.execute("SELECT aprobador_n1, estado_n1 FROM aprobaciones WHERE id = ?", (id_solicitud,))
             check_row = cursor.fetchone()
@@ -1316,10 +1332,10 @@ def actualizar_estado_aprobacion_nivel(
                     aprobado_por_n1 = ?,
                     comentario_n1 = ?,
                     adjuntos = COALESCE(?, adjuntos),
-                    fecha_n1 = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    fecha_n1 = ?,
+                    updated_at = ?
                 WHERE id = ?
-            """, (st_upper, aprobado_por, comentario, adjunto_path, id_solicitud))
+            """, (st_upper, aprobado_por, comentario, adjunto_path, hora_peru, hora_peru, id_solicitud))
         elif nivel == 2:
             cursor.execute("""
                 UPDATE aprobaciones
@@ -1327,10 +1343,10 @@ def actualizar_estado_aprobacion_nivel(
                     aprobado_por_n2 = ?,
                     comentario_n2 = ?,
                     adjuntos = COALESCE(?, adjuntos),
-                    fecha_n2 = CURRENT_TIMESTAMP,
-                    updated_at = CURRENT_TIMESTAMP
+                    fecha_n2 = ?,
+                    updated_at = ?
                 WHERE id = ?
-            """, (st_upper, aprobado_por, comentario, adjunto_path, id_solicitud))
+            """, (st_upper, aprobado_por, comentario, adjunto_path, hora_peru, hora_peru, id_solicitud))
 
         # Evaluar estado final global de la aprobación:
         cursor.execute("SELECT estado_n1, estado_n2, aprobador_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
@@ -1354,9 +1370,10 @@ def actualizar_estado_aprobacion_nivel(
                 SET estado = ?,
                     aprobado_por = ?,
                     comentario_supervisor = ?,
-                    fecha_aprobacion = CURRENT_TIMESTAMP
+                    fecha_aprobacion = ?,
+                    updated_at = ?
                 WHERE id = ?
-            """, (final_state, aprobado_por, comentario, id_solicitud))
+            """, (final_state, aprobado_por, comentario, hora_peru, hora_peru, id_solicitud))
 
         conn.commit()
         conn.close()

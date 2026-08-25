@@ -25,3 +25,8 @@ Thumbs.db
 logs/
 downloads/
 descargas_biometrico/
+
+# Credenciales y llaves de servicio (Google Cloud)
+credentials.json
+gzg-*.json
+*.pem
