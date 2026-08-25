@@ -143,11 +143,59 @@
   </div>
 
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=35').then(function(reg) {
-        reg.update();
-      }).catch(function() {});
+    const VAPID_PUB_KEY = "BMo0zqUy8r8mFzeq69TRlqVCb3E_uC0d_xExa-bFr_RJ3FG8iBj9TqtLxSEIb5GrV5GXj0T_PPhV0z-0Fz59gAM";
+
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
     }
+
+    let swRegistration = null;
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js?v=36').then(function(reg) {
+        swRegistration = reg;
+        reg.update();
+      }).catch(function(e) {
+        console.log('SW register error:', e);
+      });
+    }
+
+    // Escuchar peticiones de suscripción Push desde el iframe de Streamlit
+    window.addEventListener('message', async function(event) {
+      if (event.data && event.data.type === 'GZG_REQUEST_PUSH') {
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm === 'granted') {
+            if (!swRegistration) {
+              swRegistration = await navigator.serviceWorker.ready;
+            }
+            let sub = await swRegistration.pushManager.getSubscription();
+            if (!sub) {
+              sub = await swRegistration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(event.data.vapid_pub || VAPID_PUB_KEY)
+              });
+            }
+            const subJson = JSON.stringify(sub);
+            const iframe = document.getElementById('app-frame');
+            if (iframe && iframe.contentWindow) {
+              iframe.contentWindow.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: subJson }, '*');
+            }
+          } else {
+            alert('Has denegado los permisos de notificación para este sitio.');
+          }
+        } catch(err) {
+          console.error('Error al suscribir push desde top-level:', err);
+        }
+      }
+    });
 
     var overlay = document.getElementById('loading-overlay');
     var frame = document.getElementById('app-frame');

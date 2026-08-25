@@ -908,16 +908,30 @@ try:
         except Exception:
             pass
 
+    # Verificar si el usuario ya tiene suscripciones push activas en la BD
+    from core.push_notifications import inicializar_tabla_push
+    inicializar_tabla_push()
+    conn_p = get_connection(DB_PATH)
+    cur_p = conn_p.cursor()
+    cur_p.execute("SELECT COUNT(*) FROM push_subscriptions WHERE username = ?", (username.strip().lower(),))
+    has_push = (cur_p.fetchone()[0] > 0)
+    conn_p.close()
+
+    btn_text = "✅ Alertas Activas en este Celular" if has_push else "🔔 Activar Alertas de Aprobación en Celular"
+    btn_color = "#2ECC71" if has_push else "#F58220"
+    btn_border = "rgba(46, 204, 113, 0.4)" if has_push else "rgba(245, 130, 32, 0.4)"
+    btn_bg = "rgba(46, 204, 113, 0.1)" if has_push else "linear-gradient(135deg, rgba(245, 130, 32, 0.15) 0%, rgba(245, 130, 32, 0.05) 100%)"
+
     # Inyección de script JS para registro de Service Worker y suscripción a Web Push
     st.components.v1.html(f"""
     <div id="push_card_container" style="margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
       <button id="btn_push_req" onclick="solicitarPermisoPush()" style="
         width: 100%;
-        background: linear-gradient(135deg, rgba(245, 130, 32, 0.15) 0%, rgba(245, 130, 32, 0.05) 100%);
-        border: 1px solid rgba(245, 130, 32, 0.4);
+        background: {btn_bg};
+        border: 1px solid {btn_border};
         border-radius: 10px;
         padding: 10px 14px;
-        color: #F58220;
+        color: {btn_color};
         font-size: 13px;
         font-weight: 700;
         cursor: pointer;
@@ -927,9 +941,8 @@ try:
         gap: 8px;
         box-sizing: border-box;
       ">
-        🔔 Activar Alertas de Aprobación en Celular
+        {btn_text}
       </button>
-      <div id="push_status_msg" style="font-size: 11px; text-align: center; color: #9CA3AF; margin-top: 4px; display: none;"></div>
     </div>
 
     <script>
@@ -944,33 +957,26 @@ try:
       return outputArray;
     }}
 
-    async function checkCurrentPushState() {{
-      const btn = document.getElementById('btn_push_req');
-      const msg = document.getElementById('push_status_msg');
-      if (!('Notification' in window) || !('serviceWorker' in navigator)) {{
-        if (btn) btn.style.display = 'none';
-        return;
+    // Escuchar respuesta de la ventana principal (si corre dentro del wrapper PWA de GitHub Pages)
+    window.addEventListener('message', function(event) {{
+      if (event.data && event.data.type === 'GZG_PUSH_SUB_SUCCESS' && event.data.sub) {{
+        const subStr = encodeURIComponent(event.data.sub);
+        const curUrl = new URL(window.parent.location.href);
+        curUrl.searchParams.set('push_sub', subStr);
+        window.parent.location.replace(curUrl.toString());
       }}
-      if (Notification.permission === 'granted') {{
-        if (btn) {{
-          btn.innerHTML = '✅ Alertas Activas en este Celular';
-          btn.style.borderColor = 'rgba(46, 204, 113, 0.4)';
-          btn.style.color = '#2ECC71';
-          btn.style.background = 'rgba(46, 204, 113, 0.1)';
-        }}
-      }} else if (Notification.permission === 'denied') {{
-        if (btn) {{
-          btn.innerHTML = '🔕 Notificaciones bloqueadas en navegador';
-          btn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
-          btn.style.color = '#E74C3C';
-        }}
-      }}
-    }}
+    }});
 
     async function solicitarPermisoPush() {{
       const btn = document.getElementById('btn_push_req');
-      const msg = document.getElementById('push_status_msg');
       
+      // 1. Si estamos dentro de un iframe (GitHub Pages PWA Wrapper), solicitar permiso a la ventana principal
+      if (window.parent && window.parent !== window) {{
+        window.parent.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+        return;
+      }}
+
+      // 2. Si estamos directo en la web de Streamlit
       if (!('Notification' in window)) {{
         alert('Este navegador no soporta notificaciones push.');
         return;
@@ -989,20 +995,16 @@ try:
             }});
           }}
           const subStr = encodeURIComponent(JSON.stringify(sub));
-          const curUrl = new URL(window.parent.location.href);
+          const curUrl = new URL(window.location.href);
           curUrl.searchParams.set('push_sub', subStr);
-          window.parent.location.replace(curUrl.toString());
+          window.location.replace(curUrl.toString());
         }} else if (perm === 'denied') {{
-          alert('Has bloqueado los permisos de notificación. Para activarlas, ve a los ajustes de tu navegador y permite las notificaciones para este sitio.');
-          checkCurrentPushState();
+          alert('Las notificaciones están bloqueadas en tu navegador. Ve a Configuración de Sitios y selecciona Permitir.');
         }}
       }} catch(err) {{
         console.error('Error al suscribir push:', err);
-        alert('Aviso: ' + err.message);
       }}
     }}
-
-    setTimeout(checkCurrentPushState, 600);
     </script>
     """, height=50)
 except Exception:
