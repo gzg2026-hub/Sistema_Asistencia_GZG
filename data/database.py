@@ -1266,13 +1266,16 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
         
         ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
         
-        # Subida inmediata garantizada a Google Drive
+        # Subida inmediata a Google Drive en hilo background (cero latencia, no congela ni oscurece la UI)
         if ok_local and out_path and os.path.exists(out_path):
-            try:
-                from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                subir_archivo_a_gdrive(out_path)
-            except Exception as e_drive:
-                print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+            import threading
+            def _async_upload(p):
+                try:
+                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                    subir_archivo_a_gdrive(p)
+                except Exception as e_drive:
+                    print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+            threading.Thread(target=_async_upload, args=(out_path,), daemon=True).start()
         return True
     except Exception as e:
         print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
