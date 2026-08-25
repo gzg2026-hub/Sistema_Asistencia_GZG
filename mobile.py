@@ -1,9 +1,20 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import datetime
 import os
 import sys
 import base64
+
+def signal_ready():
+    """Notifica a index.html (la página padre de la PWA) que el contenido ya se renderizó."""
+    try:
+        components.html(
+            "<script>try{window.top.postMessage({type: 'gzg:ready'}, '*');}catch(e){}</script>",
+            height=0, width=0
+        )
+    except Exception:
+        pass
 
 # Asegurar importaciones del proyecto
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -698,6 +709,7 @@ Creado por raules v1.0.0
 </div>
 """, unsafe_allow_html=True)
     
+    signal_ready()
     st.stop()
 
 # ---------------------------------------------------------
@@ -764,6 +776,8 @@ st.markdown(f"""
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+signal_ready()
 
 # Callbacks atómicos para ejecución inmediata en el primer toque táctil
 def callback_logout():

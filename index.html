@@ -13,11 +13,11 @@
   <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
   <meta name="application-name" content="GZG MINERALES">
   
-  <link rel="manifest" href="manifest.json?v=16">
-  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=16">
-  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=16">
-  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=16">
-  <link rel="shortcut icon" href="assets/favicon.png?v=16">
+  <link rel="manifest" href="manifest.json?v=35">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon-192.png?v=35">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png?v=35">
+  <link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png?v=35">
+  <link rel="shortcut icon" href="assets/favicon.png?v=35">
 
   <style>
     * {
@@ -53,10 +53,87 @@
       outline: 0;
       display: block;
       background-color: #121418;
+      opacity: 0;
+      transition: opacity 0.4s ease-in;
+    }
+
+    #app-frame.visible {
+      opacity: 1;
+    }
+
+    /* Splash Screen Corporativo GZG */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100dvh;
+      background-color: #121418;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.45s ease-out;
+    }
+
+    #loading-overlay.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      width: 82px;
+      height: 82px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 6px 16px rgba(0,0,0,0.8));
+    }
+
+    .splash-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      color: #FFFFFF;
+    }
+
+    .splash-title span {
+      color: #F58220;
+    }
+
+    .splash-subtitle {
+      font-size: 10px;
+      font-weight: 700;
+      color: #A0A5B1;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(245, 130, 32, 0.2);
+      border-top-color: #F58220;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
+  <!-- Overlay Splash Screen que cubre todo el arranque hasta que Streamlit avisa que está listo -->
+  <div id="loading-overlay">
+    <img src="assets/gzg_logo_transparent.png" class="splash-logo" alt="GZG Logo" onerror="this.src='assets/icon-192.png'">
+    <div class="splash-title">GZG <span>MINERALES</span></div>
+    <div class="splash-subtitle">CONTROL DE ASISTENCIA</div>
+    <div class="spinner"></div>
+  </div>
+
   <div id="app-container">
     <iframe 
       id="app-frame" 
@@ -67,10 +144,34 @@
 
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=16').then(reg => {
+      navigator.serviceWorker.register('sw.js?v=35').then(function(reg) {
         reg.update();
-      }).catch(() => {});
+      }).catch(function() {});
     }
+
+    var overlay = document.getElementById('loading-overlay');
+    var frame = document.getElementById('app-frame');
+    var shown = false;
+
+    function showApp() {
+      if (shown) return;
+      shown = true;
+      frame.classList.add('visible');
+      overlay.classList.add('fade-out');
+      setTimeout(function() {
+        overlay.style.display = 'none';
+      }, 450);
+    }
+
+    // Señal real: Streamlit avisa en cuanto terminó de renderizar
+    window.addEventListener('message', function(ev) {
+      if (ev.data && ev.data.type === 'gzg:ready') {
+        showApp();
+      }
+    });
+
+    // Red de seguridad: si la señal nunca llega, revela a los 18s
+    setTimeout(showApp, 18000);
   </script>
 </body>
 </html>
