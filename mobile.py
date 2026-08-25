@@ -723,6 +723,20 @@ if current_user:
         current_user = db_user_fresh
         st.session_state['user'] = db_user_fresh
 
+# Forzar fondo sólido oscuro en Dashboard para tapar cualquier fondo residual
+st.markdown("""
+<style>
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+.main {
+    background: #121418 !important;
+    background-color: #121418 !important;
+    background-image: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
