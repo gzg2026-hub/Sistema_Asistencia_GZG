@@ -902,6 +902,28 @@ try:
 
     # Inyección de script JS para registro de Service Worker y suscripción a Web Push
     st.components.v1.html(f"""
+    <div id="push_card_container" style="margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <button id="btn_push_req" onclick="solicitarPermisoPush()" style="
+        width: 100%;
+        background: linear-gradient(135deg, rgba(245, 130, 32, 0.15) 0%, rgba(245, 130, 32, 0.05) 100%);
+        border: 1px solid rgba(245, 130, 32, 0.4);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: #F58220;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-sizing: border-box;
+      ">
+        🔔 Activar Alertas de Aprobación en Celular
+      </button>
+      <div id="push_status_msg" style="font-size: 11px; text-align: center; color: #9CA3AF; margin-top: 4px; display: none;"></div>
+    </div>
+
     <script>
     function urlBase64ToUint8Array(base64String) {{
       const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -914,32 +936,67 @@ try:
       return outputArray;
     }}
 
-    async function initWebPush() {{
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    async function checkCurrentPushState() {{
+      const btn = document.getElementById('btn_push_req');
+      const msg = document.getElementById('push_status_msg');
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {{
+        if (btn) btn.style.display = 'none';
+        return;
+      }}
+      if (Notification.permission === 'granted') {{
+        if (btn) {{
+          btn.innerHTML = '✅ Alertas Activas en este Celular';
+          btn.style.borderColor = 'rgba(46, 204, 113, 0.4)';
+          btn.style.color = '#2ECC71';
+          btn.style.background = 'rgba(46, 204, 113, 0.1)';
+        }}
+      }} else if (Notification.permission === 'denied') {{
+        if (btn) {{
+          btn.innerHTML = '🔕 Notificaciones bloqueadas en navegador';
+          btn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+          btn.style.color = '#E74C3C';
+        }}
+      }}
+    }}
+
+    async function solicitarPermisoPush() {{
+      const btn = document.getElementById('btn_push_req');
+      const msg = document.getElementById('push_status_msg');
+      
+      if (!('Notification' in window)) {{
+        alert('Este navegador no soporta notificaciones push.');
+        return;
+      }}
+
       try {{
-        const reg = await navigator.serviceWorker.register('/sw.js');
-        if (Notification.permission === 'granted') {{
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {{
+          const reg = await navigator.serviceWorker.register('/sw.js');
+          await navigator.serviceWorker.ready;
           let sub = await reg.pushManager.getSubscription();
           if (!sub) {{
             sub = await reg.pushManager.subscribe({{
               userVisibleOnly: true,
               applicationServerKey: urlBase64ToUint8Array("{vapid_pub}")
             }});
-            const subStr = encodeURIComponent(JSON.stringify(sub));
-            const curUrl = new URL(window.parent.location.href);
-            if (!curUrl.searchParams.has('push_sub')) {{
-              curUrl.searchParams.set('push_sub', subStr);
-              window.parent.location.replace(curUrl.toString());
-            }}
           }}
+          const subStr = encodeURIComponent(JSON.stringify(sub));
+          const curUrl = new URL(window.parent.location.href);
+          curUrl.searchParams.set('push_sub', subStr);
+          window.parent.location.replace(curUrl.toString());
+        }} else if (perm === 'denied') {{
+          alert('Has bloqueado los permisos de notificación. Para activarlas, ve a los ajustes de tu navegador y permite las notificaciones para este sitio.');
+          checkCurrentPushState();
         }}
-      }} catch(e) {{
-        console.log('WebPush notice:', e);
+      }} catch(err) {{
+        console.error('Error al suscribir push:', err);
+        alert('Aviso: ' + err.message);
       }}
     }}
-    setTimeout(initWebPush, 1500);
+
+    setTimeout(checkCurrentPushState, 600);
     </script>
-    """, height=0, width=0)
+    """, height=50)
 except Exception:
     pass
 
