@@ -1168,18 +1168,12 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             dni_raw = str(r.get('DNI', '')).split('.')[0].strip()
             if not dni_raw or dni_raw.lower() in ('nan', 'none'):
                 continue
-            dni = dni_raw.zfill(8)
-            fecha_raw = str(r.get('Fecha Turno', '')).strip()
-            if not fecha_raw or fecha_raw.lower() in ('nan', 'none'):
+            dni = dni_raw.lstrip('0').zfill(8)
+            fecha_raw = r.get('Fecha Turno')
+            if not fecha_raw or str(fecha_raw).lower() in ('nan', 'none', ''):
                 continue
-            if '/' in fecha_raw:
-                pts = fecha_raw.split('/')
-                if len(pts) == 3:
-                    fecha_iso = f"{pts[2]}-{pts[1].zfill(2)}-{pts[0].zfill(2)}"
-                else:
-                    fecha_iso = fecha_raw
-            else:
-                fecha_iso = fecha_raw[:10]
+            ts = pd.to_datetime(fecha_raw, errors='coerce', dayfirst=True)
+            fecha_iso = ts.strftime('%Y-%m-%d') if pd.notnull(ts) else str(fecha_raw)[:10]
                 
             est_final = str(r.get('Estado Final', '')).strip().upper()
             est_n1 = str(r.get('Estado N1', '')).strip().upper()
