@@ -209,10 +209,7 @@ def init_db(db_path: str = DB_PATH):
     conn.commit()
     conn.close()
 
-    try:
-        sincronizar_padron_desde_excel(db_path)
-    except Exception:
-        pass
+    # init_db completo sin relectura de Excel en cada ejecución
 
 def clean_dni(val) -> str:
     """Normaliza cualquier DNI respetando estrictamente la Regla Invariante de 8 dígitos (zfill(8))."""
@@ -893,9 +890,15 @@ def crear_token_sesion(username: str, db_path: str = DB_PATH) -> str:
     conn.close()
     return token
 
-def validar_token_sesion(token: str, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
-    """Valida un token de sesión y retorna el objeto usuario si existe y está activo."""
-    if not token:
+def _normalize_token_str(tok) -> str:
+    if isinstance(tok, (list, tuple)):
+        tok = tok[0] if len(tok) > 0 else ""
+    return str(tok or "").strip()
+
+def validar_token_sesion(token: Any, db_path: str = DB_PATH) -> Optional[Dict[str, Any]]:
+    """Valida un token de sesión y devuelve el usuario si es válido (soporta strings y listas de query_params)."""
+    t_clean = _normalize_token_str(token)
+    if not t_clean:
         return None
     try:
         conn = get_connection(db_path)
@@ -907,7 +910,7 @@ def validar_token_sesion(token: str, db_path: str = DB_PATH) -> Optional[Dict[st
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
-        cursor.execute("SELECT username FROM user_tokens WHERE token = ?", (token.strip(),))
+        cursor.execute("SELECT username FROM user_tokens WHERE token = ?", (t_clean,))
         row = cursor.fetchone()
         conn.close()
         if row:
@@ -916,18 +919,25 @@ def validar_token_sesion(token: str, db_path: str = DB_PATH) -> Optional[Dict[st
         print(f"Error al validar token de sesion: {e}")
     return None
 
-def eliminar_token_sesion(token: str, db_path: str = DB_PATH):
-    """Elimina un token de sesión al cerrar sesión manualmente."""
-    if not token:
+def eliminar_token_sesion(token: Any = None, username: str = None, db_path: str = DB_PATH):
+    """Elimina tokens de sesión al cerrar sesión manualmente para evitar re-ingresos accidentales."""
+    t_clean = _normalize_token_str(token)
+    u_clean = str(username or "").strip()
+    if not t_clean and not u_clean:
         return
     try:
         conn = get_connection(db_path)
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM user_tokens WHERE token = ?", (token.strip(),))
+        if t_clean and u_clean:
+            cursor.execute("DELETE FROM user_tokens WHERE token = ? OR LOWER(username) = LOWER(?)", (t_clean, u_clean))
+        elif t_clean:
+            cursor.execute("DELETE FROM user_tokens WHERE token = ?", (t_clean,))
+        elif u_clean:
+            cursor.execute("DELETE FROM user_tokens WHERE LOWER(username) = LOWER(?)", (u_clean,))
         conn.commit()
         conn.close()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error al eliminar token de sesion: {e}")
 
 def crear_usuario(username: str, password_hash: str, nombre_completo: str, rol: str, area_asignada: str = 'TODAS', cargo: str = '', db_path: str = DB_PATH) -> bool:
     """Crea un nuevo usuario en la base de datos."""
@@ -1086,17 +1096,17 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         
         def _to_hhmm(minutos):
             if not minutos or minutos <= 0:
-                return "0h 00m"
+                return "00:00"
             h = minutos // 60
             m = minutos % 60
-            return f"{h}h {m:02d}m"
+            return f"{h:02d}:{m:02d}"
         
         def _htrab_to_hhmm(val):
             if not val:
-                return "0h 00m"
+                return "00:00"
             h = int(val)
             m = int(round((val - h) * 60))
-            return f"{h}h {m:02d}m"
+            return f"{h:02d}:{m:02d}"
         
         jornada_str = _htrab_to_hhmm(h_trab)
         he_str = _to_hhmm(he_min)
@@ -1144,41 +1154,42 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
 
 def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     """
-    Regenera el Excel oficial de aprobaciones desde SQLite y lo sube inmediatamente a Google Drive.
-    Se ejecuta tras cada accion de aprobacion/rechazo en el app movil.
-    La subida a Drive ocurre en un hilo background para no bloquear la UI.
+    Regenera el Excel oficial de aprobaciones desde SQLite y lo sube inmediatamente a Google Drive en segundo plano.
+    Se ejecuta tras cada accion de aprobacion/rechazo en el app movil sin bloquear la UI (0ms latencia).
     Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
     """
     try:
-        import sys, os, datetime, threading
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        from data.exporter import exportar_aprobaciones_excel
-        
-        conn = get_connection(db_path)
-        df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
-        conn.close()
-        
-        mes_str = datetime.date.today().strftime('%Y-%m')
-        out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        
-        ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
-        
-        # Subida inmediata a Google Drive en segundo plano si el guardado local fue exitoso
-        if ok_local and out_path and os.path.exists(out_path):
-            def _subir_drive(filepath):
-                try:
-                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                    subir_archivo_a_gdrive(filepath)
-                except Exception as e_drive:
-                    print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+        import threading
+        def _tarea_excel_background():
+            try:
+                import sys, os, datetime
+                root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                from data.exporter import exportar_aprobaciones_excel
+                
+                conn = get_connection(db_path)
+                df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
+                conn.close()
+                
+                mes_str = datetime.date.today().strftime('%Y-%m')
+                out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+                os.makedirs(os.path.dirname(out_path), exist_ok=True)
+                
+                ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
+                
+                # Subida inmediata a Google Drive en segundo plano si el guardado local fue exitoso
+                if ok_local and out_path and os.path.exists(out_path):
+                    try:
+                        from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                        subir_archivo_a_gdrive(out_path)
+                    except Exception as e_drive:
+                        print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+            except Exception as e_bg:
+                print(f"[Aviso] Error en background regenerar Excel: {e_bg}")
 
-            hilo = threading.Thread(target=_subir_drive, args=(out_path,), daemon=True)
-            hilo.start()
-
-        return ok_local
+        threading.Thread(target=_tarea_excel_background, daemon=True).start()
+        return True
     except Exception as e:
-        print(f"[Aviso] No se pudo regenerar Excel de aprobaciones: {e}")
+        print(f"[Aviso] No se pudo lanzar hilo de Excel de aprobaciones: {e}")
         return False
 
 

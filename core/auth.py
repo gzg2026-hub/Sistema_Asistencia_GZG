@@ -9,9 +9,17 @@ def hash_password(password: str) -> str:
     """Genera un hash SHA-256 seguro para la contraseña."""
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
-def verify_password(password: str, password_hash: str) -> bool:
+def verify_password(password: str, password_hash: str, username: str = "") -> bool:
     """Verifica si la contraseña coincide con el hash almacenado."""
-    return hash_password(password) == password_hash
+    if not password or not password_hash:
+        return False
+    p_clean = password.strip()
+    if hash_password(p_clean) == password_hash:
+        return True
+    # Tolerancia móvil: si el usuario no digitó el asterisco en el celular (ej. jalva2026 -> jalva2026*)
+    if not p_clean.endswith('*') and hash_password(p_clean + '*') == password_hash:
+        return True
+    return False
 
 def init_auth():
     """Inicializa la tabla de usuarios y asegura usuarios por defecto."""
@@ -19,12 +27,13 @@ def init_auth():
     seed_default_users(hash_password)
 
 def login_user(username: str, password: str) -> bool:
-    """Intenta iniciar sesión para el usuario ingresado."""
+    """Intenta iniciar sesión para el usuario ingresado de forma segura y tolerante."""
     if not username or not password:
         return False
-    user = obtener_usuario_by_username(username.strip())
+    u_clean = username.strip().lower()
+    user = obtener_usuario_by_username(u_clean)
     if user and user.get('activo', 1) == 1:
-        if verify_password(password.strip(), user['password_hash']):
+        if verify_password(password.strip(), user['password_hash'], u_clean):
             st.session_state['authenticated'] = True
             st.session_state['user'] = {
                 'id': user['id'],
@@ -38,12 +47,15 @@ def login_user(username: str, password: str) -> bool:
     return False
 
 def logout_user():
-    """Cierra la sesión del usuario actual y limpia completamente el estado."""
+    """Cierra la sesión del usuario actual y limpia el estado de autenticación de forma segura."""
     st.session_state['authenticated'] = False
     st.session_state['user'] = None
     for k in list(st.session_state.keys()):
         if k not in ('authenticated', 'user'):
-            st.session_state.pop(k, None)
+            try:
+                del st.session_state[k]
+            except Exception:
+                pass
 
 def get_current_user():
     """Retorna la información del usuario autenticado o None."""

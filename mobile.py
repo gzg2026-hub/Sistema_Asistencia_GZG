@@ -19,12 +19,14 @@ from PIL import Image
 
 import json
 
+@st.cache_data(show_spinner=False)
 def get_file_b64(path):
     if os.path.exists(path):
         with open(path, "rb") as f:
             return base64.b64encode(f.read()).decode()
     return ""
 
+@st.cache_data(show_spinner=False)
 def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
     for logo_path in ["assets/gzg_logo_transparent.png", "assets/gzg_logo.png"]:
@@ -33,6 +35,7 @@ def get_logo_base64():
                 return base64.b64encode(f.read()).decode()
     return ""
 
+@st.cache_data(show_spinner=False)
 def get_hero_base64():
     """Obtiene la imagen de portada minera para el login."""
     hero_path = "assets/login_mining_hero.jpg"
@@ -57,8 +60,12 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
                             return f"data:{mime};base64,{b64}"
                     except Exception:
                         pass
-    avatar_name = str(worker_name).strip().replace(" ", "+")
-    return f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
+    # Generación 100% local en SVG (0ms latencia, sin peticiones de red externas)
+    partes = str(worker_name).strip().split()
+    initials = ("".join([p[0] for p in partes if p])[:2]).upper() if partes else "GZ"
+    svg_data = f'<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="40" fill="#F58220"/><text x="50%" y="54%" font-family="sans-serif" font-size="28" font-weight="bold" fill="#FFFFFF" text-anchor="middle" dominant-baseline="middle">{initials}</text></svg>'
+    b64_svg = base64.b64encode(svg_data.encode('utf-8')).decode('utf-8')
+    return f"data:image/svg+xml;base64,{b64_svg}"
 
 logo_b64 = get_logo_base64()
 hero_b64 = get_hero_base64()
@@ -105,23 +112,45 @@ st.set_page_config(
 )
 
 # Inicializar Base de Datos y Autenticación
-init_db()
-init_auth()
+if "db_initialized" not in st.session_state:
+    init_db()
+    init_auth()
+    st.session_state["db_initialized"] = True
+
+# ---------------------------------------------------------
+# AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
+# ---------------------------------------------------------
+if not is_authenticated():
+    if not st.session_state.get('just_logged_out', False):
+        persisted_token = st.query_params.get("token", "")
+        if persisted_token:
+            user_data = validar_token_sesion(persisted_token)
+            if user_data and user_data.get("activo", 1) == 1:
+                st.session_state["authenticated"] = True
+                st.session_state["user"] = {
+                    "id": user_data["id"],
+                    "username": user_data["username"],
+                    "nombre_completo": user_data["nombre_completo"],
+                    "rol": user_data["rol"],
+                    "area_asignada": user_data["area_asignada"],
+                    "cargo": user_data.get("cargo", "")
+                }
+    else:
+        st.session_state['just_logged_out'] = False
 
 # Inyectar metas para icono y PWA
 st.markdown(f"""
 <head>
     <title>GZG MINERALES</title>
     <meta name="apple-mobile-web-app-title" content="GZG MINERALES">
-    <meta name="application-name" content="GZG MINERALES">
-    <meta name="theme-color" content="#121418">
-    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="app/static/manifest.json">
+    <meta name="theme-color" content="#121418">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link rel="manifest" href="data:application/manifest+json;base64,{manifest_b64}">
-    <link rel="apple-touch-icon" sizes="180x180" href="app/static/icon-192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,{icon192_b64}">
+    <link rel="apple-touch-icon" href="app/static/icon-192.png">
+    <link rel="apple-touch-icon" href="data:image/png;base64,{icon192_b64}">
     <link rel="icon" type="image/png" sizes="192x192" href="app/static/icon-192.png">
     <link rel="icon" type="image/png" sizes="192x192" href="data:image/png;base64,{icon192_b64}">
     <link rel="icon" type="image/png" sizes="512x512" href="app/static/icon-512.png">
@@ -133,6 +162,43 @@ st.markdown(f"""
 # CSS TOTALMENTE AISLADO PARA CELULARES (Hides all desktop elements & prevents flickering)
 st.markdown("""
 <style>
+    /* =====================================================================
+       FONDO OSCURO NATIVO PWA GZG (100% ESTÁTICO SIN PARPADEO)
+       ===================================================================== */
+    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
+        background-color: #121418 !important;
+        background: #121418 !important;
+        color: #FFFFFF !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+    }
+
+    /* Desactivar oscurecimiento y parpadeo al recargar en Streamlit */
+    *, *::before, *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+    .stApp,
+    .stApp[data-test-script-state="running"],
+    [data-testid="stAppViewContainer"],
+    [data-testid="stAppViewContainer"][data-test-script-state="running"],
+    div[data-testid="stVerticalBlock"],
+    div[data-testid="stVerticalBlock"][data-test-script-state="running"],
+    div.block-container,
+    div.block-container[data-test-script-state="running"] {
+        opacity: 1 !important;
+        filter: none !important;
+    }
+
+    /* Padding compacto superior e inferior para vista móvil */
+    .main .block-container {
+        padding: 0.2rem 0.5rem 50px 0.5rem !important;
+        max-width: 500px !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+    }
+
     /* =====================================================================
        CAPA 1: OCULTAR SKELETONS Y PLACEHOLDERS (sin ocultar contenido real)
        ===================================================================== */
@@ -149,29 +215,6 @@ st.markdown("""
         opacity: 0 !important;
         height: 0px !important;
         width: 0px !important;
-    }
-
-    /* =====================================================================
-       CAPA 2: ELIMINAR TRANSICIONES - ZERO FLASH (sin tocar animaciones SVG)
-       ===================================================================== */
-    *,
-    *::before,
-    *::after {
-        transition-property: background-color, border-color, color, fill, stroke !important;
-        transition-duration: 0s !important;
-    }
-    .stApp,
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMain"],
-    .main,
-    div[data-testid="stVerticalBlock"],
-    div[data-testid="stTabs"],
-    div[data-baseweb="tab-panel"],
-    div[data-baseweb="tab-list"],
-    div[data-baseweb="tab-border"] {
-        opacity: 1 !important;
-        transition: none !important;
-        animation: none !important;
     }
 
     /* =====================================================================
@@ -228,25 +271,7 @@ st.markdown("""
         pointer-events: none !important;
     }
 
-    /* =====================================================================
-       FONDO OSCURO NATIVO PWA GZG
-       ===================================================================== */
-    html, body, .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], .main {
-        background-color: #121418 !important;
-        background: #121418 !important;
-        color: #FFFFFF !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        touch-action: pan-y !important;
-    }
 
-    /* Padding compacto superior e inferior para vista móvil */
-    .main .block-container {
-        padding: 0.2rem 0.5rem 50px 0.5rem !important;
-        max-width: 500px !important;
-        margin: 0 auto !important;
-        width: 100% !important;
-    }
 
     /* Formulario de Login: Contenedor con efecto Glassmorphism */
     div[data-testid="stForm"] {
@@ -581,43 +606,14 @@ st.markdown("""
 
 
 # ---------------------------------------------------------
-# AUTO-LOGIN PERSISTENTE SI "RECORDARME" ESTÁ ACTIVO
-# ---------------------------------------------------------
-if not is_authenticated():
-    persisted_token = st.query_params.get("token", "")
-    if persisted_token:
-        user_data = validar_token_sesion(persisted_token)
-        if user_data and user_data.get("activo", 1) == 1:
-            st.session_state["authenticated"] = True
-            st.session_state["user"] = {
-                "id": user_data["id"],
-                "username": user_data["username"],
-                "nombre_completo": user_data["nombre_completo"],
-                "rol": user_data["rol"],
-                "area_asignada": user_data["area_asignada"],
-                "cargo": user_data.get("cargo", "")
-            }
-
-# ---------------------------------------------------------
 # PANTALLA DE LOGIN MÓVIL CON FONDO MINERO GZG CORPORATIVO
 # ---------------------------------------------------------
 if not is_authenticated():
-    # Inyectar fondo minero de alta definición con maquinaria minera visible
+    # Fondo minero HD fijo en capa trasera (0ms de latencia, cero parpadeo CSS)
     if hero_b64:
         st.markdown(f"""
-<style>
-.stApp,
-[data-testid="stAppViewContainer"] {{
-    background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url("data:image/jpeg;base64,{hero_b64}") no-repeat center top !important;
-    background-size: cover !important;
-    background-attachment: fixed !important;
-}}
-[data-testid="stMain"], .main, .block-container, div[data-testid="stVerticalBlock"] {{
-    background-color: transparent !important;
-}}
-</style>
-""", unsafe_allow_html=True)
-
+        <div style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; background: linear-gradient(180deg, rgba(14, 16, 20, 0.0) 0%, rgba(14, 16, 20, 0.20) 38%, #0E1014 85%), url('data:image/jpeg;base64,{hero_b64}') no-repeat center top; background-size: cover; background-attachment: fixed;"></div>
+        """, unsafe_allow_html=True)
 
     # 1. Cabecera Superior Corporativa (Logo y Títulos arriba bien pegados al tope)
     st.markdown(f"""
@@ -645,7 +641,8 @@ if not is_authenticated():
 </div>
 """, unsafe_allow_html=True)
     
-    with st.form("form_login_mobile"):
+    # Formulario atómico para empaquetar credenciales de forma robusta en celular
+    with st.form("form_login_mobile", clear_on_submit=False):
         u_name = st.text_input("Usuario", placeholder="")
         u_pass = st.text_input("Contraseña", type="password", placeholder="")
         
@@ -658,6 +655,7 @@ if not is_authenticated():
         if btn_login:
             if u_name and u_pass:
                 if login_user(u_name.strip(), u_pass.strip()):
+                    st.session_state['just_logged_out'] = False
                     if recordarme:
                         new_token = crear_token_sesion(u_name.strip())
                         st.query_params["token"] = new_token
@@ -752,23 +750,22 @@ with col_b1:
 
 with col_b2:
     if st.button("🚪 Salir", key="btn_logout_mobile", use_container_width=True):
-        # 1. Eliminar token de BD si existe
+        # 1. Eliminar tokens de BD tanto por token como por username
         _cur_token = st.query_params.get('token', '')
-        if _cur_token:
-            try:
-                eliminar_token_sesion(_cur_token)
-            except Exception:
-                pass
+        eliminar_token_sesion(token=_cur_token, username=username)
         # 2. Limpiar query params de URL
         try:
+            if "token" in st.query_params:
+                del st.query_params["token"]
             st.query_params.clear()
         except Exception:
             pass
-        # 3. Limpiar session_state completamente
-        for _k in list(st.session_state.keys()):
-            del st.session_state[_k]
+        # 3. Limpiar estado de autenticación de forma segura
+        logout_user()
         st.session_state['authenticated'] = False
         st.session_state['user'] = None
+        st.session_state['just_logged_out'] = True
+        st.session_state['show_change_pw_box'] = False
         # 4. Rerun inmediato y limpio al Login
         st.rerun()
 
@@ -804,6 +801,7 @@ if st.session_state.get("show_change_pw_box", False):
                 else:
                     new_h = hash_password(p_nue_h.strip())
                     if cambiar_password_usuario(username, new_h):
+                        eliminar_token_sesion(username=username)
                         st.toast("🎉 ¡Contraseña actualizada!", icon="🔑")
                         st.success("Contraseña modificada exitosamente.")
                         st.session_state["show_change_pw_box"] = False
@@ -895,12 +893,10 @@ with tab_pendientes:
             worker_name = f"{row.get('nombres', '')} {row.get('apellidos', '')}".title()
             cargo = row.get('cargo', 'Operativo')
             fecha_sol = row.get('fecha', '')
-            he_hhmm = row.get('horas_extras_hhmm', '0h 00m')
-            exceso_hhmm = row.get('exceso_jornada_hhmm', '0h 00m')
-            
+            he_hhmm = row.get('horas_extras_hhmm', '00:00')
+            exceso_hhmm = row.get('exceso_jornada_hhmm', '00:00')
             avatar_url = get_worker_avatar_url(row.get('dni'), worker_name)
-            
-            with st.expander(f"👤 **{worker_name}** ({fecha_sol})", expanded=True):
+            with st.expander(f"👤 **{worker_name}** ({fecha_sol}) — ⏰ {he_hhmm} | ⚠️ {exceso_hhmm}", expanded=False):
                 st.markdown(f"""
                 <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                     <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />

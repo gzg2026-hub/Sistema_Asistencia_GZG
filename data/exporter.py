@@ -582,6 +582,25 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                 if coment.lower() in ('nan', 'none', ''):
                     coment = ""
 
+                def _clean_hhmm(val):
+                    if val is None or pd.isna(val):
+                        return "00:00"
+                    v_str = str(val).strip()
+                    if v_str.lower() in ('nan', 'none', '', '-'):
+                        return "00:00"
+                    import re
+                    m = re.match(r'^(\d+)\s*h\s*(\d+)\s*m?$', v_str, re.IGNORECASE)
+                    if m:
+                        return f"{int(m.group(1)):02d}:{int(m.group(2)):02d}"
+                    m2 = re.match(r'^(\d+):(\d+)$', v_str)
+                    if m2:
+                        return f"{int(m2.group(1)):02d}:{int(m2.group(2)):02d}"
+                    return v_str
+
+                jornada_fmt = _clean_hhmm(row.get('jornada_trabajada_hhmm', ''))
+                he_fmt = _clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
+                exceso_fmt = _clean_hhmm(row.get('exceso_jornada_hhmm', '00:00'))
+
                 row_data = [
                     dni_val,
                     quitar_tildes(str(row.get('apellidos', '') or '')),
@@ -592,9 +611,9 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     str(row.get('turno', '') or ''),
                     str(row.get('entrada', '') or ''),
                     str(row.get('salida', '') or ''),
-                    str(row.get('jornada_trabajada_hhmm', '') or ''),
-                    str(row.get('horas_extras_hhmm', '0h 00m') or '0h 00m'),
-                    str(row.get('exceso_jornada_hhmm', '0h 00m') or '0h 00m'),
+                    jornada_fmt,
+                    he_fmt,
+                    exceso_fmt,
                     estado,
                     aprob_n1,
                     est_n1,
@@ -616,7 +635,10 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     cell.font = est_font if c_idx == 13 else font_data
                     cell.fill = est_fill if c_idx == 13 else PatternFill()
                     cell.border = thin_border
-                    cell.alignment = align_center if c_idx in (1, 6, 8, 9, 14, 16, 18) else align_left
+                    # Columnas centradas: DNI (1), Fecha Turno (6), Turno (7), Entrada (8), Salida (9),
+                    # Horas Trabajadas (10), Horas Extras (11), Exceso Jornada (12), Estado Final (13),
+                    # Aprobador N1 (14), Estado N1 (15), Aprobador N2 (16), Estado N2 (17), Fecha Aprobacion (18)
+                    cell.alignment = align_center if c_idx in (1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18) else align_left
                     if c_idx == 1:
                         cell.number_format = '@'
 
