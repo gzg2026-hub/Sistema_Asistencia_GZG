@@ -319,22 +319,36 @@ def sincronizar_padron_desde_excel(db_path: str = DB_PATH):
             if n1 in ('nan', 'none', ''): n1 = None
             if n2 in ('nan', 'none', ''): n2 = None
 
-            cursor.execute("""
-                INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, aprobador_n1, aprobador_n2, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-                ON CONFLICT(dni) DO UPDATE SET
-                    apellidos = excluded.apellidos,
-                    nombres = excluded.nombres,
-                    cargo = excluded.cargo,
-                    area = excluded.area,
-                    aprobador_n1 = excluded.aprobador_n1,
-                    aprobador_n2 = excluded.aprobador_n2,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (dni, ape, nom, cargo, area, n1, n2))
+            if n1 is not None:
+                # Excel tiene aprobador -> actualizar todo incluyendo aprobadores
+                cursor.execute("""
+                    INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, aprobador_n1, aprobador_n2, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(dni) DO UPDATE SET
+                        apellidos = excluded.apellidos,
+                        nombres = excluded.nombres,
+                        cargo = excluded.cargo,
+                        area = excluded.area,
+                        aprobador_n1 = excluded.aprobador_n1,
+                        aprobador_n2 = excluded.aprobador_n2,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (dni, ape, nom, cargo, area, n1, n2))
+            else:
+                # Excel NO tiene aprobador -> preservar el aprobador existente en DB
+                cursor.execute("""
+                    INSERT INTO trabajadores (dni, apellidos, nombres, cargo, area, updated_at)
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(dni) DO UPDATE SET
+                        apellidos = excluded.apellidos,
+                        nombres = excluded.nombres,
+                        cargo = excluded.cargo,
+                        area = excluded.area,
+                        updated_at = CURRENT_TIMESTAMP
+                """, (dni, ape, nom, cargo, area))
 
         conn.commit()
 
-        # Actualizar tabla aprobaciones existente
+        # Actualizar tabla aprobaciones existente (preservar aprobadores si Excel los tiene vacios)
         for _, r in df_data.iterrows():
             dni = r['dni']
             cargo = str(r.get('cargo', '')).strip()
@@ -343,11 +357,20 @@ def sincronizar_padron_desde_excel(db_path: str = DB_PATH):
             n2 = str(r.get('aprobador_n2', '')).strip().lower()
             if n1 in ('nan', 'none', ''): n1 = None
             if n2 in ('nan', 'none', ''): n2 = None
-            cursor.execute("""
-                UPDATE aprobaciones
-                SET aprobador_n1 = ?, aprobador_n2 = ?, cargo = ?, area = ?
-                WHERE dni = ?
-            """, (n1, n2, cargo, area, dni))
+            if n1 is not None:
+                # Solo actualizar aprobadores si el Excel los tiene
+                cursor.execute("""
+                    UPDATE aprobaciones
+                    SET aprobador_n1 = ?, aprobador_n2 = ?, cargo = ?, area = ?
+                    WHERE dni = ?
+                """, (n1, n2, cargo, area, dni))
+            else:
+                # Preservar aprobadores existentes, solo actualizar cargo y area
+                cursor.execute("""
+                    UPDATE aprobaciones
+                    SET cargo = ?, area = ?
+                    WHERE dni = ?
+                """, (cargo, area, dni))
 
         conn.commit()
         conn.close()
@@ -1125,12 +1148,13 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
             n1_app, n2_app
         ))
 
-        # Actualizar N1 y N2 si ya existía el registro
-        cursor.execute("""
-            UPDATE aprobaciones
-            SET aprobador_n1 = ?, aprobador_n2 = ?
-            WHERE fecha = ? AND dni = ?
-        """, (n1_app, n2_app, fecha, dni))
+        # Actualizar N1 y N2 solo si tenemos valores válidos desde trabajadores
+        if n1_app:
+            cursor.execute("""
+                UPDATE aprobaciones
+                SET aprobador_n1 = ?, aprobador_n2 = ?
+                WHERE fecha = ? AND dni = ?
+            """, (n1_app, n2_app, fecha, dni))
         
     conn.commit()
     conn.close()
