@@ -1135,26 +1135,28 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         he_str = _to_hhmm(he_min)
         exceso_str = _to_hhmm(exceso_min)
         
+        st_n2_init = '-' if (not n2_app or str(n2_app).strip().lower() in ('', 'none', 'nan', '-')) else 'PENDIENTE'
         cursor.execute("""
             INSERT OR IGNORE INTO aprobaciones (
                 fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
                 horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
                 horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador,
                 aprobador_n1, aprobador_n2, estado_n1, estado_n2
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', 'PENDIENTE')
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?)
         """, (
             fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
             h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str, obs or '',
-            n1_app, n2_app
+            n1_app, n2_app, st_n2_init
         ))
 
         # Actualizar N1 y N2 solo si tenemos valores válidos desde trabajadores
         if n1_app:
             cursor.execute("""
                 UPDATE aprobaciones
-                SET aprobador_n1 = ?, aprobador_n2 = ?
+                SET aprobador_n1 = ?, aprobador_n2 = ?,
+                    estado_n2 = CASE WHEN ? = '-' THEN '-' ELSE estado_n2 END
                 WHERE fecha = ? AND dni = ?
-            """, (n1_app, n2_app, fecha, dni))
+            """, (n1_app, n2_app, n2_app, fecha, dni))
         
     conn.commit()
     conn.close()

@@ -873,20 +873,7 @@ if st.session_state.get("show_change_pw_box", False):
 
 
 
-# Sincronizar estado persistente de aprobaciones con Google Drive / Excel
-ahora_ts = time.time()
-if "gdrive_clean_pushed" not in st.session_state:
-    try:
-        regenerar_aprobaciones_excel()
-    except Exception:
-        pass
-    st.session_state["gdrive_clean_pushed"] = True
-    st.session_state["last_drive_sync"] = ahora_ts
-elif (ahora_ts - st.session_state.get("last_drive_sync", 0)) > 10:
-    sincronizar_aprobaciones_con_gdrive()
-    st.session_state["last_drive_sync"] = ahora_ts
-
-# Cargar data de aprobaciones directamente de SQLite sin bucles
+# Cargar data de aprobaciones directamente de SQLite sin bloqueos de red
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
 
 # PUNTO 7: Filtrado por bandeja personal del usuario autenticado
