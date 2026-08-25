@@ -160,18 +160,14 @@
       overlay.classList.add('fade-out');
       setTimeout(function() {
         overlay.style.display = 'none';
-      }, 450);
+      }, 350);
     }
 
-    // Señal real: Streamlit avisa en cuanto terminó de renderizar
-    window.addEventListener('message', function(ev) {
-      if (ev.data && ev.data.type === 'gzg:ready') {
-        showApp();
-      }
-    });
-
-    // Red de seguridad: si la señal nunca llega, revela a los 18s
-    setTimeout(showApp, 18000);
+    // Detección nativa instantánea de carga del iframe
+    frame.addEventListener('load', showApp);
+    
+    // Revelado de seguridad rápido
+    setTimeout(showApp, 3500);
   </script>
 </body>
 </html>
