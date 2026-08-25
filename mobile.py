@@ -772,7 +772,7 @@ st.markdown(f"""
         <span style="color: #FFFFFF;">GZG</span> <span style="color: #F58220;">MINERALES</span>
     </div>
     <div style="font-size: 10px; font-weight: 700; color: #E0E2EC; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; opacity: 0.95;">
-        CONTROL DE ASISTENCIA
+        CONTROL DE HORAS EXTRAS
     </div>
 </div>
 
@@ -815,10 +815,10 @@ def callback_logout():
 def callback_toggle_pw():
     st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
 
-# 2 Botones Nativos Gemelos Simétricos (50% Clave a la izquierda / 50% Salir a la derecha)
+# 2 Botones Nativos Gemelos Simétricos (50% Cambiar clave a la izquierda / 50% Salir a la derecha)
 col_b1, col_b2 = st.columns(2)
 with col_b1:
-    st.button("🔑 Clave", key="btn_toggle_change_pw", on_click=callback_toggle_pw, use_container_width=True)
+    st.button("🔑 Cambiar clave", key="btn_toggle_change_pw", on_click=callback_toggle_pw, use_container_width=True)
 
 with col_b2:
     st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
