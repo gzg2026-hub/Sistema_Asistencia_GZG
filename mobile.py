@@ -767,21 +767,27 @@ st.markdown(f"""
 
 # Callbacks atómicos para ejecución inmediata en el primer toque táctil
 def callback_logout():
-    _cur_token = st.query_params.get('token', '')
-    curr_user = get_current_user()
-    curr_uname = curr_user.get('username', '') if curr_user else ''
-    eliminar_token_sesion(token=_cur_token, username=curr_uname)
+    # 1. PRIMERO: Limpiar el estado de sesión en memoria inmediatamente
+    logout_user()
+    st.session_state['authenticated'] = False
+    st.session_state['user'] = None
+    st.session_state['just_logged_out'] = True
+    st.session_state['show_change_pw_box'] = False
+
+    # 2. SEGUNDO: Limpiar base de datos SQLite protegida contra bloqueos
+    try:
+        _cur_token = st.query_params.get('token', '')
+        eliminar_token_sesion(token=_cur_token, username=username)
+    except Exception:
+        pass
+
+    # 3. TERCERO: Limpiar query_params de URL al final
     try:
         if "token" in st.query_params:
             del st.query_params["token"]
         st.query_params.clear()
     except Exception:
         pass
-    logout_user()
-    st.session_state['authenticated'] = False
-    st.session_state['user'] = None
-    st.session_state['just_logged_out'] = True
-    st.session_state['show_change_pw_box'] = False
 
 def callback_toggle_pw():
     st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
