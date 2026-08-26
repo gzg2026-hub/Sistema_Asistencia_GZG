@@ -127,5 +127,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * Toda sincronización de trabajadores entre Excel y SQLite (`data/database.py`) debe preservar obligatoriamente las 8 columnas completas: `DNI`, `Apellidos`, `Nombres`, `Departamento / Área`, `Posición / Cargo`, `Estado en Sistema`, `Nivel de Aprobacion 1`, `Nivel de Aprobacion 2`.
 - **Regeneración y Subida Inmediata de `Aprobaciones_GZG_YYYY-MM.xlsx`**:
   * Tras cada acción de aprobación o rechazo en el app móvil, el sistema regenera automáticamente el archivo Excel `downloads/data_procesada/Aprobaciones_GZG_YYYY-MM.xlsx` con formato corporativo `#1F4E78` y lanza la subida inmediata a Google Drive en un **hilo background** (`threading.Thread`) para garantizar tiempo de respuesta instantáneo en la pantalla del supervisor.
+- **Inmutabilidad Estricta de `Padron_Trabajadores_GZG.xlsx` (Solo Lectura Absoluta)**:
+  * El archivo `Padron_Trabajadores_GZG.xlsx` en la raíz del proyecto es la fuente maestra oficial humana y es de **ESTRICTA SOLO LECTURA**.
+  * Queda terminantemente PROHIBIDO que cualquier script, rutina automática, tarea programada o función de base de datos (`data/database.py`, `scripts/schedule_downloader.py`, `scripts/download_personal_info.py`, etc.) escriba, regenere o sobreescriba este archivo.
+  * El sistema únicamente lee desde `Padron_Trabajadores_GZG.xlsx` para sincronizar trabajadores y aprobadores hacia SQLite.
 
 

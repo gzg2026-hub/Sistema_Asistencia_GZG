@@ -274,31 +274,15 @@ def procesar_y_exportar_padron(excel_raw_path: str):
     for col_idx, width in widths.items():
         ws.column_dimensions[get_column_letter(col_idx)].width = width
 
-    # El padrón se guarda EXCLUSIVAMENTE en la carpeta raíz del proyecto
-    root_path = os.path.join(ROOT_DIR, "Padron_Trabajadores_GZG.xlsx")
-    old_data_proc_path = os.path.join(CARPETA_DATA_PROCESADA, "Padron_Trabajadores_GZG.xlsx")
-    
-    # Intentar eliminar del directorio data_procesada si existiera
-    if os.path.exists(old_data_proc_path):
-        try:
-            os.remove(old_data_proc_path)
-            print(f"[OK] Eliminado Padrón antiguo de data_procesada: {old_data_proc_path}")
-        except Exception as e:
-            print(f"[Warn] No se pudo borrar de data_procesada (en uso): {e}")
-
+    # Guardar descarga en data_cruda para preservación y NO sobreescribir el Padrón Maestro
+    target_path = os.path.join(CARPETA_DATA_CRUDA, "Personal_HikCentral.xlsx")
     try:
-        wb.save(root_path)
-        print(f"[OK] Padrón Oficial guardado en la raíz del proyecto: {root_path}")
-    except PermissionError:
-        import time
-        time.sleep(1)
-        try:
-            wb.save(root_path)
-            print(f"[OK] Padrón Oficial guardado en la raíz del proyecto: {root_path}")
-        except Exception as e:
-            print(f"[Error] No se pudo sobrescribir Padron_Trabajadores_GZG.xlsx (Asegúrese de cerrar Excel si está abierto): {e}")
+        wb.save(target_path)
+        print(f"[OK] Personal HikCentral guardado en: {target_path}")
+    except Exception as e:
+        print(f"[Aviso] Error guardando Personal HikCentral: {e}")
 
-    return root_path
+    return target_path
 
 
 if __name__ == "__main__":

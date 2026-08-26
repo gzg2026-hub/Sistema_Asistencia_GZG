@@ -222,7 +222,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
     # 5. Sincronización Automática con GitHub para Streamlit Cloud
     try:
         _log("Sincronizando cambios diarios con GitHub / Streamlit Cloud...")
-        os.system('git add data/asistencia.db downloads/ Padron_Trabajadores_GZG.xlsx && git commit -m "auto: Daily attendance & approvals update 9AM" && git push origin main')
+        os.system('git add data/asistencia.db downloads/ && git commit -m "auto: Daily attendance & approvals update 9AM" && git push origin main')
         _log("[OK] Sincronizado exitosamente con GitHub.")
     except Exception as e_git:
         _log(f"Aviso en sincronización git: {e_git}")
