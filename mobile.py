@@ -822,6 +822,8 @@ def callback_logout():
 
 def callback_toggle_pw():
     st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
+    if st.session_state.get("show_change_pw_box", False):
+        st.session_state["pw_change_success"] = False
 
 # Mensaje de confirmación de cambio de contraseña exitoso (En el tope visual)
 if st.session_state.get("pw_change_success", False):
@@ -845,7 +847,7 @@ if st.session_state.get("show_change_pw_box", False):
         st.markdown("""
         <div style="background: rgba(245, 130, 32, 0.08); border: 1px solid rgba(245, 130, 32, 0.25); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px;">
             <div style="font-size: 14px; font-weight: 700; color: #F58220; margin-bottom: 4px;">🔑 Cambiar mi Contraseña</div>
-            <div style="font-size: 11px; color: #D1D5DB;">💡 La nueva contraseña debe tener <b>6 o más caracteres</b>.</div>
+            <div style="font-size: 11px; color: #D1D5DB;">💡 Ingresa tu contraseña actual y escribe la nueva clave (mínimo 6 caracteres).</div>
         </div>
         """, unsafe_allow_html=True)
         with st.form("form_header_change_pw", clear_on_submit=True):
@@ -862,18 +864,22 @@ if st.session_state.get("show_change_pw_box", False):
                 st.session_state["show_change_pw_box"] = False
                 st.rerun()
             if btn_h_pw:
-                db_u = obtener_usuario_by_username(username)
-                if not db_u or not verify_password(p_act_h.strip(), db_u.get('password_hash', '')):
+                u_curr = username.strip().lower()
+                db_u = obtener_usuario_by_username(u_curr)
+                if not db_u or not verify_password(p_act_h.strip(), db_u.get('password_hash', ''), u_curr):
                     st.error("❌ La contraseña actual ingresada es incorrecta.")
+                    st.toast("❌ Contraseña actual incorrecta", icon="⚠️")
                 elif not p_nue_h or len(p_nue_h.strip()) < 6:
                     st.warning("⚠️ La nueva contraseña debe tener al menos 6 caracteres.")
+                    st.toast("⚠️ Mínimo 6 caracteres requeridos", icon="⚠️")
                 elif p_nue_h.strip() != p_cnf_h.strip():
                     st.error("❌ Las nuevas contraseñas no coinciden.")
+                    st.toast("❌ Las contraseñas no coinciden", icon="⚠️")
                 else:
                     new_h = hash_password(p_nue_h.strip())
-                    if cambiar_password_usuario(username, new_h):
+                    if cambiar_password_usuario(u_curr, new_h):
                         # Renovar token de sesión activo para mantener la sesión fluida
-                        nuevo_token = crear_token_sesion(username)
+                        nuevo_token = crear_token_sesion(u_curr)
                         if nuevo_token:
                             st.query_params["token"] = nuevo_token
                         if st.session_state.get("user"):
