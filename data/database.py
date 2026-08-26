@@ -1087,53 +1087,47 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
 
 def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     """
-    Regenera el Excel oficial de aprobaciones desde SQLite y lo sube inmediatamente a Google Drive.
-    Garantiza que la subida a Drive siempre termine con éxito antes de finalizar la transacción.
-    Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (3er archivo autorizado segun GEMINI.md)
+    Regenera el Excel de aprobaciones y lo sube a Google Drive, todo en segundo plano.
+    El llamador (actualizar_estado_aprobacion) no espera a que esto termine.
+    Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (único archivo de aprobaciones permitido en Drive)
     """
-    print("[DIAGNOSTICO] regenerar_aprobaciones_excel() FUE LLAMADA", flush=True)
-    try:
-        import sys, os, datetime
-        import pandas as pd
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        from data.exporter import exportar_aprobaciones_excel
-        
-        conn = get_connection(db_path)
-        df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
-        conn.close()
-        
-        mes_str = datetime.date.today().strftime('%Y-%m')
-        out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        
-        ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
-        print(f"[DIAGNOSTICO] ok_local={ok_local} | out_path={out_path} | existe={os.path.exists(out_path)}", flush=True)
-        
-        # Subida inmediata a Google Drive en hilo background (cero latencia, no congela la UI)
-        if ok_local and out_path and os.path.exists(out_path):
-            print("[DIAGNOSTICO] Entrando al bloque de subida a Drive", flush=True)
-            sa_info = None
-            try:
-                import streamlit as st
-                if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
-                    sa_info = dict(st.secrets["gcp_service_account"])
-            except Exception:
-                pass
+    import threading
 
-            import threading
-            def _async_upload(p, sa):
+    sa_info = None
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+            sa_info = dict(st.secrets["gcp_service_account"])
+    except Exception:
+        pass
+
+    def _async_full_regen(p_db, sa):
+        try:
+            import os, datetime
+            import pandas as pd
+            from data.exporter import exportar_aprobaciones_excel
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+            conn = get_connection(p_db)
+            df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
+            conn.close()
+
+            mes_str = datetime.date.today().strftime('%Y-%m')
+            out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+            ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
+            if ok_local and os.path.exists(out_path):
                 try:
                     from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                    subir_archivo_a_gdrive(p, sa_dict=sa)
+                    subir_archivo_a_gdrive(out_path, sa_dict=sa)
                 except Exception as e_drive:
                     print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+        except Exception as e:
+            print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
 
-            threading.Thread(target=_async_upload, args=(out_path, sa_info), daemon=True).start()
-        return True
-    except Exception as e:
-        print(f"[DIAGNOSTICO] EXCEPCION CAPTURADA: {e}", flush=True)
-        print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
-        return False
+    threading.Thread(target=_async_full_regen, args=(db_path, sa_info), daemon=True).start()
+    return True
 
 
 

@@ -50,14 +50,14 @@ SWIPE_TYPE_MAP = {
 
 
 def cargar_config_hikvision():
-    """Lee la configuración de IP y credenciales desde config_hikvision.json si existe."""
+    """Lee la configuración de IP y credenciales desde config_hikvision.json."""
     config_file = os.path.join(PROJECT_ROOT, "config_hikvision.json")
     defaults = {
         "host": "127.0.0.1",
         "port": 443,
         "scheme": "https",
         "username": "admin",
-        "password": "GzG@ACCESO2026"
+        "password": ""
     }
     if os.path.exists(config_file):
         try:
@@ -66,6 +66,8 @@ def cargar_config_hikvision():
                 defaults.update(data)
         except Exception:
             pass
+    if not defaults.get("password"):
+        print("[HikCentral] ADVERTENCIA: no hay password en config_hikvision.json")
     return defaults
 
 

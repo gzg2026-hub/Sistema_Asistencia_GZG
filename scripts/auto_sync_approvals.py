@@ -24,14 +24,13 @@ def descargar_aprobaciones_actual():
     mes_str = datetime.date.today().strftime('%Y-%m')
     nombre_archivo = f"Aprobaciones_GZG_{mes_str}.xlsx"
     destino_local = os.path.join(ROOT_DIR, "downloads", "data_procesada", nombre_archivo)
-
     ok = descargar_archivo_de_gdrive(nombre_archivo, destino_local)
     if ok:
         log_sync(f"{nombre_archivo} actualizado desde Drive.")
     return ok
 
-def sync_cycle(intervalo_segundos: int = 300):
-    log_sync("Iniciando descarga periódica de Aprobaciones cada 5 minutos (solo lectura desde Drive)...")
+def sync_cycle(intervalo_segundos: int = 90):
+    log_sync("Iniciando descarga periódica de Aprobaciones (solo lectura desde Drive)...")
     while True:
         try:
             descargar_aprobaciones_actual()
@@ -40,4 +39,4 @@ def sync_cycle(intervalo_segundos: int = 300):
         time.sleep(intervalo_segundos)
 
 if __name__ == "__main__":
-    sync_cycle(300)
+    sync_cycle(90)

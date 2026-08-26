@@ -26,7 +26,8 @@ logs/
 downloads/
 descargas_biometrico/
 
-# Credenciales y llaves de servicio (Google Cloud)
+# Credenciales y llaves de servicio (Google Cloud, Hikvision)
 credentials.json
 gzg-*.json
+config_hikvision.json
 *.pem

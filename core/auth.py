@@ -10,13 +10,12 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
 def verify_password(password: str, password_hash: str, username: str = "") -> bool:
-    """Verifica si la contraseña coincide con el hash almacenado."""
-    if not password or not password_hash:
+    """Verifica si la contraseña coincide con el hash almacenado, con tolerancia inteligente para teclados móviles."""
+    if not password:
         return False
     p_clean = password.strip()
     if hash_password(p_clean) == password_hash:
         return True
-    # Tolerancia móvil: si el usuario no digitó el asterisco en el celular (ej. jalva2026 -> jalva2026*)
     if not p_clean.endswith('*') and hash_password(p_clean + '*') == password_hash:
         return True
     return False
