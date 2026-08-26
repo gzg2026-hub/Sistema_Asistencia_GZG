@@ -337,12 +337,12 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         if valid_rows.empty:
             continue
 
-        # Caso Jhon Agreda (Punto 1): Marcación accidental de 'Inicio de horas extra' en la mañana (05:00 a 09:30 AM).
+        # Caso Jhon Agreda / Raul Lazaro (Punto 1): Marcación accidental de 'Inicio de horas extra' o 'Fin de horas extra' en la mañana (05:00 a 09:30 AM).
         # Reclasificar como 'Registro de entrada' para evaluar Turno Día correctamente.
         for r_idx, r in valid_rows.iterrows():
             tipo_str = str(r.get(tipo_col, '')).lower()
             t_sec = time_to_seconds(r['Hora_Clean'])
-            if ('inicio de horas extra' in tipo_str or 'inicio h.e.' in tipo_str) and 18000 <= t_sec < 34200:
+            if ('horas extra' in tipo_str or 'h.e.' in tipo_str) and 18000 <= t_sec < 34200:
                 valid_rows.loc[r_idx, tipo_col] = 'Registro de entrada'
 
         # Caso Yenkli Ordoñez / Doble marcación al retirarse en la tarde (Punto 6):
@@ -425,11 +425,43 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
         sub_blocks = []
         if morning_entries and late_night_entries:
-            cut_sec = time_to_seconds(late_night_entries[0]['Hora_Clean']) - 60 # Cortar justo antes de la entrada nocturna
-            block1 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) < cut_sec)]
-            block2 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) >= cut_sec)]
-            if not block1.empty: sub_blocks.append(block1)
-            if not block2.empty: sub_blocks.append(block2)
+            # Evaluar si la marcación de la tarde es un Doble Turno Real o un Error de Botón al retirarse del Turno Día (Caso Clari Tocto):
+            is_admin = 'admin' in str(worker_info.get('CARGO', '')).lower() or 'admin' in str(worker_info.get('AREA', '')).lower()
+            
+            # Verificar si hay salida intermedia registrada entre la entrada de la mañana y la tarde
+            has_intermediate_exit = any(
+                'salida' in str(r.get(tipo_col, '')).lower() and time_to_seconds(morning_entries[0]['Hora_Clean']) < time_to_seconds(r['Hora_Clean']) < time_to_seconds(late_night_entries[0]['Hora_Clean'])
+                for _, r in valid_rows.iterrows()
+            )
+            
+            # Verificar si al día siguiente (D+1) hay salida de turno noche
+            has_next_day_night_exit = False
+            try:
+                fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
+                fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                next_day_swipes = df_marcaciones[
+                    (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
+                    (df_marcaciones['Fecha_Clean'] == fecha_next_str)
+                ]
+                has_next_day_night_exit = any(
+                    time_to_seconds(r['Hora_Clean']) <= 34200 and 'salida' in str(r.get(tipo_col, '')).lower()
+                    for _, r in next_day_swipes.iterrows()
+                )
+            except Exception:
+                pass
+
+            if is_admin or (not has_intermediate_exit and not has_next_day_night_exit):
+                # Error de Botón Humano al salir: Reclasificar a 'Registrar salida'
+                idx_late = late_night_entries[0].name
+                valid_rows.loc[idx_late, tipo_col] = 'Registrar salida'
+                sub_blocks = [valid_rows]
+            else:
+                # Doble Turno / Cambio de Guardia REAL
+                cut_sec = time_to_seconds(late_night_entries[0]['Hora_Clean']) - 60 # Cortar justo antes de la entrada nocturna
+                block1 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) < cut_sec)]
+                block2 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) >= cut_sec)]
+                if not block1.empty: sub_blocks.append(block1)
+                if not block2.empty: sub_blocks.append(block2)
         else:
             sub_blocks = [valid_rows]
 
