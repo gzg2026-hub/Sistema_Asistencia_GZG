@@ -1273,6 +1273,18 @@ def actualizar_estado_aprobacion_nivel(
             else:
                 final_state = 'PENDIENTE'
 
+            # Obtener comentarios actualizados de N1 y N2 para concatenar limpiamente
+            cursor.execute("SELECT comentario_n1, comentario_n2, aprobado_por_n1, aprobado_por_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+            c_info = cursor.fetchone()
+            cmts_list = []
+            if c_info:
+                cn1, cn2, ap1, ap2 = c_info[0], c_info[1], c_info[2], c_info[3]
+                if cn1 and str(cn1).strip() and str(cn1).strip().lower() not in ('none', 'nan'):
+                    cmts_list.append(f"N1 ({ap1 or 'Sup'}): {str(cn1).strip()}")
+                if cn2 and str(cn2).strip() and str(cn2).strip().lower() not in ('none', 'nan'):
+                    cmts_list.append(f"N2 ({ap2 or 'Gte'}): {str(cn2).strip()}")
+            comentario_global = "\n".join(cmts_list) if cmts_list else (comentario or "")
+
             cursor.execute("""
                 UPDATE aprobaciones
                 SET estado = ?,
@@ -1281,7 +1293,7 @@ def actualizar_estado_aprobacion_nivel(
                     fecha_aprobacion = ?,
                     updated_at = ?
                 WHERE id = ?
-            """, (final_state, aprobado_por, comentario, hora_peru, hora_peru, id_solicitud))
+            """, (final_state, aprobado_por, comentario_global, hora_peru, hora_peru, id_solicitud))
 
         conn.commit()
         conn.close()

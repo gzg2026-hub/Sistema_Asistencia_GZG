@@ -578,9 +578,28 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                         except Exception:
                             fecha_aprob = fa_str
 
-                coment = str(row.get('comentario_supervisor', '') or '').strip()
-                if coment.lower() in ('nan', 'none', ''):
-                    coment = ""
+                # Combinar comentarios de Nivel 1 y Nivel 2 en la misma celda
+                c_n1 = str(row.get('comentario_n1', '') or '').strip()
+                c_n2 = str(row.get('comentario_n2', '') or '').strip()
+                c_sup = str(row.get('comentario_supervisor', '') or '').strip()
+
+                if c_n1.lower() in ('nan', 'none', ''): c_n1 = ""
+                if c_n2.lower() in ('nan', 'none', ''): c_n2 = ""
+                if c_sup.lower() in ('nan', 'none', ''): c_sup = ""
+
+                comentarios_list = []
+                if c_n1:
+                    ap_n1_name = str(row.get('aprobado_por_n1', '') or row.get('aprobador_n1', '') or '').strip()
+                    pref_1 = f"N1 ({ap_n1_name}): " if ap_n1_name and ap_n1_name != '-' else "N1: "
+                    comentarios_list.append(f"{pref_1}{c_n1}")
+                if c_n2:
+                    ap_n2_name = str(row.get('aprobado_por_n2', '') or row.get('aprobador_n2', '') or '').strip()
+                    pref_2 = f"N2 ({ap_n2_name}): " if ap_n2_name and ap_n2_name != '-' else "N2: "
+                    comentarios_list.append(f"{pref_2}{c_n2}")
+                if not comentarios_list and c_sup:
+                    comentarios_list.append(c_sup)
+
+                coment = "\n".join(comentarios_list)
 
                 def _clean_hhmm(val):
                     if val is None or pd.isna(val):
@@ -625,7 +644,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
 
                 ws.append(row_data)
                 r_idx = ws.max_row
-                ws.row_dimensions[r_idx].height = 20
+                ws.row_dimensions[r_idx].height = 32 if "\n" in coment else 20
 
                 # Estilos por columna de estado:
                 def _get_status_style(st_val):
@@ -661,7 +680,13 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     # Columnas centradas: DNI (1), Fecha Turno (6), Turno (7), Entrada (8), Salida (9),
                     # Horas Trabajadas (10), Horas Extras (11), Exceso Jornada (12), Estado Final (13),
                     # Aprobador N1 (14), Estado N1 (15), Aprobador N2 (16), Estado N2 (17), Fecha Aprobacion (18)
-                    cell.alignment = align_center if c_idx in (1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18) else align_left
+                    if c_idx in (1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18):
+                        cell.alignment = align_center
+                    elif c_idx == 19:
+                        cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
+                    else:
+                        cell.alignment = align_left
+
                     if c_idx == 1:
                         cell.number_format = '@'
 
