@@ -1138,6 +1138,26 @@ with tab_pendientes:
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Mostrar validación previa de Nivel 1 si ya fue aprobada por el supervisor
+                c_n1_prev = str(row.get('comentario_n1', '') or '').strip()
+                if c_n1_prev and c_n1_prev.lower() not in ('none', 'nan', ''):
+                    ap_n1_name = str(row.get('aprobado_por_n1', '') or 'Supervisor').strip()
+                    st.markdown(f"""
+                    <div style="background: rgba(46, 204, 113, 0.12); border-left: 3px solid #2ECC71; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
+                        <strong style="color: #2ECC71;">✅ Validación Nivel 1 ({ap_n1_name}):</strong><br>
+                        <span style="color: #E5E7EB;">{c_n1_prev}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Mostrar foto de evidencia previa si existe
+                adj_val = row.get('adjuntos')
+                if adj_val and str(adj_val).strip() and str(adj_val).strip().lower() not in ('none', 'nan', ''):
+                    adj_str = str(adj_val).strip()
+                    if adj_str.startswith('data:image'):
+                        st.image(adj_str, caption=f"📷 Evidencia adjuntada por {row.get('aprobado_por_n1') or 'Nivel 1'}", use_container_width=True)
+                    elif os.path.exists(adj_str):
+                        st.image(adj_str, caption=f"📷 Evidencia adjuntada por {row.get('aprobado_por_n1') or 'Nivel 1'}", use_container_width=True)
+
                 comentario_aprobador = st.text_input(
                     "✍️ Comentario del Aprobador",
                     key=f"m_com_{sol_id}",
@@ -1161,9 +1181,12 @@ with tab_pendientes:
                             os.makedirs(adj_dir, exist_ok=True)
                             fname = f"solic_{sol_id}_{uploaded_file.name}"
                             fpath = os.path.join(adj_dir, fname)
+                            buf = uploaded_file.getvalue()
                             with open(fpath, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+                                f.write(buf)
+                            mime = "image/png" if uploaded_file.name.lower().endswith('.png') else "image/jpeg"
+                            b64_img = base64.b64encode(buf).decode()
+                            adjunto_rel_path = f"data:{mime};base64,{b64_img}"
 
                         actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
@@ -1178,9 +1201,12 @@ with tab_pendientes:
                             os.makedirs(adj_dir, exist_ok=True)
                             fname = f"solic_{sol_id}_{uploaded_file.name}"
                             fpath = os.path.join(adj_dir, fname)
+                            buf = uploaded_file.getvalue()
                             with open(fpath, "wb") as f:
-                                f.write(uploaded_file.getbuffer())
-                            adjunto_rel_path = os.path.join("downloads", "adjuntos_aprobaciones", fname)
+                                f.write(buf)
+                            mime = "image/png" if uploaded_file.name.lower().endswith('.png') else "image/jpeg"
+                            b64_img = base64.b64encode(buf).decode()
+                            adjunto_rel_path = f"data:{mime};base64,{b64_img}"
 
                         actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
