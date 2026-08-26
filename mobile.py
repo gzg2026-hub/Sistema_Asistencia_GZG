@@ -876,7 +876,10 @@ if st.session_state.get("show_change_pw_box", False):
                 else:
                     new_h = hash_password(p_nue_h.strip())
                     if cambiar_password_usuario(username, new_h):
-                        eliminar_token_sesion(username=username)
+                        # Renovar token de sesión activo para mantener la sesión fluida
+                        nuevo_token = crear_token_sesion(username)
+                        if nuevo_token:
+                            st.query_params["token"] = nuevo_token
                         if st.session_state.get("user"):
                             st.session_state["user"]["password_hash"] = new_h
                         st.session_state["show_change_pw_box"] = False
@@ -961,18 +964,24 @@ try:
     window.addEventListener('message', function(event) {{
       if (event.data && event.data.type === 'GZG_PUSH_SUB_SUCCESS' && event.data.sub) {{
         const subStr = encodeURIComponent(event.data.sub);
-        const curUrl = new URL(window.parent.location.href);
-        curUrl.searchParams.set('push_sub', subStr);
-        window.parent.location.replace(curUrl.toString());
+        try {{
+          const curUrl = new URL(window.top.location.href);
+          curUrl.searchParams.set('push_sub', subStr);
+          window.top.location.replace(curUrl.toString());
+        }} catch(e) {{
+          const curUrl = new URL(window.location.href);
+          curUrl.searchParams.set('push_sub', subStr);
+          window.location.replace(curUrl.toString());
+        }}
       }}
     }});
 
     async function solicitarPermisoPush() {{
       const btn = document.getElementById('btn_push_req');
       
-      // 1. Si estamos dentro de un iframe (GitHub Pages PWA Wrapper), solicitar permiso a la ventana principal
-      if (window.parent && window.parent !== window) {{
-        window.parent.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+      // 1. Si estamos dentro de un iframe (GitHub Pages PWA Wrapper), solicitar permiso a la ventana principal (window.top)
+      if (window.top && window.top !== window) {{
+        window.top.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
         return;
       }}
 

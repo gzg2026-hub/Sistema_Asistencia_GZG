@@ -167,32 +167,29 @@
       });
     }
 
-    // Escuchar peticiones de suscripción Push desde el iframe de Streamlit
-    window.addEventListener('message', async function(event) {
-      if (event.data && event.data.type === 'GZG_REQUEST_PUSH') {
+    // Escuchar peticiones de suscripción Push desde cualquier iframe hijo (Streamlit o componentes)
+    window.addEventListener('message', async function(ev) {
+      if (ev.data && ev.data.type === 'GZG_REQUEST_PUSH') {
         try {
           const perm = await Notification.requestPermission();
-          if (perm === 'granted') {
-            if (!swRegistration) {
-              swRegistration = await navigator.serviceWorker.ready;
-            }
-            let sub = await swRegistration.pushManager.getSubscription();
-            if (!sub) {
-              sub = await swRegistration.pushManager.subscribe({
-                userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(event.data.vapid_pub || VAPID_PUB_KEY)
-              });
-            }
-            const subJson = JSON.stringify(sub);
-            const iframe = document.getElementById('app-frame');
-            if (iframe && iframe.contentWindow) {
-              iframe.contentWindow.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: subJson }, '*');
-            }
-          } else {
-            alert('Has denegado los permisos de notificación para este sitio.');
+          if (perm !== 'granted') return;
+          const reg = await navigator.serviceWorker.ready;
+          let sub = await reg.pushManager.getSubscription();
+          if (!sub) {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(ev.data.vapid_pub || VAPID_PUB_KEY)
+            });
           }
-        } catch(err) {
-          console.error('Error al suscribir push desde top-level:', err);
+          if (ev.source) {
+            ev.source.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: JSON.stringify(sub) }, '*');
+          }
+          const iframe = document.getElementById('app-frame');
+          if (iframe && iframe.contentWindow && iframe.contentWindow !== ev.source) {
+            iframe.contentWindow.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: JSON.stringify(sub) }, '*');
+          }
+        } catch (err) {
+          console.error('Error suscribiendo push:', err);
         }
       }
     });
