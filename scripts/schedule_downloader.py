@@ -191,12 +191,21 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                     else:
                         _log(f"Aviso: No se encontraron registros de asistencia para el día cerrado {ayer_str}.")
                 
-                # 4.5 Sincronizar y Regenerar Aprobaciones del mes y subir a Google Drive
+                # 4.5 Sincronizar y Regenerar Aprobaciones del mes y subir a Google Drive (AGOSTO)
                 try:
-                    from data.database import sincronizar_aprobaciones_desde_asistencia, regenerar_aprobaciones_excel, DB_PATH
+                    from data.database import sincronizar_aprobaciones_desde_asistencia, DB_PATH, get_connection
+                    from data.exporter import exportar_aprobaciones_excel
                     sincronizar_aprobaciones_desde_asistencia(DB_PATH)
-                    regenerar_aprobaciones_excel(DB_PATH)
-                    _log("Aprobaciones del mes sincronizadas y subidas a Google Drive con éxito.")
+                    
+                    mes_str = datetime.date.today().strftime('%Y-%m')
+                    aprob_path = os.path.join(CARPETA_DATA_PROCESADA, f"Aprobaciones_GZG_{mes_str}.xlsx")
+                    conn_ap = get_connection(DB_PATH)
+                    df_aprob_final = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn_ap)
+                    conn_ap.close()
+                    
+                    if exportar_aprobaciones_excel(df_aprob_final, aprob_path):
+                        subir_archivo_a_gdrive(aprob_path)
+                        _log(f"Aprobaciones del mes ({aprob_path}) generadas y subidas a Google Drive con éxito.")
                 except Exception as e_aprob:
                     _log(f"Aviso actualizando aprobaciones en schedule: {e_aprob}")
 
