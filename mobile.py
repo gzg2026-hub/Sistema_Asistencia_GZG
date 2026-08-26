@@ -1221,7 +1221,25 @@ with tab_pendientes:
             he_detail = f" <span style='color: #9A9EA7; font-size: 11.5px; font-weight: 500;'>({inicio_he} a {fin_he})</span>" if inicio_he and fin_he and he_hhmm != '00:00' else ""
 
             avatar_url = get_worker_avatar_url(row.get('dni'), worker_name)
-            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
+            
+            # Verificar sustento y definir estado para la cabecera contraída
+            obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
+            if obs_trab.lower() in ('none', 'nan'): obs_trab = ""
+            adj_list = parse_adjuntos(row.get('adjuntos'))
+            tiene_sustento = bool(obs_trab or adj_list)
+
+            app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
+            app_n2_raw = str(row.get('aprobador_n2') or '').strip().upper()
+            is_direct_to_gerencia = (app_n1_raw == 'msanchez') and (app_n2_raw in ('NA', '-', '', 'NAN', 'NONE'))
+
+            if is_direct_to_gerencia:
+                tag_pend = "📩 Enviado" if tiene_sustento else "⏳ Pendiente"
+            elif row.get('aprobado_por_n1'):
+                tag_pend = "✅ Validado N1"
+            else:
+                tag_pend = "⏳ Pendiente"
+
+            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  |  {tag_pend}", expanded=False):
                 st.markdown(f"""
                 <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                     <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
@@ -1240,8 +1258,6 @@ with tab_pendientes:
                 """, unsafe_allow_html=True)
                 
                 # Mostrar sustento personal del trabajador si existe
-                obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
-                if obs_trab.lower() in ('none', 'nan'): obs_trab = ""
                 if obs_trab:
                     st.markdown(f"""
                     <div style="background: rgba(52, 152, 219, 0.12); border-left: 3px solid #3498DB; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
@@ -1517,12 +1533,23 @@ with tab_mis_horas:
                 estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
                 obs_actual = str(row.get('observacion_trabajador', '') or '').strip()
                 if obs_actual.lower() in ('none', 'nan'): obs_actual = ""
-                
+                adj_list_my = parse_adjuntos(row.get('adjuntos'))
+                tiene_sustento_my = bool(obs_actual or adj_list_my)
+
+                if estado_global == 'APROBADO':
+                    tag_estado_my = "✅ Aprobado"
+                elif estado_global == 'RECHAZADO':
+                    tag_estado_my = "❌ Rechazado"
+                elif tiene_sustento_my:
+                    tag_estado_my = "📩 Enviado"
+                else:
+                    tag_estado_my = "⏳ Pendiente"
+
                 worker_name_me = format_worker_name(row.get('nombres', ''), row.get('apellidos', ''))
                 cargo_me = row.get('cargo', 'Operativo')
                 avatar_url_me = get_worker_avatar_url(row.get('dni'), worker_name_me)
 
-                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
+                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  |  {tag_estado_my}", expanded=False):
                     st.markdown(f"""
                     <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                         <img src="{avatar_url_me}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
