@@ -1257,6 +1257,26 @@ with tab_historial:
                 aprob_info.append(f"N2: {row.get('aprobado_por_n2')} ({estado_n2})")
             aprob_str = " | ".join(aprob_info) if aprob_info else f"Por: {row.get('aprobado_por') or 'Pendiente'}"
             
+            # Comentarios de N1 y N2 en historial
+            c_info_str = ""
+            c1 = str(row.get('comentario_n1', '') or '').strip()
+            c2 = str(row.get('comentario_n2', '') or '').strip()
+            csup = str(row.get('comentario_supervisor', '') or '').strip()
+            cmts = []
+            if c1 and c1.lower() not in ('none', 'nan'): cmts.append(f"<b>N1:</b> {c1}")
+            if c2 and c2.lower() not in ('none', 'nan'): cmts.append(f"<b>N2:</b> {c2}")
+            if not cmts and csup and csup.lower() not in ('none', 'nan'): cmts.append(f"<b>Obs:</b> {csup}")
+            if cmts:
+                c_info_str = f"""<div style="font-size: 11px; color: #D1D5DB; background: rgba(255,255,255,0.04); padding: 5px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.4;">{'<br>'.join(cmts)}</div>"""
+            
+            # Foto adjunta si existe
+            adj_html = ""
+            adj_val = row.get('adjuntos')
+            if adj_val and str(adj_val).strip() and str(adj_val).strip().lower() not in ('none', 'nan', ''):
+                adj_str = str(adj_val).strip()
+                if adj_str.startswith('data:image'):
+                    adj_html = f"""<div style="margin-top: 6px;"><img src="{adj_str}" style="max-width: 100%; max-height: 180px; border-radius: 6px; object-fit: contain; border: 1px solid #3A3F4D;" /></div>"""
+
             cards_list.append(f"""
             <div class="approval-card">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
@@ -1269,6 +1289,8 @@ with tab_historial:
                     <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b></div>
                     <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                 </div>
+                {c_info_str}
+                {adj_html}
                 <div style="font-size: 10px; color: #9A9EA7; margin-top: 6px;">{aprob_str}</div>
             </div>
             """)
