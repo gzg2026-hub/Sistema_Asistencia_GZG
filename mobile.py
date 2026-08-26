@@ -1348,7 +1348,7 @@ with tab_mis_horas:
                 cargo_me = row.get('cargo', 'Operativo')
                 avatar_url_me = get_worker_avatar_url(row.get('dni'), worker_name_me)
 
-                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  [{badge_label}]", expanded=False):
+                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
                     st.markdown(f"""
                     <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                         <img src="{avatar_url_me}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
@@ -1362,7 +1362,6 @@ with tab_mis_horas:
                         <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
                         <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {row.get('jornada_trabajada_hhmm', '-')}</div>
                         <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b> &nbsp;|&nbsp; ⚠️ <strong style="color: #FFFFFF;">Exceso:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
-                        <div>📋 <strong style="color: #FFFFFF;">Aprobadores:</strong> N1: {row.get('aprobador_n1') or '-'} | N2: {row.get('aprobador_n2') or '-'}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1392,7 +1391,7 @@ with tab_mis_horas:
                     my_obs_input = st.text_area(
                         "✍️ Motivo / Detalle del trabajo extraordinario realizado",
                         value=obs_actual,
-                        placeholder="Ej: Se realizó guardia de apoyo en cambio de revestimiento de tolva...",
+                        placeholder="",
                         key=f"my_txt_{sol_id}"
                     )
                     
