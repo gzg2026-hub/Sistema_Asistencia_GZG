@@ -823,6 +823,14 @@ def callback_logout():
 def callback_toggle_pw():
     st.session_state["show_change_pw_box"] = not st.session_state.get("show_change_pw_box", False)
 
+# Mensaje de confirmación de cambio de contraseña exitoso (En el tope visual)
+if st.session_state.get("pw_change_success", False):
+    st.success("✅ **¡Contraseña actualizada exitosamente!** Tu nueva clave ya está guardada y activa.")
+    st.toast("🎉 ¡Contraseña actualizada exitosamente!", icon="🔑")
+    if st.button("✖ Entendido / Cerrar aviso", key="btn_close_pw_success", use_container_width=True):
+        st.session_state["pw_change_success"] = False
+        st.rerun()
+
 # 2 Botones Nativos Gemelos Simétricos (50% Cambiar clave a la izquierda / 50% Salir a la derecha)
 col_b1, col_b2 = st.columns(2)
 with col_b1:
@@ -830,11 +838,6 @@ with col_b1:
 
 with col_b2:
     st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
-
-# Mensaje de confirmación de cambio de contraseña exitoso
-if st.session_state.get("pw_change_success", False):
-    st.success("✅ **¡Contraseña actualizada exitosamente!** Tu nueva clave ya está activa. Úsala en tu próximo inicio de sesión.")
-    st.toast("🎉 ¡Contraseña actualizada exitosamente!", icon="🔑")
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
