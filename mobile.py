@@ -1431,7 +1431,7 @@ with tab_historial:
                 </div>
                 <div class="worker-role">{cargo} ({fecha_sol})</div>
                 <hr style="border-color: #2A2F3D; margin: 8px 0;">
-                <div style="display: flex; justify-content: space-between; font-size: 12px;">
+                <div style="font-size: 12px; line-height: 1.5;">
                     <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
                     <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                 </div>
@@ -1535,7 +1535,8 @@ with tab_mis_horas:
                     <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
                         <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
                         <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {jornada_hhmm}</div>
-                        <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b>{he_detail} &nbsp;|&nbsp; ⚠️ <strong style="color: #FFFFFF;">Exceso:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
+                        <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
+                        <div>⚠️ <strong style="color: #FFFFFF;">Exceso de jornada:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                     </div>
                     """, unsafe_allow_html=True)
                     
