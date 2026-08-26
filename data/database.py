@@ -1233,6 +1233,17 @@ def actualizar_estado_aprobacion_nivel(
                     conn.close()
                     return False
 
+        # Manejo acumulativo de adjuntos múltiples (preservar los de N1 y sumar los de N2)
+        final_adjuntos = None
+        if adjunto_path:
+            cursor.execute("SELECT adjuntos FROM aprobaciones WHERE id = ?", (id_solicitud,))
+            prev_adj_row = cursor.fetchone()
+            prev_adj_val = prev_adj_row[0] if prev_adj_row else None
+            if prev_adj_val and str(prev_adj_val).strip() and str(prev_adj_val).strip().lower() not in ('none', 'nan', ''):
+                final_adjuntos = f"{str(prev_adj_val).strip()}|||{adjunto_path}"
+            else:
+                final_adjuntos = adjunto_path
+
         if nivel == 1:
             cursor.execute("""
                 UPDATE aprobaciones
@@ -1243,7 +1254,7 @@ def actualizar_estado_aprobacion_nivel(
                     fecha_n1 = ?,
                     updated_at = ?
                 WHERE id = ?
-            """, (st_upper, aprobado_por, comentario, adjunto_path, hora_peru, hora_peru, id_solicitud))
+            """, (st_upper, aprobado_por, comentario, final_adjuntos, hora_peru, hora_peru, id_solicitud))
         elif nivel == 2:
             cursor.execute("""
                 UPDATE aprobaciones
@@ -1254,7 +1265,7 @@ def actualizar_estado_aprobacion_nivel(
                     fecha_n2 = ?,
                     updated_at = ?
                 WHERE id = ?
-            """, (st_upper, aprobado_por, comentario, adjunto_path, hora_peru, hora_peru, id_solicitud))
+            """, (st_upper, aprobado_por, comentario, final_adjuntos, hora_peru, hora_peru, id_solicitud))
 
         # Evaluar estado final global de la aprobación:
         cursor.execute("SELECT estado_n1, estado_n2, aprobador_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))

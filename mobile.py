@@ -79,6 +79,24 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
     b64_svg = base64.b64encode(svg_data.encode('utf-8')).decode('utf-8')
     return f"data:image/svg+xml;base64,{b64_svg}"
 
+def parse_adjuntos(val) -> list:
+    """Extrae una lista de URLs/Base64/Rutas de adjuntos desde la base de datos."""
+    if not val or pd.isna(val):
+        return []
+    v_str = str(val).strip()
+    if v_str.lower() in ('none', 'nan', ''):
+        return []
+    if "|||" in v_str:
+        return [x.strip() for x in v_str.split("|||") if x.strip()]
+    elif v_str.startswith("[") and v_str.endswith("]"):
+        try:
+            import json
+            res = json.loads(v_str)
+            if isinstance(res, list): return res
+        except Exception:
+            pass
+    return [v_str]
+
 logo_b64 = get_logo_base64()
 hero_b64 = get_hero_base64()
 icon192_b64 = get_file_b64("assets/icon-192.png") or logo_b64
@@ -1149,14 +1167,21 @@ with tab_pendientes:
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Mostrar foto de evidencia previa si existe
-                adj_val = row.get('adjuntos')
-                if adj_val and str(adj_val).strip() and str(adj_val).strip().lower() not in ('none', 'nan', ''):
-                    adj_str = str(adj_val).strip()
-                    if adj_str.startswith('data:image'):
-                        st.image(adj_str, caption=f"📷 Evidencia adjuntada por {row.get('aprobado_por_n1') or 'Nivel 1'}", use_container_width=True)
-                    elif os.path.exists(adj_str):
-                        st.image(adj_str, caption=f"📷 Evidencia adjuntada por {row.get('aprobado_por_n1') or 'Nivel 1'}", use_container_width=True)
+                # Mostrar fotos de evidencia previa si existen
+                adj_list = parse_adjuntos(row.get('adjuntos'))
+                if adj_list:
+                    ap_n1_name = str(row.get('aprobado_por_n1', '') or 'Nivel 1').strip()
+                    if len(adj_list) == 1:
+                        st.image(adj_list[0], caption=f"📷 Evidencia adjuntada por {ap_n1_name}", use_container_width=True)
+                    else:
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Evidencias adjuntas ({len(adj_list)} fotos por {ap_n1_name}):</div>", unsafe_allow_html=True)
+                        for i in range(0, len(adj_list), 2):
+                            c_img1, c_img2 = st.columns(2)
+                            with c_img1:
+                                st.image(adj_list[i], caption=f"Foto {i+1}", use_container_width=True)
+                            if i + 1 < len(adj_list):
+                                with c_img2:
+                                    st.image(adj_list[i+1], caption=f"Foto {i+2}", use_container_width=True)
 
                 comentario_aprobador = st.text_input(
                     "✍️ Comentario del Aprobador",
@@ -1164,9 +1189,10 @@ with tab_pendientes:
                     placeholder=""
                 )
                 
-                uploaded_file = st.file_uploader(
-                    "📷 Adjuntar Foto",
+                uploaded_files = st.file_uploader(
+                    "📷 Adjuntar Fotos (permite múltiples)",
                     type=["png", "jpg", "jpeg"],
+                    accept_multiple_files=True,
                     key=f"m_file_{sol_id}"
                 )
                 
@@ -1175,18 +1201,22 @@ with tab_pendientes:
                 with col_act1:
                     if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
                         adjunto_rel_path = None
-                        if uploaded_file is not None:
+                        if uploaded_files:
                             root_dir = os.path.dirname(os.path.abspath(__file__))
                             adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
                             os.makedirs(adj_dir, exist_ok=True)
-                            fname = f"solic_{sol_id}_{uploaded_file.name}"
-                            fpath = os.path.join(adj_dir, fname)
-                            buf = uploaded_file.getvalue()
-                            with open(fpath, "wb") as f:
-                                f.write(buf)
-                            mime = "image/png" if uploaded_file.name.lower().endswith('.png') else "image/jpeg"
-                            b64_img = base64.b64encode(buf).decode()
-                            adjunto_rel_path = f"data:{mime};base64,{b64_img}"
+                            data_uris = []
+                            for f_idx, uf in enumerate(uploaded_files):
+                                fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                buf = uf.getvalue()
+                                with open(fpath, "wb") as f:
+                                    f.write(buf)
+                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                b64_img = base64.b64encode(buf).decode()
+                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                            if data_uris:
+                                adjunto_rel_path = "|||".join(data_uris)
 
                         actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
@@ -1195,18 +1225,22 @@ with tab_pendientes:
                 with col_act2:
                     if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
                         adjunto_rel_path = None
-                        if uploaded_file is not None:
+                        if uploaded_files:
                             root_dir = os.path.dirname(os.path.abspath(__file__))
                             adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
                             os.makedirs(adj_dir, exist_ok=True)
-                            fname = f"solic_{sol_id}_{uploaded_file.name}"
-                            fpath = os.path.join(adj_dir, fname)
-                            buf = uploaded_file.getvalue()
-                            with open(fpath, "wb") as f:
-                                f.write(buf)
-                            mime = "image/png" if uploaded_file.name.lower().endswith('.png') else "image/jpeg"
-                            b64_img = base64.b64encode(buf).decode()
-                            adjunto_rel_path = f"data:{mime};base64,{b64_img}"
+                            data_uris = []
+                            for f_idx, uf in enumerate(uploaded_files):
+                                fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                buf = uf.getvalue()
+                                with open(fpath, "wb") as f:
+                                    f.write(buf)
+                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                b64_img = base64.b64encode(buf).decode()
+                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                            if data_uris:
+                                adjunto_rel_path = "|||".join(data_uris)
 
                         actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
@@ -1271,11 +1305,10 @@ with tab_historial:
             
             # Foto adjunta si existe
             adj_html = ""
-            adj_val = row.get('adjuntos')
-            if adj_val and str(adj_val).strip() and str(adj_val).strip().lower() not in ('none', 'nan', ''):
-                adj_str = str(adj_val).strip()
-                if adj_str.startswith('data:image'):
-                    adj_html = f"""<div style="margin-top: 6px;"><img src="{adj_str}" style="max-width: 100%; max-height: 180px; border-radius: 6px; object-fit: contain; border: 1px solid #3A3F4D;" /></div>"""
+            adj_list_hist = parse_adjuntos(row.get('adjuntos'))
+            if adj_list_hist:
+                imgs_tags = "".join([f'<img src="{x}" style="max-width: 48%; max-height: 140px; border-radius: 6px; object-fit: cover; border: 1px solid #3A3F4D; margin: 2px;" />' for x in adj_list_hist])
+                adj_html = f"""<div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">{imgs_tags}</div>"""
 
             cards_list.append(f"""
             <div class="approval-card">
