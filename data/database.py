@@ -126,9 +126,14 @@ def init_db(db_path: str = DB_PATH):
         area_asignada TEXT DEFAULT 'TODAS',
         cargo TEXT DEFAULT '',
         activo INTEGER DEFAULT 1,
+        dni TEXT DEFAULT '',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
+    try:
+        cursor.execute("ALTER TABLE usuarios ADD COLUMN dni TEXT DEFAULT ''")
+    except Exception:
+        pass
 
     # 7. Tabla APROBACIONES para MVP Móvil (Horas Extras, Excesos de Jornada e Incidencias)
     cursor.execute("""
@@ -729,27 +734,30 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
     """)
 
     users = [
-        ('admin', hash_fn('gzg2026*'), 'Administración (Control Total)', 'ADMINISTRADOR', 'TODAS', 'Administrador de Sistema'),
-        ('jagreda', hash_fn('jagreda2026*'), 'Jhon Robert Ágreda Aspajo', 'JEFE', 'OPER&MTTO', 'Jefe'),
-        ('jalva', hash_fn('jalva2026*'), 'Jhon Kenedy Alva Medina', 'JEFE', 'JEFATURA', 'Jefe'),
-        ('jdelariva', hash_fn('jdelariva2026*'), 'Javier Adrián De La Riva Aguilar', 'JEFE', 'JEFATURA', 'Jefe'),
-        ('jhuayama', hash_fn('jhuayama2026*'), 'Josmell Waldir Huayama Adriano', 'JEFE', 'OPER&MTTO', 'Jefe'),
-        ('msanchez', hash_fn('msanchez2026*'), 'Manuel Ysidoro Sánchez Montoya', 'SUPERINTENDENTE', 'JEFATURA', 'Superintendente')
+        ('admin', hash_fn('gzg2026*'), 'Administración (Control Total)', 'ADMINISTRADOR', 'TODAS', 'Administrador de Sistema', ''),
+        ('jagreda', hash_fn('jagreda2026*'), 'Jhon Robert Ágreda Aspajo', 'JEFE', 'OPER&MTTO', 'Jefe', '47783594'),
+        ('jalva', hash_fn('jalva2026*'), 'Jhon Kenedy Alva Medina', 'JEFE', 'JEFATURA', 'Jefe', '47034929'),
+        ('jdelariva', hash_fn('jdelariva2026*'), 'Javier Adrián De La Riva Aguilar', 'JEFE', 'JEFATURA', 'Jefe', '72559194'),
+        ('jhuayama', hash_fn('jhuayama2026*'), 'Josmell Waldir Huayama Adriano', 'JEFE', 'OPER&MTTO', 'Jefe', '46671923'),
+        ('msanchez', hash_fn('msanchez2026*'), 'Manuel Ysidoro Sánchez Montoya', 'SUPERINTENDENTE', 'JEFATURA', 'Superintendente', '26696602'),
+        ('lpretel', hash_fn('lpretel2026*'), 'Liliana Morely Pretel Ramírez', 'PERSONAL', 'OPER&MTTO', 'Auxiliar de Seguridad', '75227437'),
+        ('respinoza', hash_fn('respinoza2026*'), 'Raúl Esteban Espinoza Saavedra', 'PERSONAL', 'OPER&MTTO', 'Comunicaciones', '44955960'),
+        ('jsanchez', hash_fn('jsanchez2026*'), 'Juan Fernando Sánchez Montero', 'SUPERVISOR', 'OPER&MTTO', 'Supervisor', '70782038')
     ]
     
-    for username, pass_hash, nombre, rol, area, cargo in users:
+    for username, pass_hash, nombre, rol, area, cargo, dni in users:
         # Verificar si ya existe
         cursor.execute("SELECT id FROM usuarios WHERE LOWER(username) = LOWER(?)", (username,))
         row = cursor.fetchone()
         if row:
             cursor.execute("""
-            UPDATE usuarios SET rol = ?, area_asignada = ?, cargo = ? WHERE id = ?
-            """, (rol, area, cargo, row[0]))
+            UPDATE usuarios SET rol = ?, area_asignada = ?, cargo = ?, dni = ? WHERE id = ?
+            """, (rol, area, cargo, dni, row[0]))
         else:
             cursor.execute("""
-            INSERT INTO usuarios (username, password_hash, nombre_completo, rol, area_asignada, cargo)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """, (username, pass_hash, nombre, rol, area, cargo))
+            INSERT INTO usuarios (username, password_hash, nombre_completo, rol, area_asignada, cargo, dni)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (username, pass_hash, nombre, rol, area, cargo, dni))
         
     conn.commit()
     conn.close()
@@ -771,7 +779,7 @@ def obtener_usuario_by_username(username: str, db_path: str = DB_PATH) -> Option
     """Obtiene la información de un usuario según su nombre de usuario (búsqueda case-insensitive)."""
     conn = get_connection(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT id, username, password_hash, nombre_completo, rol, area_asignada, cargo, activo FROM usuarios WHERE LOWER(username) = LOWER(?)", (username.strip(),))
+    cursor.execute("SELECT id, username, password_hash, nombre_completo, rol, area_asignada, cargo, activo, dni FROM usuarios WHERE LOWER(username) = LOWER(?)", (username.strip(),))
     row = cursor.fetchone()
     conn.close()
     if row:
@@ -783,7 +791,8 @@ def obtener_usuario_by_username(username: str, db_path: str = DB_PATH) -> Option
             'rol': row[4],
             'area_asignada': row[5],
             'cargo': row[6],
-            'activo': row[7]
+            'activo': row[7],
+            'dni': row[8] if len(row) > 8 else ''
         }
     return None
 
@@ -1322,3 +1331,51 @@ def actualizar_estado_aprobacion_nivel(
         conn.close()
         print(f"Error actualizando aprobación nivel {nivel}: {e}")
         return False
+
+
+def guardar_sustento_trabajador(
+    id_solicitud: int,
+    observacion_trabajador: str,
+    adjuntos_path: str = None,
+    db_path: str = DB_PATH
+) -> bool:
+    """
+    Guarda el sustento personal y fotos de evidencia adjuntas por el trabajador o jefe
+    para sus propias horas extras / exceso de jornada.
+    """
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    try:
+        hora_peru = obtener_hora_peru_str()
+        final_adjuntos = None
+        if adjuntos_path:
+            cursor.execute("SELECT adjuntos FROM aprobaciones WHERE id = ?", (id_solicitud,))
+            prev = cursor.fetchone()
+            if prev and prev[0] and str(prev[0]).strip().lower() not in ('none', 'nan', ''):
+                final_adjuntos = f"{str(prev[0]).strip()}|||{adjuntos_path}"
+            else:
+                final_adjuntos = adjuntos_path
+
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET observacion_trabajador = ?,
+                adjuntos = COALESCE(?, adjuntos),
+                updated_at = ?
+            WHERE id = ?
+        """, (observacion_trabajador.strip(), final_adjuntos, hora_peru, id_solicitud))
+        conn.commit()
+        conn.close()
+        try:
+            obtener_solicitudes_aprobacion.clear()
+        except Exception:
+            pass
+        try:
+            regenerar_aprobaciones_excel(db_path)
+        except Exception as e_excel:
+            print(f"[Aviso] Excel de aprobaciones no regenerado: {e_excel}")
+        return True
+    except Exception as e:
+        conn.close()
+        print(f"Error al guardar sustento del trabajador: {e}")
+        return False
+

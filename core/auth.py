@@ -40,7 +40,8 @@ def login_user(username: str, password: str) -> bool:
                 'nombre_completo': user['nombre_completo'],
                 'rol': user['rol'],
                 'area_asignada': user['area_asignada'],
-                'cargo': user.get('cargo', '')
+                'cargo': user.get('cargo', ''),
+                'dni': user.get('dni', '')
             }
             return True
     return False

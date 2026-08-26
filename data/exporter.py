@@ -578,16 +578,20 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                         except Exception:
                             fecha_aprob = fa_str
 
-                # Combinar comentarios de Nivel 1 y Nivel 2 en la misma celda
+                # Combinar justificación del trabajador y comentarios de Nivel 1 y Nivel 2 en la misma celda
+                obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
                 c_n1 = str(row.get('comentario_n1', '') or '').strip()
                 c_n2 = str(row.get('comentario_n2', '') or '').strip()
                 c_sup = str(row.get('comentario_supervisor', '') or '').strip()
 
+                if obs_trab.lower() in ('nan', 'none', ''): obs_trab = ""
                 if c_n1.lower() in ('nan', 'none', ''): c_n1 = ""
                 if c_n2.lower() in ('nan', 'none', ''): c_n2 = ""
                 if c_sup.lower() in ('nan', 'none', ''): c_sup = ""
 
                 comentarios_list = []
+                if obs_trab:
+                    comentarios_list.append(f"Trabajador: {obs_trab}")
                 if c_n1:
                     ap_n1_name = str(row.get('aprobado_por_n1', '') or row.get('aprobador_n1', '') or '').strip()
                     pref_1 = f"N1 ({ap_n1_name}): " if ap_n1_name and ap_n1_name != '-' else "N1: "

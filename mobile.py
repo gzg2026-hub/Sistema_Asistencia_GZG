@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from data.database import (
     init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
     sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive,
-    regenerar_aprobaciones_excel,
+    regenerar_aprobaciones_excel, guardar_sustento_trabajador,
     cambiar_password_usuario, obtener_usuario_by_username,
     crear_token_sesion, validar_token_sesion, eliminar_token_sesion
 )
@@ -1065,9 +1065,25 @@ else:
     df_all = df_all_raw.copy()
 
 
-# 3 Pestañas Móviles PWA
-tab_pendientes, tab_historial, tab_dashboard = st.tabs([
-    "📋 Pendientes", "📜 Historial", "📊 Dashboard"
+# Mapeo de DNI del usuario autenticado para la gestión de sus horas personales
+MAPA_USUARIOS_DNI = {
+    'admin': '',
+    'jagreda': '47783594',
+    'jalva': '47034929',
+    'jdelariva': '72559194',
+    'jhuayama': '46671923',
+    'msanchez': '26696602',
+    'lpretel': '75227437',
+    'respinoza': '44955960',
+    'jsanchez': '70782038',
+}
+user_dni = str(user.get('dni', '') or '').strip().lstrip('0').zfill(8)
+if (not user_dni or user_dni == '00000000') and username.lower().strip() in MAPA_USUARIOS_DNI:
+    user_dni = MAPA_USUARIOS_DNI[username.lower().strip()]
+
+# 4 Pestañas Móviles PWA
+tab_pendientes, tab_mis_horas, tab_historial, tab_dashboard = st.tabs([
+    "📋 Pendientes", "📝 Mis Horas Extras", "📜 Historial", "📊 Dashboard"
 ])
 
 # ---------------------------------------------------------
@@ -1156,6 +1172,16 @@ with tab_pendientes:
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Mostrar sustento personal del trabajador si existe
+                obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
+                if obs_trab and obs_trab.lower() not in ('none', 'nan', ''):
+                    st.markdown(f"""
+                    <div style="background: rgba(52, 152, 219, 0.12); border-left: 3px solid #3498DB; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
+                        <strong style="color: #3498DB;">👤 Sustento de {worker_name}:</strong><br>
+                        <span style="color: #E5E7EB;">{obs_trab}</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+
                 # Mostrar validación previa de Nivel 1 si ya fue aprobada por el supervisor
                 c_n1_prev = str(row.get('comentario_n1', '') or '').strip()
                 if c_n1_prev and c_n1_prev.lower() not in ('none', 'nan', ''):
@@ -1174,7 +1200,7 @@ with tab_pendientes:
                     if len(adj_list) == 1:
                         st.image(adj_list[0], caption=f"📷 Evidencia adjuntada por {ap_n1_name}", use_container_width=True)
                     else:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Evidencias adjuntas ({len(adj_list)} fotos por {ap_n1_name}):</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Evidencias adjuntas ({len(adj_list)} fotos):</div>", unsafe_allow_html=True)
                         for i in range(0, len(adj_list), 2):
                             c_img1, c_img2 = st.columns(2)
                             with c_img1:
@@ -1245,6 +1271,133 @@ with tab_pendientes:
                         actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
                         st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
                         st.rerun()
+
+# ---------------------------------------------------------
+# TAB MIS HORAS EXTRAS: JUSTIFICACIÓN Y SUSTENTO PERSONAL
+# ---------------------------------------------------------
+with tab_mis_horas:
+    if not user_dni or user_dni == '00000000':
+        st.info("ℹ️ Como Administrador, visualiza y gestiona las horas de todo el personal desde la pestaña Pendientes e Historial.")
+    else:
+        df_raw_dni = df_all_raw['dni'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip().str.lstrip('0').str.zfill(8)
+        df_mis_horas = df_all_raw[df_raw_dni == user_dni].copy()
+        
+        # Cajones de Métricas Personales
+        n_mis_sol = len(df_mis_horas)
+        mis_he_min = df_mis_horas['horas_extras_min'].sum() if 'horas_extras_min' in df_mis_horas.columns and not df_mis_horas.empty else 0
+        mis_exc_min = df_mis_horas['exceso_jornada_min'].sum() if 'exceso_jornada_min' in df_mis_horas.columns and not df_mis_horas.empty else 0
+        
+        he_tot_hhmm = f"{int(mis_he_min // 60):02d}:{int(mis_he_min % 60):02d}"
+        exc_tot_hhmm = f"{int(mis_exc_min // 60):02d}:{int(mis_exc_min % 60):02d}"
+        
+        st.markdown(f"""
+        <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
+            <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(30, 136, 229, 0.25); box-sizing: border-box;">
+                <div style="font-size: 18px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{he_tot_hhmm}</div>
+                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Mis H.E. este mes</div>
+            </div>
+            <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #FB8C00 0%, #EF6C00 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(251, 140, 0, 0.3); box-sizing: border-box;">
+                <div style="font-size: 18px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{exc_tot_hhmm}</div>
+                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Mis Excesos este mes</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if df_mis_horas.empty:
+            st.info("🎉 ¡Excelente! No tienes horas extras ni excesos de jornada pendientes en este mes.")
+        else:
+            for idx, row in df_mis_horas.iterrows():
+                sol_id = row['id']
+                fecha_sol = row.get('fecha', '')
+                he_hhmm = row.get('horas_extras_hhmm', '00:00')
+                exceso_hhmm = row.get('exceso_jornada_hhmm', '00:00')
+                estado_global = str(row.get('estado', 'PENDIENTE')).upper()
+                estado_n1 = str(row.get('estado_n1', 'PENDIENTE')).upper()
+                estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
+                obs_actual = str(row.get('observacion_trabajador', '') or '').strip()
+                if obs_actual.lower() in ('none', 'nan'): obs_actual = ""
+                
+                # Badge de estado descriptivo
+                if estado_global == 'APROBADO':
+                    badge_label = "✅ APROBADO FINAL"
+                elif estado_global == 'RECHAZADO' or estado_n1 == 'RECHAZADO' or estado_n2 == 'RECHAZADO':
+                    badge_label = "❌ RECHAZADO"
+                elif estado_n1 == 'APROBADO':
+                    badge_label = "🟢 APROBADO N1"
+                else:
+                    badge_label = "⏳ PENDIENTE DE VALIDACIÓN"
+                
+                with st.expander(f"📅 **Jornada {fecha_sol}** | ⏰ {he_hhmm} | ⚠️ {exceso_hhmm}  [{badge_label}]", expanded=False):
+                    st.markdown(f"""
+                    <div style="margin: 4px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
+                        <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
+                        <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {row.get('jornada_trabajada_hhmm', '-')}</div>
+                        <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b> &nbsp;|&nbsp; ⚠️ <strong style="color: #FFFFFF;">Exceso:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
+                        <div>📋 <strong style="color: #FFFFFF;">Aprobadores:</strong> N1: {row.get('aprobador_n1') or '-'} | N2: {row.get('aprobador_n2') or '-'}</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    # Mostrar sustento ya registrado si existe
+                    if obs_actual:
+                        st.markdown(f"""
+                        <div style="background: rgba(46, 204, 113, 0.1); border-left: 3px solid #2ECC71; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
+                            <strong style="color: #2ECC71;">✍️ Tu Sustento Registrado:</strong><br>
+                            <span style="color: #E5E7EB;">{obs_actual}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    
+                    # Mostrar fotos ya adjuntadas si existen
+                    adj_list_my = parse_adjuntos(row.get('adjuntos'))
+                    if adj_list_my:
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos de Evidencia Subidas ({len(adj_list_my)} fotos):</div>", unsafe_allow_html=True)
+                        for i in range(0, len(adj_list_my), 2):
+                            c_my1, c_my2 = st.columns(2)
+                            with c_my1:
+                                st.image(adj_list_my[i], caption=f"Foto {i+1}", use_container_width=True)
+                            if i + 1 < len(adj_list_my):
+                                with c_my2:
+                                    st.image(adj_list_my[i+1], caption=f"Foto {i+2}", use_container_width=True)
+
+                    # Formulario para sustentar / actualizar sustento
+                    st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
+                    my_obs_input = st.text_area(
+                        "✍️ Motivo / Detalle del trabajo realizado",
+                        value=obs_actual,
+                        placeholder="Ej: Se realizó guardia de apoyo en cambio de revestimiento de tolva...",
+                        key=f"my_txt_{sol_id}"
+                    )
+                    
+                    my_uploaded_files = st.file_uploader(
+                        "📷 Adjuntar Fotos de Evidencia (permite múltiples)",
+                        type=["png", "jpg", "jpeg"],
+                        accept_multiple_files=True,
+                        key=f"my_files_{sol_id}"
+                    )
+                    
+                    if st.button("📤 Guardar y Enviar Sustento a Gerencia", key=f"btn_send_my_{sol_id}", type="primary", use_container_width=True):
+                        my_adj_path = None
+                        if my_uploaded_files:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            data_uris = []
+                            for f_idx, uf in enumerate(my_uploaded_files):
+                                fname = f"sustento_{sol_id}_{f_idx}_{uf.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                buf = uf.getvalue()
+                                with open(fpath, "wb") as f:
+                                    f.write(buf)
+                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                b64_img = base64.b64encode(buf).decode()
+                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                            if data_uris:
+                                my_adj_path = "|||".join(data_uris)
+
+                        if guardar_sustento_trabajador(sol_id, my_obs_input, my_adj_path):
+                            st.toast("✅ Sustento enviado exitosamente a tu supervisor", icon="🎉")
+                            st.rerun()
+                        else:
+                            st.error("Error al guardar el sustento. Intente nuevamente.")
 
 # ---------------------------------------------------------
 # TAB 2: HISTORIAL DE APROBACIONES (CORRELACIONADO CON USUARIO)
