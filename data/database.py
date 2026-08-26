@@ -153,6 +153,8 @@ def init_db(db_path: str = DB_PATH):
         exceso_jornada_min INTEGER DEFAULT 0,
         horas_extras_hhmm TEXT,
         exceso_jornada_hhmm TEXT,
+        inicio_he TEXT,
+        fin_he TEXT,
         motivo TEXT DEFAULT 'Trabajo operativo adicional en turno',
         observacion_trabajador TEXT,
         estado TEXT NOT NULL DEFAULT 'PENDIENTE',
@@ -175,6 +177,10 @@ def init_db(db_path: str = DB_PATH):
 
     # Migración segura de columnas de aprobación en 2 niveles para aprobaciones
     cols_aprob = [row[1] for row in cursor.execute("PRAGMA table_info(aprobaciones)").fetchall()]
+    if 'inicio_he' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN inicio_he TEXT")
+    if 'fin_he' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN fin_he TEXT")
     if 'aprobador_n1' not in cols_aprob:
         cursor.execute("ALTER TABLE aprobaciones ADD COLUMN aprobador_n1 TEXT")
     if 'aprobador_n2' not in cols_aprob:
@@ -1066,6 +1072,13 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
                 WHERE fecha = ? AND dni = ?
             """, (n1_app, n2_app, n2_app, fecha, dni))
         
+    # Sincronizar inicio y fin de marcación de horas extras desde horas_extra
+    cursor.execute("""
+        UPDATE aprobaciones
+        SET inicio_he = (SELECT h.inicio_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1),
+            fin_he = (SELECT h.fin_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1)
+        WHERE (horas_extras_min > 0 OR (horas_extras_hhmm IS NOT NULL AND horas_extras_hhmm != '00:00'));
+    """)
     conn.commit()
     conn.close()
 

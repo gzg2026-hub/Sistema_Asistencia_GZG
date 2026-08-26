@@ -1178,8 +1178,15 @@ with tab_pendientes:
             worker_name = format_worker_name(row.get('nombres', ''), row.get('apellidos', ''))
             cargo = row.get('cargo', 'Operativo')
             fecha_sol = row.get('fecha', '')
-            he_hhmm = row.get('horas_extras_hhmm', '00:00')
-            exceso_hhmm = row.get('exceso_jornada_hhmm', '00:00')
+            he_hhmm = clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
+            exceso_hhmm = clean_hhmm(row.get('exceso_jornada_hhmm', '00:00'))
+            jornada_hhmm = clean_hhmm(row.get('jornada_trabajada_hhmm', '-'))
+            inicio_he = str(row.get('inicio_he') or '').strip()
+            fin_he = str(row.get('fin_he') or '').strip()
+            if inicio_he.lower() in ('none', 'nan'): inicio_he = ""
+            if fin_he.lower() in ('none', 'nan'): fin_he = ""
+            he_detail = f" <span style='color: #9A9EA7; font-size: 11.5px; font-weight: 500;'>({inicio_he} a {fin_he})</span>" if inicio_he and fin_he and he_hhmm != '00:00' else ""
+
             avatar_url = get_worker_avatar_url(row.get('dni'), worker_name)
             with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
                 st.markdown(f"""
@@ -1193,8 +1200,8 @@ with tab_pendientes:
 
                 <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
                     <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
-                    <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {row.get('jornada_trabajada_hhmm', '-')}</div>
-                    <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b></div>
+                    <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {jornada_hhmm}</div>
+                    <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
                     <div>⚠️ <strong style="color: #FFFFFF;">Exceso de jornada:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1221,14 +1228,14 @@ with tab_pendientes:
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Mostrar fotos de evidencia previa si existen
+                # Mostrar fotos previas si existen
                 adj_list = parse_adjuntos(row.get('adjuntos'))
                 if adj_list:
                     ap_n1_name = str(row.get('aprobado_por_n1', '') or 'Nivel 1').strip()
                     if len(adj_list) == 1:
-                        st.image(adj_list[0], caption=f"📷 Evidencia adjuntada por {ap_n1_name}", use_container_width=True)
+                        st.image(adj_list[0], caption=f"📷 Foto adjuntada por {ap_n1_name}", use_container_width=True)
                     else:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Evidencias adjuntas ({len(adj_list)} fotos):</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos adjuntas ({len(adj_list)} fotos):</div>", unsafe_allow_html=True)
                         for i in range(0, len(adj_list), 2):
                             c_img1, c_img2 = st.columns(2)
                             with c_img1:
@@ -1247,7 +1254,7 @@ with tab_pendientes:
                 if is_blocked_for_n2:
                     st.markdown("""
                     <div style="background: rgba(241, 196, 15, 0.12); border-left: 3px solid #F1C40F; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #F1C40F;">
-                        ⏳ <strong>Esperando Sustento:</strong> El trabajador/jefe aún no ha enviado su justificación ni fotos de evidencia desde su app móvil. Los botones de aprobación se activarán cuando envíe su sustento.
+                        ⏳ <strong>Esperando Sustento:</strong> El trabajador/jefe aún no ha enviado su justificación ni fotos desde su app móvil. Los botones de aprobación se activarán cuando envíe su sustento.
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1340,6 +1347,11 @@ with tab_historial:
             estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
             he_hhmm = clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
             exceso_hhmm = clean_hhmm(row.get('exceso_jornada_hhmm', '00:00'))
+            inicio_he = str(row.get('inicio_he') or '').strip()
+            fin_he = str(row.get('fin_he') or '').strip()
+            if inicio_he.lower() in ('none', 'nan'): inicio_he = ""
+            if fin_he.lower() in ('none', 'nan'): fin_he = ""
+            he_detail = f" <span style='color: #9A9EA7; font-size: 11px;'>({inicio_he} a {fin_he})</span>" if inicio_he and fin_he and he_hhmm != '00:00' else ""
             
             # Badge descriptivo inteligente según estado de nivel
             if estado_global == 'APROBADO':
@@ -1387,7 +1399,7 @@ with tab_historial:
                 <div class="worker-role">{cargo} ({fecha_sol})</div>
                 <hr style="border-color: #2A2F3D; margin: 8px 0;">
                 <div style="display: flex; justify-content: space-between; font-size: 12px;">
-                    <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b></div>
+                    <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
                     <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                 </div>
                 {c_info_str}
@@ -1461,6 +1473,12 @@ with tab_mis_horas:
                 he_hhmm = clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
                 exceso_hhmm = clean_hhmm(row.get('exceso_jornada_hhmm', '00:00'))
                 jornada_hhmm = clean_hhmm(row.get('jornada_trabajada_hhmm', '-'))
+                inicio_he = str(row.get('inicio_he') or '').strip()
+                fin_he = str(row.get('fin_he') or '').strip()
+                if inicio_he.lower() in ('none', 'nan'): inicio_he = ""
+                if fin_he.lower() in ('none', 'nan'): fin_he = ""
+                he_detail = f" <span style='color: #9A9EA7; font-size: 11.5px; font-weight: 500;'>({inicio_he} a {fin_he})</span>" if inicio_he and fin_he and he_hhmm != '00:00' else ""
+
                 estado_global = str(row.get('estado', 'PENDIENTE')).upper()
                 estado_n1 = str(row.get('estado_n1', 'PENDIENTE')).upper()
                 estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
@@ -1484,7 +1502,7 @@ with tab_mis_horas:
                     <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
                         <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
                         <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {jornada_hhmm}</div>
-                        <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b> &nbsp;|&nbsp; ⚠️ <strong style="color: #FFFFFF;">Exceso:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
+                        <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b>{he_detail} &nbsp;|&nbsp; ⚠️ <strong style="color: #FFFFFF;">Exceso:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -1500,7 +1518,7 @@ with tab_mis_horas:
                     # Mostrar fotos ya adjuntadas si existen
                     adj_list_my = parse_adjuntos(row.get('adjuntos'))
                     if adj_list_my:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos de Evidencia Adjuntadas ({len(adj_list_my)} fotos):</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos Adjuntadas ({len(adj_list_my)} fotos):</div>", unsafe_allow_html=True)
                         for i in range(0, len(adj_list_my), 2):
                             c_my1, c_my2 = st.columns(2)
                             with c_my1:
@@ -1512,14 +1530,14 @@ with tab_mis_horas:
                     # Formulario para sustentar / actualizar sustento
                     st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
                     my_obs_input = st.text_area(
-                        "✍️ Motivo / Detalle del trabajo extraordinario realizado",
+                        "✍️ Motivo / Detalle del trabajo realizado",
                         value=obs_actual,
                         placeholder="",
                         key=f"my_txt_{sol_id}"
                     )
                     
                     my_uploaded_files = st.file_uploader(
-                        "📷 Adjuntar Fotos de Evidencia (permite múltiples)",
+                        "📷 Adjuntar Fotos (permite múltiples)",
                         type=["png", "jpg", "jpeg"],
                         accept_multiple_files=True,
                         key=f"my_files_{sol_id}"
