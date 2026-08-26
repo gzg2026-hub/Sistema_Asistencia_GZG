@@ -850,46 +850,56 @@ if st.session_state.get("show_change_pw_box", False):
             <div style="font-size: 11px; color: #D1D5DB;">💡 Ingresa tu contraseña actual y escribe la nueva clave (mínimo 6 caracteres).</div>
         </div>
         """, unsafe_allow_html=True)
-        with st.form("form_header_change_pw", clear_on_submit=True):
-            p_act_h = st.text_input("Contraseña Actual", type="password", key="inp_pw_act")
-            p_nue_h = st.text_input("Nueva Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="inp_pw_nue")
-            p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password", placeholder="Repite la nueva contraseña", key="inp_pw_cnf")
-            col_f1, col_f2 = st.columns(2)
-            with col_f1:
-                btn_h_pw = st.form_submit_button("💾 Guardar", type="primary", use_container_width=True)
-            with col_f2:
-                btn_h_close = st.form_submit_button("✖ Cancelar", use_container_width=True)
+        
+        p_act_h = st.text_input("Contraseña Actual", type="password", key="inp_pw_act")
+        p_nue_h = st.text_input("Nueva Contraseña", type="password", placeholder="Mínimo 6 caracteres", key="inp_pw_nue")
+        p_cnf_h = st.text_input("Confirmar Nueva Contraseña", type="password", placeholder="Repite la nueva contraseña", key="inp_pw_cnf")
+        
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            btn_h_pw = st.button("💾 Guardar", type="primary", key="btn_save_new_pw", use_container_width=True)
+        with col_f2:
+            btn_h_close = st.button("✖ Cancelar", key="btn_cancel_new_pw", use_container_width=True)
+        
+        if btn_h_close:
+            st.session_state["show_change_pw_box"] = False
+            st.rerun()
             
-            if btn_h_close:
-                st.session_state["show_change_pw_box"] = False
-                st.rerun()
-            if btn_h_pw:
-                u_curr = username.strip().lower()
-                db_u = obtener_usuario_by_username(u_curr)
-                if not db_u or not verify_password(p_act_h.strip(), db_u.get('password_hash', ''), u_curr):
-                    st.error("❌ La contraseña actual ingresada es incorrecta.")
-                    st.toast("❌ Contraseña actual incorrecta", icon="⚠️")
-                elif not p_nue_h or len(p_nue_h.strip()) < 6:
-                    st.warning("⚠️ La nueva contraseña debe tener al menos 6 caracteres.")
-                    st.toast("⚠️ Mínimo 6 caracteres requeridos", icon="⚠️")
-                elif p_nue_h.strip() != p_cnf_h.strip():
-                    st.error("❌ Las nuevas contraseñas no coinciden.")
-                    st.toast("❌ Las contraseñas no coinciden", icon="⚠️")
+        if btn_h_pw:
+            u_curr = username.strip().lower()
+            db_u = obtener_usuario_by_username(u_curr)
+            if not p_act_h:
+                st.error("❌ Por favor ingresa tu contraseña actual.")
+                st.toast("❌ Falta contraseña actual", icon="⚠️")
+            elif not db_u or not verify_password(p_act_h.strip(), db_u.get('password_hash', ''), u_curr):
+                st.error("❌ La contraseña actual ingresada es incorrecta.")
+                st.toast("❌ Contraseña actual incorrecta", icon="⚠️")
+            elif not p_nue_h or len(p_nue_h.strip()) < 6:
+                st.warning("⚠️ La nueva contraseña debe tener al menos 6 caracteres.")
+                st.toast("⚠️ Mínimo 6 caracteres requeridos", icon="⚠️")
+            elif p_nue_h.strip() != p_cnf_h.strip():
+                st.error("❌ Las nuevas contraseñas no coinciden.")
+                st.toast("❌ Las contraseñas no coinciden", icon="⚠️")
+            else:
+                new_h = hash_password(p_nue_h.strip())
+                if cambiar_password_usuario(u_curr, new_h):
+                    nuevo_token = crear_token_sesion(u_curr)
+                    if nuevo_token:
+                        st.query_params["token"] = nuevo_token
+                    if st.session_state.get("user"):
+                        st.session_state["user"]["password_hash"] = new_h
+                    st.session_state["show_change_pw_box"] = False
+                    st.session_state["pw_change_success"] = True
+                    try:
+                        st.session_state["inp_pw_act"] = ""
+                        st.session_state["inp_pw_nue"] = ""
+                        st.session_state["inp_pw_cnf"] = ""
+                    except Exception:
+                        pass
+                    st.toast("🎉 ¡Contraseña actualizada exitosamente!", icon="🔑")
+                    st.rerun()
                 else:
-                    new_h = hash_password(p_nue_h.strip())
-                    if cambiar_password_usuario(u_curr, new_h):
-                        # Renovar token de sesión activo para mantener la sesión fluida
-                        nuevo_token = crear_token_sesion(u_curr)
-                        if nuevo_token:
-                            st.query_params["token"] = nuevo_token
-                        if st.session_state.get("user"):
-                            st.session_state["user"]["password_hash"] = new_h
-                        st.session_state["show_change_pw_box"] = False
-                        st.session_state["pw_change_success"] = True
-                        st.toast("🎉 ¡Contraseña actualizada exitosamente!", icon="🔑")
-                        st.rerun()
-                    else:
-                        st.error("❌ Error interno al actualizar la contraseña en la base de datos.")
+                    st.error("❌ Error interno al actualizar la contraseña en la base de datos.")
 
 
 
