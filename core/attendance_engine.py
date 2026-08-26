@@ -844,7 +844,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 'TIPO_REGISTRO': tipo_registro,
                 'INCIDENCIAS': incidencias_str,
                 'ESTADO ASISTENCIA': estado,
-                'OBSERVACIONES': 'Abastecer petróleo / Recoger personal / Varios' if (es_mantenimiento and entrada and time_to_seconds(entrada) < 6 * 3600 + 25 * 60) else ''
+                'OBSERVACIONES': ''
             })
 
     # Procesar FALTAS para trabajadores no registrados en las fechas del dataset

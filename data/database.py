@@ -1068,10 +1068,10 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
                 horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
                 horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador,
                 aprobador_n1, aprobador_n2, estado_n1, estado_n2
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, 'PENDIENTE', ?)
         """, (
             fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
-            h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str, obs or '',
+            h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str,
             n1_app, n2_app, st_n2_init
         ))
 
