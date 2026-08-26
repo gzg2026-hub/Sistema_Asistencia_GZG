@@ -217,6 +217,18 @@ def init_db(db_path: str = DB_PATH):
         cursor.execute("ALTER TABLE incidencias ADD COLUMN fecha_validacion TEXT")
         cursor.execute("ALTER TABLE incidencias ADD COLUMN observacion_validacion TEXT")
 
+    # Sincronización automática de inicio_he y fin_he si están vacíos
+    try:
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET inicio_he = (SELECT h.inicio_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1),
+                fin_he = (SELECT h.fin_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1)
+            WHERE (horas_extras_min > 0 OR (horas_extras_hhmm IS NOT NULL AND horas_extras_hhmm != '00:00'))
+              AND (inicio_he IS NULL OR inicio_he = '');
+        """)
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
 

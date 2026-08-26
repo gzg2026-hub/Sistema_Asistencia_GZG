@@ -597,6 +597,39 @@ st.markdown("""
         font-weight: 700 !important;
     }
 
+    /* Botones de Aprobación en Modo Apagado / Gris cuando están deshabilitados */
+    div[data-testid="stExpander"] div.stButton button:disabled,
+    div[data-testid="stExpander"] div.stButton button[disabled],
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"]:disabled,
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-primary"]:disabled,
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"]:disabled,
+    div[data-testid="stExpander"] div.stButton button[kind="primary"]:disabled,
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-secondary"][disabled],
+    div[data-testid="stExpander"] div.stButton button[data-testid="baseButton-primary"][disabled],
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"][disabled],
+    div[data-testid="stExpander"] div.stButton button[kind="primary"][disabled] {
+        background: #232730 !important;
+        background-color: #232730 !important;
+        background-image: none !important;
+        border: 1px solid #333846 !important;
+        color: #6B7280 !important;
+        box-shadow: none !important;
+        cursor: not-allowed !important;
+        opacity: 0.45 !important;
+        pointer-events: none !important;
+    }
+    div[data-testid="stExpander"] div.stButton button:disabled p,
+    div[data-testid="stExpander"] div.stButton button:disabled span,
+    div[data-testid="stExpander"] div.stButton button[disabled] p,
+    div[data-testid="stExpander"] div.stButton button[disabled] span,
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"]:disabled p,
+    div[data-testid="stExpander"] div.stButton button[kind="secondary"]:disabled span,
+    div[data-testid="stExpander"] div.stButton button[kind="primary"]:disabled p,
+    div[data-testid="stExpander"] div.stButton button[kind="primary"]:disabled span {
+        color: #6B7280 !important;
+        font-weight: 600 !important;
+    }
+
     /* Cabecera uniforme en 2 líneas limpias para tarjetas de solicitud expandibles */
     div[data-testid="stExpander"] details summary,
     div[data-testid="stExpander"] summary {
