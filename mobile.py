@@ -1077,7 +1077,7 @@ MAPA_USUARIOS_DNI = {
     'respinoza': '44955960',
     'jsanchez': '70782038',
 }
-user_dni = str(user.get('dni', '') or '').strip().lstrip('0').zfill(8)
+user_dni = str(current_user.get('dni', '') or '').strip().lstrip('0').zfill(8) if current_user else ''
 if (not user_dni or user_dni == '00000000') and username.lower().strip() in MAPA_USUARIOS_DNI:
     user_dni = MAPA_USUARIOS_DNI[username.lower().strip()]
 
@@ -1174,7 +1174,8 @@ with tab_pendientes:
                 
                 # Mostrar sustento personal del trabajador si existe
                 obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
-                if obs_trab and obs_trab.lower() not in ('none', 'nan', ''):
+                if obs_trab.lower() in ('none', 'nan'): obs_trab = ""
+                if obs_trab:
                     st.markdown(f"""
                     <div style="background: rgba(52, 152, 219, 0.12); border-left: 3px solid #3498DB; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
                         <strong style="color: #3498DB;">👤 Sustento de {worker_name}:</strong><br>
@@ -1209,6 +1210,20 @@ with tab_pendientes:
                                 with c_img2:
                                     st.image(adj_list[i+1], caption=f"Foto {i+2}", use_container_width=True)
 
+                # Regla de Bloqueo Inteligente para N2 (Reporte Directo a Gerencia)
+                app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
+                app_n2_raw = str(row.get('aprobador_n2') or '').strip().upper()
+                is_direct_to_gerencia = (app_n1_raw == 'msanchez') and (app_n2_raw in ('NA', '-', '', 'NAN', 'NONE'))
+                tiene_sustento = bool(obs_trab or adj_list)
+                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento)
+
+                if is_blocked_for_n2:
+                    st.markdown("""
+                    <div style="background: rgba(241, 196, 15, 0.12); border-left: 3px solid #F1C40F; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #F1C40F;">
+                        ⏳ <strong>Esperando Sustento:</strong> El trabajador/jefe aún no ha enviado su justificación ni fotos de evidencia desde su app móvil. Los botones de aprobación se activarán cuando envíe su sustento.
+                    </div>
+                    """, unsafe_allow_html=True)
+
                 comentario_aprobador = st.text_input(
                     "✍️ Comentario del Aprobador",
                     key=f"m_com_{sol_id}",
@@ -1225,7 +1240,7 @@ with tab_pendientes:
                 # 2 Botones Gemelos Simétricos 50% / 50% en Fila Horizontal
                 col_act1, col_act2 = st.columns(2)
                 with col_act1:
-                    if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", use_container_width=True):
+                    if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", disabled=is_blocked_for_n2, use_container_width=True):
                         adjunto_rel_path = None
                         if uploaded_files:
                             root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1249,7 +1264,7 @@ with tab_pendientes:
                         st.rerun()
 
                 with col_act2:
-                    if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", use_container_width=True):
+                    if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", disabled=is_blocked_for_n2, use_container_width=True):
                         adjunto_rel_path = None
                         if uploaded_files:
                             root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -1324,12 +1339,26 @@ with tab_mis_horas:
                     badge_label = "❌ RECHAZADO"
                 elif estado_n1 == 'APROBADO':
                     badge_label = "🟢 APROBADO N1"
+                elif obs_actual:
+                    badge_label = "📤 ENVIADO (PENDIENTE DE GERENCIA)"
                 else:
-                    badge_label = "⏳ PENDIENTE DE VALIDACIÓN"
+                    badge_label = "⏳ PENDIENTE DE TU SUSTENTO"
                 
-                with st.expander(f"📅 **Jornada {fecha_sol}** | ⏰ {he_hhmm} | ⚠️ {exceso_hhmm}  [{badge_label}]", expanded=False):
+                worker_name_me = format_worker_name(row.get('nombres', ''), row.get('apellidos', ''))
+                cargo_me = row.get('cargo', 'Operativo')
+                avatar_url_me = get_worker_avatar_url(row.get('dni'), worker_name_me)
+
+                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  [{badge_label}]", expanded=False):
                     st.markdown(f"""
-                    <div style="margin: 4px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
+                        <img src="{avatar_url_me}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
+                        <div>
+                            <div style="font-size: 15px; font-weight: 700; color: #FFFFFF;">{worker_name_me}</div>
+                            <div style="font-size: 12px; color: #9A9EA7;">{cargo_me} ({fecha_sol})</div>
+                        </div>
+                    </div>
+
+                    <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
                         <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('entrada', '-')}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{row.get('salida', '-')}</code></div>
                         <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {row.get('jornada_trabajada_hhmm', '-')}</div>
                         <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b> &nbsp;|&nbsp; ⚠️ <strong style="color: #FFFFFF;">Exceso:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
@@ -1341,7 +1370,7 @@ with tab_mis_horas:
                     if obs_actual:
                         st.markdown(f"""
                         <div style="background: rgba(46, 204, 113, 0.1); border-left: 3px solid #2ECC71; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
-                            <strong style="color: #2ECC71;">✍️ Tu Sustento Registrado:</strong><br>
+                            <strong style="color: #2ECC71;">✍️ Tu Sustento Enviado:</strong><br>
                             <span style="color: #E5E7EB;">{obs_actual}</span>
                         </div>
                         """, unsafe_allow_html=True)
@@ -1349,7 +1378,7 @@ with tab_mis_horas:
                     # Mostrar fotos ya adjuntadas si existen
                     adj_list_my = parse_adjuntos(row.get('adjuntos'))
                     if adj_list_my:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos de Evidencia Subidas ({len(adj_list_my)} fotos):</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos de Evidencia Adjuntadas ({len(adj_list_my)} fotos):</div>", unsafe_allow_html=True)
                         for i in range(0, len(adj_list_my), 2):
                             c_my1, c_my2 = st.columns(2)
                             with c_my1:
@@ -1361,7 +1390,7 @@ with tab_mis_horas:
                     # Formulario para sustentar / actualizar sustento
                     st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
                     my_obs_input = st.text_area(
-                        "✍️ Motivo / Detalle del trabajo realizado",
+                        "✍️ Motivo / Detalle del trabajo extraordinario realizado",
                         value=obs_actual,
                         placeholder="Ej: Se realizó guardia de apoyo en cambio de revestimiento de tolva...",
                         key=f"my_txt_{sol_id}"
@@ -1374,30 +1403,33 @@ with tab_mis_horas:
                         key=f"my_files_{sol_id}"
                     )
                     
-                    if st.button("📤 Guardar y Enviar Sustento a Gerencia", key=f"btn_send_my_{sol_id}", type="primary", use_container_width=True):
-                        my_adj_path = None
-                        if my_uploaded_files:
-                            root_dir = os.path.dirname(os.path.abspath(__file__))
-                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                            os.makedirs(adj_dir, exist_ok=True)
-                            data_uris = []
-                            for f_idx, uf in enumerate(my_uploaded_files):
-                                fname = f"sustento_{sol_id}_{f_idx}_{uf.name}"
-                                fpath = os.path.join(adj_dir, fname)
-                                buf = uf.getvalue()
-                                with open(fpath, "wb") as f:
-                                    f.write(buf)
-                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                b64_img = base64.b64encode(buf).decode()
-                                data_uris.append(f"data:{mime};base64,{b64_img}")
-                            if data_uris:
-                                my_adj_path = "|||".join(data_uris)
-
-                        if guardar_sustento_trabajador(sol_id, my_obs_input, my_adj_path):
-                            st.toast("✅ Sustento enviado exitosamente a tu supervisor", icon="🎉")
-                            st.rerun()
+                    if st.button("📤 ENVIAR", key=f"btn_send_my_{sol_id}", type="primary", use_container_width=True):
+                        if not my_obs_input.strip() and not my_uploaded_files and not adj_list_my:
+                            st.warning("⚠️ Por favor ingresa el motivo o adjunta al menos una foto antes de enviar.")
                         else:
-                            st.error("Error al guardar el sustento. Intente nuevamente.")
+                            my_adj_path = None
+                            if my_uploaded_files:
+                                root_dir = os.path.dirname(os.path.abspath(__file__))
+                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                                os.makedirs(adj_dir, exist_ok=True)
+                                data_uris = []
+                                for f_idx, uf in enumerate(my_uploaded_files):
+                                    fname = f"sustento_{sol_id}_{f_idx}_{uf.name}"
+                                    fpath = os.path.join(adj_dir, fname)
+                                    buf = uf.getvalue()
+                                    with open(fpath, "wb") as f:
+                                        f.write(buf)
+                                    mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                    b64_img = base64.b64encode(buf).decode()
+                                    data_uris.append(f"data:{mime};base64,{b64_img}")
+                                if data_uris:
+                                    my_adj_path = "|||".join(data_uris)
+
+                            if guardar_sustento_trabajador(sol_id, my_obs_input, my_adj_path):
+                                st.toast("✅ Sustento enviado exitosamente a Gerencia", icon="🎉")
+                                st.rerun()
+                            else:
+                                st.error("Error al guardar el sustento. Intente nuevamente.")
 
 # ---------------------------------------------------------
 # TAB 2: HISTORIAL DE APROBACIONES (CORRELACIONADO CON USUARIO)
