@@ -1311,24 +1311,30 @@ def render_tab_pendientes():
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Mostrar validación previa de Nivel 1 si ya fue aprobada por el supervisor / jefe
+                # Mostrar validación previa de Nivel 1 si ya fue aprobada por el supervisor / jefe o admin
                 est_n1_str = str(row.get('estado_n1', '') or '').strip().upper()
-                ap_n1_name = str(row.get('aprobado_por_n1', '') or row.get('aprobador_n1', '') or 'Supervisor').strip()
-                if ap_n1_name.lower() in ('nan', 'none', '-', ''):
-                    ap_n1_name = 'Supervisor'
+                ap1_raw = str(row.get('aprobado_por_n1', '') or '').strip()
+                csup_raw = str(row.get('comentario_supervisor', '') or '').strip()
+
+                if ap1_raw.lower() == 'admin' or 'n1 (admin)' in csup_raw.lower():
+                    ap_n1_name = 'admin'
+                elif ap1_raw and ap1_raw.lower() not in ('nan', 'none', '-'):
+                    ap_n1_name = ap1_raw
+                else:
+                    ap_n1_name = str(row.get('aprobador_n1', '') or 'Supervisor').strip()
+                    if ap_n1_name.lower() in ('nan', 'none', '-', ''):
+                        ap_n1_name = 'Supervisor'
 
                 c_n1_prev = str(row.get('comentario_n1', '') or '').strip()
                 if c_n1_prev.lower() in ('none', 'nan'):
                     c_n1_prev = ""
 
                 # Si no hay comentario_n1 explícito, extraer de comentario_supervisor si contiene N1
-                if not c_n1_prev:
-                    csup_raw = str(row.get('comentario_supervisor', '') or '').strip()
-                    if csup_raw and csup_raw.lower() not in ('none', 'nan'):
-                        for line in csup_raw.split('\n'):
-                            if line.upper().startswith('N1'):
-                                c_n1_prev = line.split(':', 1)[1].strip() if ':' in line else line
-                                break
+                if not c_n1_prev and csup_raw and csup_raw.lower() not in ('none', 'nan'):
+                    for line in csup_raw.split('\n'):
+                        if line.upper().startswith('N1'):
+                            c_n1_prev = line.split(':', 1)[1].strip() if ':' in line else line
+                            break
 
                 if est_n1_str in ('APROBADO', 'RECHAZADO') or c_n1_prev:
                     txt_n1_show = c_n1_prev if c_n1_prev else ("Aprobado" if est_n1_str == 'APROBADO' else "Rechazado")
