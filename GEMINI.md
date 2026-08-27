@@ -126,6 +126,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * El wrapper PWA utiliza el evento `frame.addEventListener('load')` con un colchón adaptativo de 5 segundos posteriores a la carga base del iframe.
   * Si la señal `gzg:ready` enviada por Streamlit llega antes, la pantalla se revela de forma inmediata e instantánea.
   * Se mantiene un respaldo de seguridad de 25 segundos para proteger arranques en frío extremo (*cold start*).
+- **Diseño de Métricas y Tarjetas de Evaluación**:
+  * **3 Cajones KPI Simétricos**: En las vistas de Aprobador (`📋 Pendientes`) y Personal (`📝 Mis Horas Extras`), se muestran siempre 3 cajones en fila horizontal: `Pendientes` (Naranja), `Aprobadas` (Celeste) y `Rechazadas` (Rojo).
+  * **Alertas de Validación Limpias**: Cero cajas de advertencia estáticas dentro de las tarjetas. Toda alerta de validación requerida se dispara al hacer clic y se ubica centrada a todo el ancho debajo de los botones de acción.
 
 ---
 
@@ -149,8 +152,12 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * **Aprobación de Contingencia en Ausencia de Jefaturas / Superintendencia**: Si un aprobador Nivel 1 (Jefe de Área) o Nivel 2 (Superintendente) se encuentra de descanso, vacaciones o sin conectividad, `admin` puede validar o rechazar cualquier solicitud:
     - Si la solicitud está en Nivel 1 pendiente, `admin` aprueba como Nivel 1 (avanzando al Nivel 2 o emitiendo aprobación final si no requiere N2).
     - Si la solicitud ya fue aprobada en Nivel 1 y está pendiente en Nivel 2, `admin` aprueba como Nivel 2 (emitiendo la Aprobación Final).
-    - El usuario `admin` queda exento de bloqueos por falta de sustento para garantizar operatividad en casos de emergencia o contingencia.
-  * **Trazabilidad y Auditoría Estricta**: Toda intervención de `admin` queda registrada permanentemente con `aprobado_por = 'admin'`, fecha, hora exacta y comentario en la base de datos SQLite, en la pestaña Historial del app móvil y en la columna de validación del reporte oficial Excel (`Aprobaciones_GZG_YYYY-MM.xlsx`).
+- **Mandatoriedad de Comentario / Foto según Rol**:
+  * **Rol `JEFE` y `PERSONAL`**: Es **100% mandatorio** ingresar al menos un comentario o adjuntar al menos una foto para aprobar/rechazar a subordinados o enviar sustento personal. El sistema bloquea el envío con campos vacíos.
+  * **Rol `SUPERINTENDENTE` y `ADMINISTRADOR`**: El ingreso de comentario o foto es **opcional**, permitiendo aprobar o rechazar con 1 solo clic dado que el sustento técnico fue evaluado previamente en Nivel 1.
+- **Persistencia Total y Blindaje contra Reinicios de Servidor / Cloud**:
+  * Queda estrictamente PROHIBIDO reiniciar contadores o solicitudes en la base de datos o en los archivos Excel sin orden explícita del usuario.
+  * Ante reinicios o despliegues en contenedores efímeros (Streamlit Cloud), el app móvil rehidrata automáticamente los estados de aprobación, rechazos y comentarios desde `Aprobaciones_GZG_YYYY-MM.xlsx` de Google Drive.
 
 
 
