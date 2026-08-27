@@ -26,7 +26,9 @@ def descargar_aprobaciones_actual():
     destino_local = os.path.join(ROOT_DIR, "downloads", "data_procesada", nombre_archivo)
     ok = descargar_archivo_de_gdrive(nombre_archivo, destino_local)
     if ok:
-        log_sync(f"{nombre_archivo} actualizado desde Drive.")
+        from data.database import sincronizar_aprobaciones_con_gdrive, DB_PATH
+        sincronizar_aprobaciones_con_gdrive(DB_PATH)
+        log_sync(f"{nombre_archivo} actualizado y rehidratado en base de datos local.")
     return ok
 
 def sync_cycle(intervalo_segundos: int = 90):

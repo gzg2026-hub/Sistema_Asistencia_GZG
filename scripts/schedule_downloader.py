@@ -194,8 +194,13 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
                 
                 # 4.5 Sincronizar y Regenerar Aprobaciones del mes y subir a Google Drive (AGOSTO)
                 try:
-                    from data.database import sincronizar_aprobaciones_desde_asistencia, DB_PATH, get_connection
+                    from data.database import sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive, DB_PATH, get_connection
                     from data.exporter import exportar_aprobaciones_excel
+                    
+                    # 1. Rehidratar PRIMERO desde Google Drive para absorber aprobaciones hechas en Streamlit Cloud
+                    sincronizar_aprobaciones_con_gdrive(DB_PATH)
+                    
+                    # 2. Agregar únicamente nuevos días cerrados sin tocar los existentes
                     sincronizar_aprobaciones_desde_asistencia(DB_PATH)
                     
                     mes_str = datetime.date.today().strftime('%Y-%m')
