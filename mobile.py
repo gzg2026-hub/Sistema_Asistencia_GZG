@@ -1142,20 +1142,38 @@ user_dni = str(current_user.get('dni', '') or '').strip().lstrip('0').zfill(8) i
 if (not user_dni or user_dni == '00000000') and username.lower().strip() in MAPA_USUARIOS_DNI:
     user_dni = MAPA_USUARIOS_DNI[username.lower().strip()]
 
-# 4 Pestañas Móviles PWA
-tab_pendientes, tab_historial, tab_dashboard, tab_mis_horas = st.tabs([
-    "📋 Pendientes", "📜 Historial", "📊 Dashboard", "📝 Mis Horas Extras"
-])
+# Determinar si el usuario es aprobador con personal a cargo o personal operativo/general
+u_lower = username.lower().strip()
+aprobadores_n1 = set(df_all_raw['aprobador_n1'].dropna().str.lower().str.strip().unique()) if 'aprobador_n1' in df_all_raw.columns else set()
+aprobadores_n2 = set(df_all_raw['aprobador_n2'].dropna().str.lower().str.strip().unique()) if 'aprobador_n2' in df_all_raw.columns else set()
+todos_aprobadores = (aprobadores_n1.union(aprobadores_n2)) - {'', '-', 'none', 'nan'}
+
+es_aprobador = (rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN', 'SUPERVISOR', 'JEFE', 'GERENCIA', 'SUPERINTENDENTE')) or (u_lower in todos_aprobadores)
+
+# Pestañas Móviles PWA dinámicas según el rol
+if not es_aprobador:
+    # Usuarios que NO son aprobadores: MIS HORAS EXTRAS PRIMERO, luego Historial y Dashboard (Sin pestaña Pendientes)
+    tab_mis_horas, tab_historial, tab_dashboard = st.tabs([
+        "📝 Mis Horas Extras", "📜 Historial", "📊 Dashboard"
+    ])
+    tab_pendientes = None
+else:
+    # Aprobadores y Jefes con personal a cargo: PENDIENTES PRIMERO, luego Historial, Dashboard y Mis Horas Extras
+    tab_pendientes, tab_historial, tab_dashboard, tab_mis_horas = st.tabs([
+        "📋 Pendientes", "📜 Historial", "📊 Dashboard", "📝 Mis Horas Extras"
+    ])
 
 # ---------------------------------------------------------
 # CÁLCULO UNIFICADO Y CORRELACIONADO DE BANDEJAS POR ROL
 # ---------------------------------------------------------
-u_lower = username.lower().strip()
+df_raw_dni = df_all_raw['dni'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip().str.lstrip('0').str.zfill(8)
+df_mis_horas = df_all_raw[df_raw_dni == user_dni].copy() if user_dni and user_dni != '00000000' else pd.DataFrame()
+
 if rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'):
     df_pendientes = df_all[df_all['estado'] == 'PENDIENTE'].copy()
     df_aprobadas_mes = df_all[df_all['estado'] == 'APROBADO'].copy()
     df_rechazadas_mes = df_all[df_all['estado'] == 'RECHAZADO'].copy()
-else:
+elif es_aprobador:
     # 1. PENDIENTES: Lo que REQUIERE acción inmediata del usuario
     # Regla Jerárquica Estricta: Nivel 2 solo visualiza y puede aprobar cuando Nivel 1 ya aprobó
     tiene_n1 = df_all['aprobador_n1'].fillna('').str.strip().ne('') & ~df_all['aprobador_n1'].fillna('').str.lower().isin(['-', 'none', 'nan'])
@@ -1183,11 +1201,16 @@ else:
         (df_all['aprobador_n2'].fillna('').str.lower().str.strip() == u_lower) & (df_all['estado_n2'] == 'RECHAZADO')
     ) | (df_all['estado'] == 'RECHAZADO')
     df_rechazadas_mes = df_all[is_rej_by_me].copy()
+else:
+    df_pendientes = df_mis_horas[df_mis_horas['estado'] == 'PENDIENTE'].copy()
+    df_aprobadas_mes = df_mis_horas[df_mis_horas['estado'] == 'APROBADO'].copy()
+    df_rechazadas_mes = df_mis_horas[df_mis_horas['estado'] == 'RECHAZADO'].copy()
 
+# ---------------------------------------------------------
 # ---------------------------------------------------------
 # TAB 1: PENDIENTES DE APROBACIÓN (EVALUACIÓN POR NIVEL)
 # ---------------------------------------------------------
-with tab_pendientes:
+def render_tab_pendientes():
     # Cajones de Métricas en una Sola Fila 50% / 50% para Celular
     st.markdown(f"""
     <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
@@ -1360,6 +1383,10 @@ with tab_pendientes:
                         st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
                         st.rerun()
 
+if tab_pendientes is not None:
+    with tab_pendientes:
+        render_tab_pendientes()
+
 # ---------------------------------------------------------
 # TAB 2: HISTORIAL DE APROBACIONES (CORRELACIONADO CON USUARIO)
 # ---------------------------------------------------------
@@ -1371,7 +1398,7 @@ with tab_historial:
     elif filtro_estado == "RECHAZADAS":
         df_hist = df_rechazadas_mes.copy()
     else:
-        df_hist = df_all.copy()
+        df_hist = df_all.copy() if es_aprobador else df_mis_horas.copy()
         
     if df_hist.empty:
         st.info("No hay registros en el historial para este filtro.")
