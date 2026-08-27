@@ -1347,17 +1347,17 @@ def render_tab_pendientes():
                     </div>
                     """, unsafe_allow_html=True)
 
-                if is_blocked_for_n2:
+                if not tiene_sustento and not is_admin_user:
                     st.markdown("""
-                    <div style="background: rgba(241, 196, 15, 0.12); border-left: 3px solid #F1C40F; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #F1C40F;">
-                        ⏳ <strong>Esperando Sustento:</strong> El trabajador/jefe aún no ha enviado su justificación ni fotos desde su app móvil. Los botones de aprobación se activarán cuando envíe su sustento.
+                    <div style="background: rgba(241, 196, 15, 0.1); border-left: 3px solid #F1C40F; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #F1C40F;">
+                        ⚠️ <strong>Sin sustento previo:</strong> El trabajador no adjuntó justificación. Para aprobar o rechazar, debes ingresar al menos un comentario o adjuntar una foto.
                     </div>
                     """, unsafe_allow_html=True)
 
                 comentario_aprobador = st.text_input(
                     "✍️ Comentario del Aprobador",
                     key=f"m_com_{sol_id}",
-                    placeholder=""
+                    placeholder="Ingresa el motivo o justificación..."
                 )
                 
                 uploaded_files = st.file_uploader(
@@ -1371,51 +1371,57 @@ def render_tab_pendientes():
                 col_act1, col_act2 = st.columns(2)
                 with col_act1:
                     if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", disabled=is_blocked_for_n2, use_container_width=True):
-                        adjunto_rel_path = None
-                        if uploaded_files:
-                            root_dir = os.path.dirname(os.path.abspath(__file__))
-                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                            os.makedirs(adj_dir, exist_ok=True)
-                            data_uris = []
-                            for f_idx, uf in enumerate(uploaded_files):
-                                fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
-                                fpath = os.path.join(adj_dir, fname)
-                                buf = uf.getvalue()
-                                with open(fpath, "wb") as f:
-                                    f.write(buf)
-                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                b64_img = base64.b64encode(buf).decode()
-                                data_uris.append(f"data:{mime};base64,{b64_img}")
-                            if data_uris:
-                                adjunto_rel_path = "|||".join(data_uris)
+                        if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
+                            st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para rechazar.")
+                        else:
+                            adjunto_rel_path = None
+                            if uploaded_files:
+                                root_dir = os.path.dirname(os.path.abspath(__file__))
+                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                                os.makedirs(adj_dir, exist_ok=True)
+                                data_uris = []
+                                for f_idx, uf in enumerate(uploaded_files):
+                                    fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
+                                    fpath = os.path.join(adj_dir, fname)
+                                    buf = uf.getvalue()
+                                    with open(fpath, "wb") as f:
+                                        f.write(buf)
+                                    mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                    b64_img = base64.b64encode(buf).decode()
+                                    data_uris.append(f"data:{mime};base64,{b64_img}")
+                                if data_uris:
+                                    adjunto_rel_path = "|||".join(data_uris)
 
-                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
-                        st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
-                        st.rerun()
+                            actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
+                            st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
+                            st.rerun()
 
                 with col_act2:
                     if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", disabled=is_blocked_for_n2, use_container_width=True):
-                        adjunto_rel_path = None
-                        if uploaded_files:
-                            root_dir = os.path.dirname(os.path.abspath(__file__))
-                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                            os.makedirs(adj_dir, exist_ok=True)
-                            data_uris = []
-                            for f_idx, uf in enumerate(uploaded_files):
-                                fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
-                                fpath = os.path.join(adj_dir, fname)
-                                buf = uf.getvalue()
-                                with open(fpath, "wb") as f:
-                                    f.write(buf)
-                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                b64_img = base64.b64encode(buf).decode()
-                                data_uris.append(f"data:{mime};base64,{b64_img}")
-                            if data_uris:
-                                adjunto_rel_path = "|||".join(data_uris)
+                        if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
+                            st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para aprobar.")
+                        else:
+                            adjunto_rel_path = None
+                            if uploaded_files:
+                                root_dir = os.path.dirname(os.path.abspath(__file__))
+                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                                os.makedirs(adj_dir, exist_ok=True)
+                                data_uris = []
+                                for f_idx, uf in enumerate(uploaded_files):
+                                    fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
+                                    fpath = os.path.join(adj_dir, fname)
+                                    buf = uf.getvalue()
+                                    with open(fpath, "wb") as f:
+                                        f.write(buf)
+                                    mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                    b64_img = base64.b64encode(buf).decode()
+                                    data_uris.append(f"data:{mime};base64,{b64_img}")
+                                if data_uris:
+                                    adjunto_rel_path = "|||".join(data_uris)
 
-                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
-                        st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
-                        st.rerun()
+                            actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
+                            st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
+                            st.rerun()
 
 if tab_pendientes is not None:
     with tab_pendientes:
