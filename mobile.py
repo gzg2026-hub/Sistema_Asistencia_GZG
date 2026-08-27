@@ -783,28 +783,44 @@ if current_user:
 username = current_user.get('username', 'Supervisor') if current_user else 'Supervisor'
 rol = current_user.get('rol', 'SUPERVISOR') if current_user else 'SUPERVISOR'
 
-# Formatear nombre corto para el saludo (Primer Nombre y Apellido)
+# Formatear nombre corto para el saludo (Primer Nombre y Apellido Paterno)
 def get_user_display_name(u_dict, u_name):
     if not u_dict:
         return u_name.title()
     u = u_dict.get('username', u_name).lower().strip()
-    if u == 'jdelariva':
-        return "Javier De La Riva"
-    if u == 'jagreda':
-        return "Jhon Ágreda"
-    if u == 'jalva':
-        return "Jhon Alva"
-    if u == 'jhuayama':
-        return "Josmell Huayama"
-    if u == 'msanchez':
-        return "Manuel Sánchez"
-    if u == 'admin':
-        return "admin"
+    MAPA_SALUDOS = {
+        'admin': 'Administración',
+        'jagreda': 'Jhon Ágreda',
+        'jalva': 'Jhon Alva',
+        'jdelariva': 'Javier De La Riva',
+        'jhuayama': 'Josmell Huayama',
+        'msanchez': 'Manuel Sánchez',
+        'lpretel': 'Liliana Pretel',
+        'respinoza': 'Raúl Espinoza',
+        'jsanchez': 'Juan Sánchez',
+    }
+    if u in MAPA_SALUDOS:
+        return MAPA_SALUDOS[u]
+    
+    dni = str(u_dict.get('dni', '') or '').strip().lstrip('0').zfill(8)
+    if dni and dni != '00000000':
+        try:
+            conn = get_connection()
+            r = conn.execute("SELECT nombres, apellidos FROM trabajadores WHERE dni = ?", (dni,)).fetchone()
+            conn.close()
+            if r:
+                p_nom = str(r[0] or '').strip().split()[0] if r[0] else ''
+                p_ape = str(r[1] or '').strip().split()[0] if r[1] else ''
+                if p_nom and p_ape:
+                    return f"{p_nom} {p_ape}".title()
+        except Exception:
+            pass
+
     nombre_comp = u_dict.get('nombre_completo', '')
     if nombre_comp:
         partes = nombre_comp.strip().split()
         if len(partes) >= 2:
-            return f"{partes[0]} {partes[-1]}".title()
+            return f"{partes[0]} {partes[1]}".title()
         return nombre_comp.title()
     return u_name.title()
 
@@ -1456,24 +1472,22 @@ with tab_historial:
                 imgs_tags = "".join([f'<img src="{x}" style="max-width: 48%; max-height: 140px; border-radius: 6px; object-fit: cover; border: 1px solid #3A3F4D; margin: 2px;" />' for x in adj_list_hist])
                 adj_html = f"""<div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">{imgs_tags}</div>"""
 
-            cards_list.append(f"""
-            <div class="approval-card">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
-                    <div class="worker-name" style="flex: 1 1 auto; min-width: 0; word-break: break-word; line-height: 1.25;">{worker_name}</div>
-                    <div style="flex-shrink: 0; white-space: nowrap; padding-top: 1px;">{badge_html}</div>
-                </div>
-                <div class="worker-role">{cargo} ({fecha_sol})</div>
-                <hr style="border-color: #2A2F3D; margin: 8px 0;">
-                <div style="font-size: 12px; line-height: 1.5;">
-                    <div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
-                    <div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
-                </div>
-                {c_info_str}
-                {adj_html}
-                <div style="font-size: 10px; color: #9A9EA7; margin-top: 6px;">{aprob_str}</div>
-            </div>
-            """)
-        st.markdown("".join(cards_list), unsafe_allow_html=True)
+            cards_list.append(f"""<div class="approval-card">
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
+<div class="worker-name" style="flex: 1 1 auto; min-width: 0; word-break: break-word; line-height: 1.25;">{worker_name}</div>
+<div style="flex-shrink: 0; white-space: nowrap; padding-top: 1px;">{badge_html}</div>
+</div>
+<div class="worker-role">{cargo} ({fecha_sol})</div>
+<hr style="border-color: #2A2F3D; margin: 8px 0;">
+<div style="font-size: 12px; line-height: 1.5;">
+<div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
+<div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
+</div>
+{c_info_str}
+{adj_html}
+<div style="font-size: 10px; color: #9A9EA7; margin-top: 6px;">{aprob_str}</div>
+</div>""")
+        st.markdown("\n".join(cards_list), unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 3: DASHBOARD DE ESTADÍSTICAS (100% CORRELACIONADO)
