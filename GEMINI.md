@@ -85,8 +85,8 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Formato de Celdas**:
   * Columna A (DNI / ID): Formateada strictly como Texto (`@`) con `cell.number_format = '@'` en TODOS los archivos Excel generados (`Reporte_Asistencia_GZG` y `Transacciones_Acumuladas.xlsx`) para conservar ceros a la izquierda y evitar advertencias de Excel.
   * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
-- **Formato Limpio de Comentarios y Sustentos en Aprobaciones**:
-  * En la Columna S (*Comentario Supervisor*) de `Aprobaciones_GZG_YYYY-MM.xlsx`, queda prohibido anteponer prefijos hardcodeados como `"Trabajador: "`. El comentario o sustento registrado en el app debe exportarse directo y limpio tal como fue ingresado por el usuario.
+- **Formato Limpio e Identificación de Autor en Comentarios de Aprobaciones (Columna S)**:
+  * En la Columna S (*Comentario Supervisor*) de `Aprobaciones_GZG_YYYY-MM.xlsx`, cuando el trabajador o jefe registre su sustento personal en *Mis Horas Extras*, se antepone automáticamente el usuario o nombre del autor (ej. `jalva: <sustento>`, `respinoza: <sustento>`), complementado de forma ordenada por las validaciones de las jefaturas y aprobadores (ej. `N1 (msanchez): <comentario>`). Queda prohibido anteponer prefijos genéricos hardcodeados como `"Trabajador: "`.
 
 ---
 
