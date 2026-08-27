@@ -1330,13 +1330,14 @@ def render_tab_pendientes():
                                 with c_img2:
                                     st.image(adj_list[i+1], caption=f"Foto {i+2}", use_container_width=True)
 
-                # Regla de Bloqueo Inteligente para N2 (Reporte Directo a Gerencia) - Admin superusuario tiene control total sin bloqueo
+                # Regla de Bloqueo Inteligente para N2 (Reporte Directo a Gerencia) - Admin y Superintendente tienen control sin bloqueo
                 app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
                 app_n2_raw = str(row.get('aprobador_n2') or '').strip().upper()
                 is_direct_to_gerencia = (app_n1_raw == 'msanchez') and (app_n2_raw in ('NA', '-', '', 'NAN', 'NONE'))
                 tiene_sustento = bool(obs_trab or adj_list)
                 is_admin_user = rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN')
-                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento) and (not is_admin_user)
+                is_exempt_user = rol in ('SUPERINTENDENTE', 'GERENCIA', 'ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN')
+                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento) and (not is_exempt_user)
 
                 # Información de Control Total exclusiva para el Superusuario Admin
                 if is_admin_user:
@@ -1373,7 +1374,7 @@ def render_tab_pendientes():
                     btn_app = st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", disabled=is_blocked_for_n2, use_container_width=True)
 
                 if btn_rej:
-                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
+                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_exempt_user:
                         st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para rechazar.")
                     else:
                         adjunto_rel_path = None
@@ -1399,7 +1400,7 @@ def render_tab_pendientes():
                         st.rerun()
 
                 if btn_app:
-                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
+                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_exempt_user:
                         st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para aprobar.")
                     else:
                         adjunto_rel_path = None
