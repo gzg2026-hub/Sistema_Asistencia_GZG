@@ -1364,14 +1364,25 @@ def render_tab_pendientes():
                                 with c_img2:
                                     st.image(adj_list[i+1], caption=f"Foto {i+2}", use_container_width=True)
 
-                # Regla de Bloqueo Inteligente para N2 (Reporte Directo a Gerencia) - Admin y Superintendente tienen control sin bloqueo
+                # Regla de Bloqueo Estricto para Reporte Directo a Superintendencia (msanchez)
                 app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
                 app_n2_raw = str(row.get('aprobador_n2') or '').strip().upper()
                 is_direct_to_gerencia = (app_n1_raw == 'msanchez') and (app_n2_raw in ('NA', '-', '', 'NAN', 'NONE'))
                 tiene_sustento = bool(obs_trab or adj_list)
                 is_admin_user = rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN')
                 is_exempt_user = rol in ('SUPERINTENDENTE', 'GERENCIA', 'ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN')
-                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento) and (not is_exempt_user)
+
+                # Si es reporte directo a Superintendencia y no cuenta con sustento previo en Mis Horas Extras:
+                # Los botones de msanchez quedan estrictamente APAGADOS (disabled=True). Solo admin puede evaluar por contingencia.
+                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento) and (not is_admin_user)
+
+                if is_blocked_for_n2:
+                    st.markdown(f"""
+                    <div style="background: rgba(231, 76, 60, 0.12); border-left: 3px solid #E74C3C; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
+                        <strong style="color: #E74C3C;">🔒 Solicitud Bloqueada:</strong><br>
+                        <span style="color: #E5E7EB;">El personal con reporte directo ({worker_name}) debe registrar primero su justificación o fotos en <b>📝 Mis Horas Extras</b> antes de que puedas evaluar.</span>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 # Información de Control Total exclusiva para el Superusuario Admin
                 if is_admin_user:
