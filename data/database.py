@@ -760,7 +760,7 @@ def seed_default_users(hash_fn, db_path: str = DB_PATH):
         ('msanchez', hash_fn('msanchez2026*'), 'Manuel Ysidoro Sánchez Montoya', 'SUPERINTENDENTE', 'JEFATURA', 'Superintendente', '26696602'),
         ('lpretel', hash_fn('lpretel2026*'), 'Liliana Morely Pretel Ramírez', 'PERSONAL', 'OPER&MTTO', 'Auxiliar de Seguridad', '75227437'),
         ('respinoza', hash_fn('respinoza2026*'), 'Raúl Esteban Espinoza Saavedra', 'PERSONAL', 'OPER&MTTO', 'Comunicaciones', '44955960'),
-        ('jsanchez', hash_fn('jsanchez2026*'), 'Juan Fernando Sánchez Montero', 'SUPERVISOR', 'OPER&MTTO', 'Supervisor', '70782038')
+        ('jsanchez', hash_fn('jsanchez2026*'), 'Juan Fernando Sánchez Montero', 'PERSONAL', 'OPER&MTTO', 'Supervisor', '70782038')
     ]
     
     for username, pass_hash, nombre, rol, area, cargo, dni in users:

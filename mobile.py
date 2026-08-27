@@ -8,8 +8,11 @@ import sys
 import base64
 
 def signal_ready():
-    """No-op: El iframe padre de la PWA detecta la carga de forma nativa e instantánea sin inyectar iframes en el DOM."""
-    pass
+    """Notifica a index.html (la página padre) que el contenido ya se renderizó."""
+    components.html(
+        "<script>window.top.postMessage({type: 'gzg:ready'}, '*');</script>",
+        height=1, width=1
+    )
 
 # Asegurar importaciones del proyecto
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
