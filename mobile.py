@@ -961,9 +961,10 @@ if st.session_state.get("show_change_pw_box", False):
             else:
                 new_h = hash_password(p_nue_h.strip())
                 if cambiar_password_usuario(u_curr, new_h):
-                    nuevo_token = crear_token_sesion(u_curr)
-                    if nuevo_token:
-                        st.query_params["token"] = nuevo_token
+                    try:
+                        eliminar_token_sesion(username=u_curr)
+                    except Exception:
+                        pass
                     if st.session_state.get("user"):
                         st.session_state["user"]["password_hash"] = new_h
                     st.session_state["show_change_pw_box"] = False

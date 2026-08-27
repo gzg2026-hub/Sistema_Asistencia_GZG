@@ -167,8 +167,11 @@
       });
     }
 
-    // Escuchar peticiones de suscripción Push desde cualquier iframe hijo (Streamlit o componentes)
+    // Escuchar peticiones de suscripción Push y señal de arranque de Streamlit
     window.addEventListener('message', async function(ev) {
+      if (ev.data && ev.data.type === 'gzg:ready') {
+        showApp();
+      }
       if (ev.data && ev.data.type === 'GZG_REQUEST_PUSH') {
         try {
           const perm = await Notification.requestPermission();
@@ -208,11 +211,9 @@
       }, 350);
     }
 
-    // Detección nativa instantánea de carga del iframe
-    frame.addEventListener('load', showApp);
-    
-    // Revelado de seguridad rápido
-    setTimeout(showApp, 3500);
+    // Único fallback de seguridad: si por algo la señal real nunca llega,
+    // revela igual a los 18s para no dejar a nadie atrapado en el splash.
+    setTimeout(showApp, 18000);
   </script>
 </body>
 </html>

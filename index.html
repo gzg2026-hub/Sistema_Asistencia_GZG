@@ -195,11 +195,9 @@
       }
     });
 
-    // Detección nativa de carga del iframe
-    frame.addEventListener('load', showApp);
-    
-    // Revelado de seguridad rápido
-    setTimeout(showApp, 3500);
+    // Único fallback de seguridad: si por algo la señal real nunca llega,
+    // revela igual a los 18s para no dejar a nadie atrapado en el splash.
+    setTimeout(showApp, 18000);
   </script>
 </body>
 </html>
