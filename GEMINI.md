@@ -65,6 +65,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente y se sombrea la fila en durazno pastel.
 - **Filtro de Filas Fantasma / Sin Marcación (Regla Punto 9)**:
   * Se eliminan automáticamente de la vista procesada las filas donde tanto la Entrada (Fecha/Hora) como la Salida (Fecha/Hora) sean nulas, vacías o `NaN`.
+- **Prohibición Total de Observaciones Asumidas o Textos Hardcodeados (Cero Suposiciones)**:
+  * Queda estrictamente prohibido insertar o asumir observaciones automáticas por defecto en el motor de cálculo de asistencia (`core/attendance_engine.py`) o en la base de datos (como *"Abastecer petróleo / Recoger personal / Varios"*).
+  * El campo `OBSERVACIONES` en asistencia y `observacion_trabajador` en aprobaciones permanecerá **limpio y vacío por defecto**, y se llenará **únicamente** con el sustento real o fotos que el trabajador o supervisor registre explícitamente desde la aplicación móvil.
 
 ---
 
@@ -131,5 +134,10 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * El archivo `Padron_Trabajadores_GZG.xlsx` en la raíz del proyecto es la fuente maestra oficial humana y es de **ESTRICTA SOLO LECTURA**.
   * Queda terminantemente PROHIBIDO que cualquier script, rutina automática, tarea programada o función de base de datos (`data/database.py`, `scripts/schedule_downloader.py`, `scripts/download_personal_info.py`, etc.) escriba, regenere o sobreescriba este archivo.
   * El sistema únicamente lee desde `Padron_Trabajadores_GZG.xlsx` para sincronizar trabajadores y aprobadores hacia SQLite.
+- **Blindaje Absoluto contra Reinicios de Solicitudes y Estados de Aprobación**:
+  * Queda **terminantemente prohibido** reiniciar, truncar, borrar o sobreescribir la tabla de aprobaciones (`aprobaciones`) en SQLite y los archivos Excel de aprobaciones sin orden explícita del usuario.
+  * La sincronización interna de solicitudes (`sincronizar_aprobaciones_desde_asistencia`) es **estrictamente incremental (`INSERT OR IGNORE`)**: únicamente añade nuevos días con horas extras o excesos de jornada si no existen previamente en la base de datos.
+  * **Inmutabilidad de Acciones Registradas**: Queda estrictamente prohibido que cualquier proceso automático, script o despliegue altere o revierta a `PENDIENTE` los estados ya decididos (`APROBADO`, `RECHAZADO`), comentarios de supervisores (`comentario_n1`, `comentario_n2`), fechas de validación, firmas o sustentos/fotos adjuntos registrados por los usuarios.
+
 
 
