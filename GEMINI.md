@@ -5,6 +5,7 @@
 ## 1. REGLA DE EXCEPCIÓN Y DESVINCULACIÓN TOTAL DE GOOGLE DRIVE
 - **Cero Sincronización Local en PC**: La carpeta del proyecto en el disco local (`c:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\`) está **100% desvinculada de Google Drive Desktop** (PROHIBIDO totalmente usar, copiar o vincular con la unidad `G:\` o carpetas de sincronización local de Windows).
 - **Cero Subidas en Sesiones Interactivas**: Durante conversaciones, pruebas manuales o ejecuciones interactivas con el usuario, **NUNCA se sube ni se actualiza nada a Google Drive, ÚNICAMENTE SE HARÁ A LA ORDEN O CONFIRMACIÓN EXPLÍCITA DEL USUARIO**.
+- **Cero Regeneraciones o Subidas durante Modificaciones de Código**: Al editar código fuente, componentes o estilos, queda estrictamente prohibido ejecutar scripts de regeneración de bases de datos o forzar subidas a Google Drive de forma proactiva. Toda regeneración o subida manual se ejecuta ÚNICAMENTE bajo orden explícita y textual del usuario.
 - **Archivos Autorizados para Google Drive (3 en Total)**:
   - **Subida Automática 9:00 AM** (`scripts/schedule_downloader.py`) → Carpeta raíz `AGOSTO` en Drive:
     1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
@@ -84,6 +85,8 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Formato de Celdas**:
   * Columna A (DNI / ID): Formateada strictly como Texto (`@`) con `cell.number_format = '@'` en TODOS los archivos Excel generados (`Reporte_Asistencia_GZG` y `Transacciones_Acumuladas.xlsx`) para conservar ceros a la izquierda y evitar advertencias de Excel.
   * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
+- **Formato Limpio de Comentarios y Sustentos en Aprobaciones**:
+  * En la Columna S (*Comentario Supervisor*) de `Aprobaciones_GZG_YYYY-MM.xlsx`, queda prohibido anteponer prefijos hardcodeados como `"Trabajador: "`. El comentario o sustento registrado en el app debe exportarse directo y limpio tal como fue ingresado por el usuario.
 
 ---
 
@@ -119,6 +122,10 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Persistencia de Sesión ("Recordarme") y Cero Latencia**:
   * La persistencia de sesión móvil se gestiona de forma nativa mediante tokens seguros almacenados en la tabla SQLite `user_tokens` y vinculados a `st.query_params["token"]`.
   * Al cerrar sesión (`🚪 Salir`), el token se elimina inmediatamente de SQLite y de los query params, ejecutando `logout_user()` y `st.rerun()` de forma instantánea sin latencia.
+- **Splash Screen Adaptativo en PWA (`index.html` y `docs/index.html`)**:
+  * El wrapper PWA utiliza el evento `frame.addEventListener('load')` con un colchón adaptativo de 5 segundos posteriores a la carga base del iframe.
+  * Si la señal `gzg:ready` enviada por Streamlit llega antes, la pantalla se revela de forma inmediata e instantánea.
+  * Se mantiene un respaldo de seguridad de 25 segundos para proteger arranques en frío extremo (*cold start*).
 
 ---
 
