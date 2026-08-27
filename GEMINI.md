@@ -137,7 +137,14 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Blindaje Absoluto contra Reinicios de Solicitudes y Estados de Aprobación**:
   * Queda **terminantemente prohibido** reiniciar, truncar, borrar o sobreescribir la tabla de aprobaciones (`aprobaciones`) en SQLite y los archivos Excel de aprobaciones sin orden explícita del usuario.
   * La sincronización interna de solicitudes (`sincronizar_aprobaciones_desde_asistencia`) es **estrictamente incremental (`INSERT OR IGNORE`)**: únicamente añade nuevos días con horas extras o excesos de jornada si no existen previamente en la base de datos.
-  * **Inmutabilidad de Acciones Registradas**: Queda estrictamente prohibido que cualquier proceso automático, script o despliegue altere o revierta a `PENDIENTE` los estados ya decididos (`APROBADO`, `RECHAZADO`), comentarios de supervisores (`comentario_n1`, `comentario_n2`), fechas de validación, firmas o sustentos/fotos adjuntos registrados por los usuarios.
+- **Control Total y Aprobación de Contingencia del Rol `ADMIN`**:
+  * **Superusuario Universal**: El usuario con rol `ADMINISTRADOR`, `ADMINISTRACION` o `ADMIN` tiene acceso irrestricto a la totalidad de solicitudes pendientes de todas las áreas y cuadrillas de la empresa.
+  * **Aprobación de Contingencia en Ausencia de Jefaturas / Superintendencia**: Si un aprobador Nivel 1 (Jefe de Área) o Nivel 2 (Superintendente) se encuentra de descanso, vacaciones o sin conectividad, `admin` puede validar o rechazar cualquier solicitud:
+    - Si la solicitud está en Nivel 1 pendiente, `admin` aprueba como Nivel 1 (avanzando al Nivel 2 o emitiendo aprobación final si no requiere N2).
+    - Si la solicitud ya fue aprobada en Nivel 1 y está pendiente en Nivel 2, `admin` aprueba como Nivel 2 (emitiendo la Aprobación Final).
+    - El usuario `admin` queda exento de bloqueos por falta de sustento para garantizar operatividad en casos de emergencia o contingencia.
+  * **Trazabilidad y Auditoría Estricta**: Toda intervención de `admin` queda registrada permanentemente con `aprobado_por = 'admin'`, fecha, hora exacta y comentario en la base de datos SQLite, en la pestaña Historial del app móvil y en la columna de validación del reporte oficial Excel (`Aprobaciones_GZG_YYYY-MM.xlsx`).
+
 
 
 
