@@ -142,10 +142,10 @@ def _get_drive_service(sa_dict: dict = None):
     return None
 
 
-def descargar_archivo_de_gdrive(file_name: str, local_dest_path: str) -> bool:
+def descargar_archivo_de_gdrive(file_name: str, local_dest_path: str, sa_dict: dict = None) -> bool:
     """Descarga un archivo específico desde la carpeta compartida de Google Drive si existe."""
     try:
-        service = _get_drive_service()
+        service = _get_drive_service(sa_dict=sa_dict)
         if not service:
             return False
         

@@ -1108,12 +1108,20 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
         nombre_excel = f"Aprobaciones_GZG_{mes_str}.xlsx"
         local_path = os.path.join(root_dir, "downloads", "data_procesada", nombre_excel)
         
+        sa_dict = None
+        try:
+            import streamlit as st
+            if hasattr(st, "secrets") and "gcp_service_account" in st.secrets:
+                sa_dict = dict(st.secrets["gcp_service_account"])
+        except Exception:
+            pass
+
         # 1. Intentar descargar la versión más reciente desde Google Drive
         try:
             from scripts.gdrive_uploader import descargar_archivo_de_gdrive
-            descargar_archivo_de_gdrive(nombre_excel, local_path)
-        except Exception:
-            pass
+            descargar_archivo_de_gdrive(nombre_excel, local_path, sa_dict=sa_dict)
+        except Exception as e_dl:
+            print(f"[Aviso] Descarga Drive en sincronizar_aprobaciones: {e_dl}")
             
         if not os.path.exists(local_path):
             return
