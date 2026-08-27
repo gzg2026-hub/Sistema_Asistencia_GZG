@@ -1229,18 +1229,7 @@ with tab_pendientes:
             adj_list = parse_adjuntos(row.get('adjuntos'))
             tiene_sustento = bool(obs_trab or adj_list)
 
-            app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
-            app_n2_raw = str(row.get('aprobador_n2') or '').strip().upper()
-            is_direct_to_gerencia = (app_n1_raw == 'msanchez') and (app_n2_raw in ('NA', '-', '', 'NAN', 'NONE'))
-
-            if is_direct_to_gerencia:
-                tag_pend = "📩 Enviado" if tiene_sustento else "⏳ Pendiente"
-            elif row.get('aprobado_por_n1'):
-                tag_pend = "✅ Validado N1"
-            else:
-                tag_pend = "⏳ Pendiente"
-
-            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  |  {tag_pend}", expanded=False):
+            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
                 st.markdown(f"""
                 <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                     <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
