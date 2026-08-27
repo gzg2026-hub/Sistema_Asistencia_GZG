@@ -1368,58 +1368,61 @@ def render_tab_pendientes():
                 # 2 Botones Gemelos Simétricos 50% / 50% en Fila Horizontal
                 col_act1, col_act2 = st.columns(2)
                 with col_act1:
-                    if st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", disabled=is_blocked_for_n2, use_container_width=True):
-                        if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
-                            st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para rechazar.")
-                        else:
-                            adjunto_rel_path = None
-                            if uploaded_files:
-                                root_dir = os.path.dirname(os.path.abspath(__file__))
-                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                                os.makedirs(adj_dir, exist_ok=True)
-                                data_uris = []
-                                for f_idx, uf in enumerate(uploaded_files):
-                                    fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
-                                    fpath = os.path.join(adj_dir, fname)
-                                    buf = uf.getvalue()
-                                    with open(fpath, "wb") as f:
-                                        f.write(buf)
-                                    mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                    b64_img = base64.b64encode(buf).decode()
-                                    data_uris.append(f"data:{mime};base64,{b64_img}")
-                                if data_uris:
-                                    adjunto_rel_path = "|||".join(data_uris)
-
-                            actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
-                            st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
-                            st.rerun()
-
+                    btn_rej = st.button("❌ RECHAZAR", key=f"m_rej_{sol_id}", disabled=is_blocked_for_n2, use_container_width=True)
                 with col_act2:
-                    if st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", disabled=is_blocked_for_n2, use_container_width=True):
-                        if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
-                            st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para aprobar.")
-                        else:
-                            adjunto_rel_path = None
-                            if uploaded_files:
-                                root_dir = os.path.dirname(os.path.abspath(__file__))
-                                adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
-                                os.makedirs(adj_dir, exist_ok=True)
-                                data_uris = []
-                                for f_idx, uf in enumerate(uploaded_files):
-                                    fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
-                                    fpath = os.path.join(adj_dir, fname)
-                                    buf = uf.getvalue()
-                                    with open(fpath, "wb") as f:
-                                        f.write(buf)
-                                    mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                    b64_img = base64.b64encode(buf).decode()
-                                    data_uris.append(f"data:{mime};base64,{b64_img}")
-                                if data_uris:
-                                    adjunto_rel_path = "|||".join(data_uris)
+                    btn_app = st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", disabled=is_blocked_for_n2, use_container_width=True)
 
-                            actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
-                            st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
-                            st.rerun()
+                if btn_rej:
+                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
+                        st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para rechazar.")
+                    else:
+                        adjunto_rel_path = None
+                        if uploaded_files:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            data_uris = []
+                            for f_idx, uf in enumerate(uploaded_files):
+                                fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                buf = uf.getvalue()
+                                with open(fpath, "wb") as f:
+                                    f.write(buf)
+                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                b64_img = base64.b64encode(buf).decode()
+                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                            if data_uris:
+                                adjunto_rel_path = "|||".join(data_uris)
+
+                        actualizar_estado_aprobacion(sol_id, 'RECHAZADO', username, comentario_aprobador, adjunto_rel_path)
+                        st.toast(f"❌ Rechazado: {worker_name}", icon="ℹ️")
+                        st.rerun()
+
+                if btn_app:
+                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_admin_user:
+                        st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para aprobar.")
+                    else:
+                        adjunto_rel_path = None
+                        if uploaded_files:
+                            root_dir = os.path.dirname(os.path.abspath(__file__))
+                            adj_dir = os.path.join(root_dir, "downloads", "adjuntos_aprobaciones")
+                            os.makedirs(adj_dir, exist_ok=True)
+                            data_uris = []
+                            for f_idx, uf in enumerate(uploaded_files):
+                                fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
+                                fpath = os.path.join(adj_dir, fname)
+                                buf = uf.getvalue()
+                                with open(fpath, "wb") as f:
+                                    f.write(buf)
+                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
+                                b64_img = base64.b64encode(buf).decode()
+                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                            if data_uris:
+                                adjunto_rel_path = "|||".join(data_uris)
+
+                        actualizar_estado_aprobacion(sol_id, 'APROBADO', username, comentario_aprobador, adjunto_rel_path)
+                        st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
+                        st.rerun()
 
 if tab_pendientes is not None:
     with tab_pendientes:
