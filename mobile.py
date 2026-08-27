@@ -1230,18 +1230,23 @@ else:
 # TAB 1: PENDIENTES DE APROBACIÓN (EVALUACIÓN POR NIVEL)
 # ---------------------------------------------------------
 def render_tab_pendientes():
-    # Cajones de Métricas en una Sola Fila 50% / 50% para Celular
+    # Cajones de Métricas en una Sola Fila (Pendientes, Aprobadas, Rechazadas) para Celular
     st.markdown(f"""
     <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
-        <!-- Izquierda 50%: Pendientes (Naranja) -->
-        <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.25); box-sizing: border-box;">
+        <!-- Pendientes (Naranja) -->
+        <div style="flex: 1 1 33.33%; width: 33.33%; background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 4px; text-align: center; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.25); box-sizing: border-box;">
             <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_pendientes)}</div>
             <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Pendientes</div>
         </div>
-        <!-- Derecha 50%: Aprobadas este mes (Celeste) -->
-        <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #0288D1 0%, #0277BD 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3); box-sizing: border-box;">
+        <!-- Aprobadas (Celeste) -->
+        <div style="flex: 1 1 33.33%; width: 33.33%; background: linear-gradient(135deg, #0288D1 0%, #0277BD 100%); border-radius: 10px; padding: 7px 4px; text-align: center; box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3); box-sizing: border-box;">
             <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_aprobadas_mes)}</div>
-            <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Aprobadas este mes</div>
+            <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Aprobadas</div>
+        </div>
+        <!-- Rechazadas (Rojo) -->
+        <div style="flex: 1 1 33.33%; width: 33.33%; background: linear-gradient(135deg, #E53935 0%, #C62828 100%); border-radius: 10px; padding: 7px 4px; text-align: center; box-shadow: 0 3px 10px rgba(229, 57, 53, 0.3); box-sizing: border-box;">
+            <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{len(df_rechazadas_mes)}</div>
+            <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Rechazadas</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -1344,13 +1349,6 @@ def render_tab_pendientes():
                     <div style="background: rgba(155, 89, 182, 0.12); border: 1px solid rgba(155, 89, 182, 0.35); border-radius: 6px; padding: 6px 10px; margin: 8px 0; font-size: 11.5px; color: #E8DAEF;">
                         👑 <strong>Control Total Admin:</strong> Aprobando como <strong>{nivel_actual_txt}</strong><br>
                         <span style="color: #D7BDE2; font-size: 11px;">N1: <b>{app_1_str}</b> ({est_1_str}) &nbsp;|&nbsp; N2: <b>{app_2_str}</b> ({est_2_str})</span>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                if not tiene_sustento and not is_admin_user:
-                    st.markdown("""
-                    <div style="background: rgba(241, 196, 15, 0.1); border-left: 3px solid #F1C40F; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #F1C40F;">
-                        ⚠️ <strong>Sin sustento previo:</strong> El trabajador no adjuntó justificación. Para aprobar o rechazar, debes ingresar al menos un comentario o adjuntar una foto.
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -1547,23 +1545,27 @@ with tab_mis_horas:
         df_raw_dni = df_all_raw['dni'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip().str.lstrip('0').str.zfill(8)
         df_mis_horas = df_all_raw[df_raw_dni == user_dni].copy()
         
-        # Cajones de Métricas Personales
-        n_mis_sol = len(df_mis_horas)
-        mis_he_min = df_mis_horas['horas_extras_min'].sum() if 'horas_extras_min' in df_mis_horas.columns and not df_mis_horas.empty else 0
-        mis_exc_min = df_mis_horas['exceso_jornada_min'].sum() if 'exceso_jornada_min' in df_mis_horas.columns and not df_mis_horas.empty else 0
-        
-        he_tot_hhmm = f"{int(mis_he_min // 60):02d}:{int(mis_he_min % 60):02d}"
-        exc_tot_hhmm = f"{int(mis_exc_min // 60):02d}:{int(mis_exc_min % 60):02d}"
+        # Cajones de Métricas Personales (Pendientes, Aprobadas, Rechazadas)
+        mis_pend = len(df_mis_horas[df_mis_horas['estado'] == 'PENDIENTE'])
+        mis_app = len(df_mis_horas[df_mis_horas['estado'] == 'APROBADO'])
+        mis_rej = len(df_mis_horas[df_mis_horas['estado'] == 'RECHAZADO'])
         
         st.markdown(f"""
         <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
-            <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #1E88E5 0%, #1565C0 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(30, 136, 229, 0.25); box-sizing: border-box;">
-                <div style="font-size: 18px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{he_tot_hhmm}</div>
-                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Mis H.E. este mes</div>
+            <!-- Pendientes (Naranja) -->
+            <div style="flex: 1 1 33.33%; width: 33.33%; background: linear-gradient(135deg, #F58220 0%, #D35400 100%); border-radius: 10px; padding: 7px 4px; text-align: center; box-shadow: 0 3px 10px rgba(245, 130, 32, 0.25); box-sizing: border-box;">
+                <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{mis_pend}</div>
+                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Pendientes</div>
             </div>
-            <div style="flex: 1 1 50%; width: 50%; background: linear-gradient(135deg, #FB8C00 0%, #EF6C00 100%); border-radius: 10px; padding: 7px 6px; text-align: center; box-shadow: 0 3px 10px rgba(251, 140, 0, 0.3); box-sizing: border-box;">
-                <div style="font-size: 18px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{exc_tot_hhmm}</div>
-                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Mis Excesos este mes</div>
+            <!-- Aprobadas (Celeste) -->
+            <div style="flex: 1 1 33.33%; width: 33.33%; background: linear-gradient(135deg, #0288D1 0%, #0277BD 100%); border-radius: 10px; padding: 7px 4px; text-align: center; box-shadow: 0 3px 10px rgba(2, 136, 209, 0.3); box-sizing: border-box;">
+                <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{mis_app}</div>
+                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Aprobadas</div>
+            </div>
+            <!-- Rechazadas (Rojo) -->
+            <div style="flex: 1 1 33.33%; width: 33.33%; background: linear-gradient(135deg, #E53935 0%, #C62828 100%); border-radius: 10px; padding: 7px 4px; text-align: center; box-shadow: 0 3px 10px rgba(229, 57, 53, 0.3); box-sizing: border-box;">
+                <div style="font-size: 20px; font-weight: 900; color: #FFFFFF; line-height: 1.1;">{mis_rej}</div>
+                <div style="font-size: 11px; font-weight: 700; color: #FFFFFF; letter-spacing: 0.3px;">Rechazadas</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
