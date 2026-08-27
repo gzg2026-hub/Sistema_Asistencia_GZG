@@ -1374,7 +1374,7 @@ def render_tab_pendientes():
                     btn_app = st.button("✅ APROBAR", key=f"m_app_{sol_id}", type="primary", disabled=is_blocked_for_n2, use_container_width=True)
 
                 if btn_rej:
-                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_exempt_user:
+                    if not comentario_aprobador.strip() and not uploaded_files and not is_exempt_user:
                         st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para rechazar.")
                     else:
                         adjunto_rel_path = None
@@ -1400,7 +1400,7 @@ def render_tab_pendientes():
                         st.rerun()
 
                 if btn_app:
-                    if not comentario_aprobador.strip() and not uploaded_files and not tiene_sustento and not is_exempt_user:
+                    if not comentario_aprobador.strip() and not uploaded_files and not is_exempt_user:
                         st.warning("⚠️ Debes ingresar un comentario o adjuntar al menos una foto para aprobar.")
                     else:
                         adjunto_rel_path = None
