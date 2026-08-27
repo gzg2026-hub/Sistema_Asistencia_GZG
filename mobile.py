@@ -1772,7 +1772,7 @@ with tab_mis_horas:
                                     my_adj_path = "|||".join(data_uris)
 
                             if guardar_sustento_trabajador(sol_id, my_obs_input, my_adj_path):
-                                st.toast("✅ Sustento enviado exitosamente a Gerencia", icon="🎉")
+                                st.toast("✅ Sustento enviado exitosamente", icon="🎉")
                                 st.rerun()
                             else:
                                 st.error("Error al guardar el sustento. Intente nuevamente.")
