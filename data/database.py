@@ -1179,7 +1179,7 @@ def actualizar_estado_aprobacion(
     """
     conn = get_connection(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT aprobador_n1, aprobador_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+    cursor.execute("SELECT aprobador_n1, aprobador_n2, estado_n1, estado_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
     row = cursor.fetchone()
     conn.close()
     
@@ -1187,9 +1187,19 @@ def actualizar_estado_aprobacion(
     if row:
         n1_usr = (row[0] or '').strip().lower()
         n2_usr = (row[1] or '').strip().lower()
+        est_n1 = str(row[2] or 'PENDIENTE').strip().upper()
+        est_n2 = str(row[3] or '-').strip().upper()
         curr_usr = (aprobado_por or '').strip().lower()
         
-        if curr_usr == n2_usr:
+        if curr_usr in ('admin', 'administrador', 'administracion'):
+            # Admin actúa como Superusuario:
+            # Si N1 ya está aprobado y N2 está pendiente -> Admin aprueba como Nivel 2 (Aprobación Final)
+            # Si N1 está pendiente -> Admin aprueba como Nivel 1 (o Final si no requiere N2)
+            if est_n1 == 'APROBADO' and est_n2 == 'PENDIENTE':
+                nivel = 2
+            else:
+                nivel = 1
+        elif curr_usr == n2_usr:
             nivel = 2
         elif curr_usr == n1_usr:
             nivel = 1

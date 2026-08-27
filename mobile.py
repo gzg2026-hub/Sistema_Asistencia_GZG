@@ -1325,12 +1325,27 @@ def render_tab_pendientes():
                                 with c_img2:
                                     st.image(adj_list[i+1], caption=f"Foto {i+2}", use_container_width=True)
 
-                # Regla de Bloqueo Inteligente para N2 (Reporte Directo a Gerencia)
+                # Regla de Bloqueo Inteligente para N2 (Reporte Directo a Gerencia) - Admin superusuario tiene control total sin bloqueo
                 app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
                 app_n2_raw = str(row.get('aprobador_n2') or '').strip().upper()
                 is_direct_to_gerencia = (app_n1_raw == 'msanchez') and (app_n2_raw in ('NA', '-', '', 'NAN', 'NONE'))
                 tiene_sustento = bool(obs_trab or adj_list)
-                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento)
+                is_admin_user = rol in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN')
+                is_blocked_for_n2 = is_direct_to_gerencia and (not tiene_sustento) and (not is_admin_user)
+
+                # Información de Control Total exclusiva para el Superusuario Admin
+                if is_admin_user:
+                    app_1_str = str(row.get('aprobador_n1') or '-').strip()
+                    app_2_str = str(row.get('aprobador_n2') or '-').strip()
+                    est_1_str = str(row.get('estado_n1') or 'PENDIENTE').strip().upper()
+                    est_2_str = str(row.get('estado_n2') or '-').strip().upper()
+                    nivel_actual_txt = "Nivel 1 (Jefatura / Supervisor)" if est_1_str != 'APROBADO' else "Nivel 2 (Superintendencia)"
+                    st.markdown(f"""
+                    <div style="background: rgba(155, 89, 182, 0.12); border: 1px solid rgba(155, 89, 182, 0.35); border-radius: 6px; padding: 6px 10px; margin: 8px 0; font-size: 11.5px; color: #E8DAEF;">
+                        👑 <strong>Control Total Admin:</strong> Aprobando como <strong>{nivel_actual_txt}</strong><br>
+                        <span style="color: #D7BDE2; font-size: 11px;">N1: <b>{app_1_str}</b> ({est_1_str}) &nbsp;|&nbsp; N2: <b>{app_2_str}</b> ({est_2_str})</span>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 if is_blocked_for_n2:
                     st.markdown("""
