@@ -163,6 +163,13 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Persistencia Total y Blindaje contra Reinicios de Servidor / Cloud**:
   * Queda estrictamente PROHIBIDO reiniciar contadores o solicitudes en la base de datos o en los archivos Excel sin orden explícita del usuario.
   * **Rehidratación Obligatoria desde Drive al Inicio (`mobile.py`)**: Al iniciar sesión en `mobile.py`, el sistema ejecuta obligatoriamente `sincronizar_aprobaciones_con_gdrive()` utilizando `st.secrets["gcp_service_account"]` para descargar y restaurar en memoria los estados reales desde Google Drive, blindando la persistencia contra cualquier reinicio de Streamlit Cloud.
+- **Bloqueo Estricto de Botones para Personal con Reporte Directo a Superintendencia (`msanchez`)**:
+  * Para trabajadores, supervisores o jefes cuyo reporte sea directo a Superintendencia (`aprobador_n1 == 'msanchez'` y sin N2 intermedio), los botones `❌ RECHAZAR` y `✅ APROBAR` en la bandeja de `msanchez` permanecen estrictamente **bloqueados y desactivados (`disabled=True`)** mientras la solicitud no cuente con justificación o fotos registradas por el trabajador en `📝 Mis Horas Extras`.
+  * Se muestra un recuadro de advertencia indicando que el trabajador debe registrar su sustento antes de poder evaluar.
+  * Únicamente el rol `ADMIN` queda exento para aprobaciones de contingencia y emergencia.
+- **Visualización Garantizada de Validación N1 y Sustentos en Bandeja Nivel 2**:
+  * En la bandeja de pendientes del Superintendente, se presenta obligatoriamente el recuadro de **Validación Nivel 1** (`✅ Validación Nivel 1 (supervisor / admin): <comentario o Aprobado>`), junto con las fotos y el sustento personal del trabajador.
+  * Al rehidratar desde Google Drive, el sistema recupera y desglosa los comentarios de N1 y N2 directamente en los campos `comentario_n1` y `comentario_n2` de la base de datos SQLite.
 
 
 
