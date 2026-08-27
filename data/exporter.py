@@ -592,14 +592,23 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                 comentarios_list = []
                 if obs_trab:
                     comentarios_list.append(obs_trab)
+
+                ap_n1_name = str(row.get('aprobado_por_n1', '') or '').strip()
+                est_n1_val = str(row.get('estado_n1', '') or '').strip().upper()
                 if c_n1:
-                    ap_n1_name = str(row.get('aprobado_por_n1', '') or row.get('aprobador_n1', '') or '').strip()
                     pref_1 = f"N1 ({ap_n1_name}): " if ap_n1_name and ap_n1_name != '-' else "N1: "
                     comentarios_list.append(f"{pref_1}{c_n1}")
+                elif ap_n1_name.lower() == 'admin' and est_n1_val in ('APROBADO', 'RECHAZADO'):
+                    comentarios_list.append(f"N1 (admin): {est_n1_val.capitalize()}")
+
+                ap_n2_name = str(row.get('aprobado_por_n2', '') or '').strip()
+                est_n2_val = str(row.get('estado_n2', '') or '').strip().upper()
                 if c_n2:
-                    ap_n2_name = str(row.get('aprobado_por_n2', '') or row.get('aprobador_n2', '') or '').strip()
                     pref_2 = f"N2 ({ap_n2_name}): " if ap_n2_name and ap_n2_name != '-' else "N2: "
                     comentarios_list.append(f"{pref_2}{c_n2}")
+                elif ap_n2_name.lower() == 'admin' and est_n2_val in ('APROBADO', 'RECHAZADO'):
+                    comentarios_list.append(f"N2 (admin): {est_n2_val.capitalize()}")
+
                 if not comentarios_list and c_sup:
                     comentarios_list.append(c_sup)
 

@@ -1491,11 +1491,22 @@ with tab_historial:
             c_info_str = ""
             c1 = str(row.get('comentario_n1', '') or '').strip()
             c2 = str(row.get('comentario_n2', '') or '').strip()
+            ap1_h = str(row.get('aprobado_por_n1', '') or '').strip().lower()
+            ap2_h = str(row.get('aprobado_por_n2', '') or '').strip().lower()
             csup = str(row.get('comentario_supervisor', '') or '').strip()
             cmts = []
-            if c1 and c1.lower() not in ('none', 'nan'): cmts.append(f"<b>N1:</b> {c1}")
-            if c2 and c2.lower() not in ('none', 'nan'): cmts.append(f"<b>N2:</b> {c2}")
-            if not cmts and csup and csup.lower() not in ('none', 'nan'): cmts.append(f"<b>Obs:</b> {csup}")
+            if c1 and c1.lower() not in ('none', 'nan'):
+                cmts.append(f"<b>N1:</b> {c1}")
+            elif ap1_h == 'admin' and estado_n1 in ('APROBADO', 'RECHAZADO'):
+                cmts.append(f"<b>N1 (admin):</b> {estado_n1.capitalize()}")
+
+            if c2 and c2.lower() not in ('none', 'nan'):
+                cmts.append(f"<b>N2:</b> {c2}")
+            elif ap2_h == 'admin' and estado_n2 in ('APROBADO', 'RECHAZADO'):
+                cmts.append(f"<b>N2 (admin):</b> {estado_n2.capitalize()}")
+
+            if not cmts and csup and csup.lower() not in ('none', 'nan'):
+                cmts.append(f"<b>Obs:</b> {csup}")
             if cmts:
                 c_info_str = f"""<div style="font-size: 11px; color: #D1D5DB; background: rgba(255,255,255,0.04); padding: 5px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.4;">{'<br>'.join(cmts)}</div>"""
             

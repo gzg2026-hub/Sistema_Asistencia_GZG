@@ -1398,15 +1398,21 @@ def actualizar_estado_aprobacion_nivel(
                 final_state = 'PENDIENTE'
 
             # Obtener comentarios actualizados de N1 y N2 para concatenar limpiamente
-            cursor.execute("SELECT comentario_n1, comentario_n2, aprobado_por_n1, aprobado_por_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+            cursor.execute("SELECT comentario_n1, comentario_n2, aprobado_por_n1, aprobado_por_n2, estado_n1, estado_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
             c_info = cursor.fetchone()
             cmts_list = []
             if c_info:
-                cn1, cn2, ap1, ap2 = c_info[0], c_info[1], c_info[2], c_info[3]
+                cn1, cn2, ap1, ap2, st1, st2 = c_info[0], c_info[1], c_info[2], c_info[3], c_info[4], c_info[5]
                 if cn1 and str(cn1).strip() and str(cn1).strip().lower() not in ('none', 'nan'):
                     cmts_list.append(f"N1 ({ap1 or 'Sup'}): {str(cn1).strip()}")
+                elif str(ap1).strip().lower() == 'admin' and str(st1).upper() in ('APROBADO', 'RECHAZADO'):
+                    cmts_list.append(f"N1 (admin): {str(st1).capitalize()}")
+
                 if cn2 and str(cn2).strip() and str(cn2).strip().lower() not in ('none', 'nan'):
                     cmts_list.append(f"N2 ({ap2 or 'Gte'}): {str(cn2).strip()}")
+                elif str(ap2).strip().lower() == 'admin' and str(st2).upper() in ('APROBADO', 'RECHAZADO'):
+                    cmts_list.append(f"N2 (admin): {str(st2).capitalize()}")
+
             comentario_global = "\n".join(cmts_list) if cmts_list else (comentario or "")
 
             cursor.execute("""
