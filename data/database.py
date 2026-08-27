@@ -1148,11 +1148,19 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             cmt = str(ws.cell(row=r, column=19).value or '').strip()
             
             if est_global in ('APROBADO', 'RECHAZADO') or est_n1 in ('APROBADO', 'RECHAZADO') or est_n2 in ('APROBADO', 'RECHAZADO') or cmt:
+                # Detectar si fue aprobado por admin según el comentario
+                ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
+                ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
+
                 cursor.execute("""
                     UPDATE aprobaciones
                     SET estado = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado END,
                         estado_n1 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado_n1 END,
                         estado_n2 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado_n2 END,
+                        aprobador_n1 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobador_n1 END,
+                        aprobador_n2 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobador_n2 END,
+                        aprobado_por_n1 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE aprobado_por_n1 END,
+                        aprobado_por_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE aprobado_por_n2 END,
                         aprobado_por = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobado_por END,
                         fecha_aprobacion = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE fecha_aprobacion END,
                         comentario_supervisor = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE comentario_supervisor END
@@ -1162,6 +1170,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     est_n1, est_n1, est_n1,
                     est_n2, est_n2, est_n2,
                     ap_n1, ap_n1, ap_n1,
+                    ap_n2, ap_n2, ap_n2,
+                    est_n1, ap_n1_final,
+                    est_n2, ap_n2_final,
+                    ap_n1_final, ap_n1_final, ap_n1_final,
                     f_aprob, f_aprob, f_aprob,
                     cmt, cmt, cmt,
                     dni, fecha

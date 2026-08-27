@@ -1479,13 +1479,24 @@ with tab_historial:
             else:
                 badge_html = '<span class="badge-pending">PENDIENTE</span>'
             
-            # Detalle de quién aprobó / validó
+            # Detalle de quién aprobó / validó (sin 'nan' y con fallback al aprobador asignado o admin)
+            def _clean_usr_str(val):
+                if val is None or pd.isna(val):
+                    return ""
+                s = str(val).strip()
+                return "" if s.lower() in ('nan', 'none', 'null', '-', '') else s
+
+            ap1_name = _clean_usr_str(row.get('aprobado_por_n1')) or _clean_usr_str(row.get('aprobador_n1'))
+            ap2_name = _clean_usr_str(row.get('aprobado_por_n2')) or _clean_usr_str(row.get('aprobador_n2'))
+
             aprob_info = []
-            if row.get('aprobado_por_n1'):
-                aprob_info.append(f"N1: {row.get('aprobado_por_n1')} ({estado_n1})")
-            if row.get('aprobado_por_n2'):
-                aprob_info.append(f"N2: {row.get('aprobado_por_n2')} ({estado_n2})")
-            aprob_str = " | ".join(aprob_info) if aprob_info else f"Por: {row.get('aprobado_por') or 'Pendiente'}"
+            if ap1_name and estado_n1 not in ('-', 'NONE'):
+                aprob_info.append(f"N1: {ap1_name} ({estado_n1})")
+            if ap2_name and estado_n2 not in ('-', 'NONE'):
+                aprob_info.append(f"N2: {ap2_name} ({estado_n2})")
+            
+            global_aprob = _clean_usr_str(row.get('aprobado_por'))
+            aprob_str = " | ".join(aprob_info) if aprob_info else (f"Por: {global_aprob}" if global_aprob else "Pendiente")
             
             # Comentarios de N1 y N2 en historial
             c_info_str = ""
