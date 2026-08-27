@@ -200,6 +200,7 @@
     var overlay = document.getElementById('loading-overlay');
     var frame = document.getElementById('app-frame');
     var shown = false;
+    var shellLoadedAt = null;
 
     function showApp() {
       if (shown) return;
@@ -211,9 +212,15 @@
       }, 350);
     }
 
-    // Fallback de seguridad: si por algo la señal real nunca llega,
-    // revela a los 5s para no dejar a nadie atrapado en el splash.
-    setTimeout(showApp, 5000);
+    // El HTML base del iframe cargó — dar 5s de colchón para que Streamlit ejecute su script.
+    // Si gzg:ready llega antes, showApp() ya se disparó y este timeout no hace nada.
+    frame.addEventListener('load', function() {
+      shellLoadedAt = Date.now();
+      setTimeout(showApp, 5000);
+    });
+
+    // Red de seguridad final por si el iframe ni siquiera dispara 'load'
+    setTimeout(showApp, 25000);
   </script>
 </body>
 </html>
