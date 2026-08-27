@@ -1535,14 +1535,31 @@ with tab_historial:
             global_aprob = _clean_usr_str(row.get('aprobado_por'))
             aprob_str = " | ".join(aprob_info) if aprob_info else (f"Por: {global_aprob}" if global_aprob else "Pendiente")
             
-            # Comentarios de N1 y N2 en historial
+            # Comentarios de Trabajador, N1 y N2 en historial
             c_info_str = ""
+            obs_my = str(row.get('observacion_trabajador', '') or '').strip()
             c1 = str(row.get('comentario_n1', '') or '').strip()
             c2 = str(row.get('comentario_n2', '') or '').strip()
             ap1_h = str(row.get('aprobado_por_n1', '') or '').strip().lower()
             ap2_h = str(row.get('aprobado_por_n2', '') or '').strip().lower()
             csup = str(row.get('comentario_supervisor', '') or '').strip()
             cmts = []
+
+            if obs_my and obs_my.lower() not in ('none', 'nan'):
+                dni_h = str(row.get('dni', '') or '').strip().lstrip('0').zfill(8)
+                mapa_dni_usuario = {
+                    '47783594': 'jagreda',
+                    '47034929': 'jalva',
+                    '72559194': 'jdelariva',
+                    '46671923': 'jhuayama',
+                    '26696602': 'msanchez',
+                    '75227437': 'lpretel',
+                    '44955960': 'respinoza',
+                    '70782038': 'jsanchez',
+                }
+                u_aut = mapa_dni_usuario.get(dni_h) or format_worker_name(row.get('nombres', ''), '').split()[0]
+                cmts.append(f"<b>{u_aut}:</b> {obs_my}")
+
             if c1 and c1.lower() not in ('none', 'nan'):
                 cmts.append(f"<b>N1:</b> {c1}")
             elif ap1_h == 'admin' and estado_n1 in ('APROBADO', 'RECHAZADO'):

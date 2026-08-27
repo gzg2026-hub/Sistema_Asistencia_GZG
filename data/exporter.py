@@ -591,7 +591,33 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
 
                 comentarios_list = []
                 if obs_trab:
-                    comentarios_list.append(obs_trab)
+                    # Identificar de qué usuario/trabajador proviene el sustento personal
+                    dni_val = str(row.get('dni', '') or '').strip().lstrip('0').zfill(8)
+                    mapa_dni_usuario = {
+                        '47783594': 'jagreda',
+                        '47034929': 'jalva',
+                        '72559194': 'jdelariva',
+                        '46671923': 'jhuayama',
+                        '26696602': 'msanchez',
+                        '75227437': 'lpretel',
+                        '44955960': 'respinoza',
+                        '70782038': 'jsanchez',
+                    }
+                    u_autor = mapa_dni_usuario.get(dni_val)
+                    if not u_autor:
+                        nom_raw = str(row.get('nombres', '') or '').strip()
+                        ape_raw = str(row.get('apellidos', '') or '').strip()
+                        if nom_raw:
+                            u_autor = nom_raw.split()[0].capitalize()
+                        elif ape_raw:
+                            u_autor = ape_raw.split()[0].capitalize()
+                        else:
+                            u_autor = "Personal"
+
+                    if obs_trab.lower().startswith(f"{u_autor.lower()}:"):
+                        comentarios_list.append(obs_trab)
+                    else:
+                        comentarios_list.append(f"{u_autor}: {obs_trab}")
 
                 ap_n1_name = str(row.get('aprobado_por_n1', '') or '').strip()
                 est_n1_val = str(row.get('estado_n1', '') or '').strip().upper()
