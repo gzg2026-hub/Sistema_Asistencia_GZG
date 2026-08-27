@@ -1130,6 +1130,14 @@ except Exception:
     pass
 
 
+# Rehidratar estados de aprobación desde Google Drive al inicio de sesión para persistencia total
+if "gdrive_rehydrated" not in st.session_state:
+    st.session_state["gdrive_rehydrated"] = True
+    try:
+        sincronizar_aprobaciones_con_gdrive()
+    except Exception:
+        pass
+
 # Cargar data de aprobaciones directamente de SQLite sin bloqueos de red
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
 

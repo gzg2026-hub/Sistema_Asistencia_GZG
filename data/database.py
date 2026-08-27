@@ -1097,10 +1097,79 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
 
 def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
     """
-    No-op de seguridad: La base de datos SQLite es la fuente de verdad maestra e intocable.
-    Previene que archivos Excel antiguos de Drive sobrescriban solicitudes pendientes en SQLite.
+    Sincroniza y rehidrata estados de aprobación desde Google Drive hacia SQLite en caso de reinicio de contenedor.
+    Solo actualiza solicitudes existentes con estados reales ('APROBADO', 'RECHAZADO') o comentarios,
+    garantizando que nunca se pierdan aprobaciones ni se reinicien contadores.
     """
-    pass
+    try:
+        import datetime, openpyxl
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        mes_str = datetime.date.today().strftime('%Y-%m')
+        nombre_excel = f"Aprobaciones_GZG_{mes_str}.xlsx"
+        local_path = os.path.join(root_dir, "downloads", "data_procesada", nombre_excel)
+        
+        # 1. Intentar descargar la versión más reciente desde Google Drive
+        try:
+            from scripts.gdrive_uploader import descargar_archivo_de_gdrive
+            descargar_archivo_de_gdrive(nombre_excel, local_path)
+        except Exception:
+            pass
+            
+        if not os.path.exists(local_path):
+            return
+            
+        # 2. Leer registros del Excel oficial
+        wb = openpyxl.load_workbook(local_path, data_only=True)
+        ws = wb.active
+        if ws.max_row < 5:
+            return
+            
+        conn = get_connection(db_path)
+        cursor = conn.cursor()
+        
+        for r in range(5, ws.max_row + 1):
+            dni_raw = str(ws.cell(row=r, column=1).value or '').strip()
+            fecha_raw = str(ws.cell(row=r, column=6).value or '').strip()
+            if not dni_raw or not fecha_raw:
+                continue
+            dni = dni_raw.lstrip('0').zfill(8)
+            fecha_parts = fecha_raw.split('/')
+            if len(fecha_parts) == 3:
+                fecha = f"{fecha_parts[2]}-{fecha_parts[1]}-{fecha_parts[0]}"
+            else:
+                fecha = fecha_raw
+                
+            est_global = str(ws.cell(row=r, column=13).value or '').strip().upper()
+            ap_n1 = str(ws.cell(row=r, column=14).value or '').strip()
+            est_n1 = str(ws.cell(row=r, column=15).value or '').strip().upper()
+            ap_n2 = str(ws.cell(row=r, column=16).value or '').strip()
+            est_n2 = str(ws.cell(row=r, column=17).value or '').strip().upper()
+            f_aprob = str(ws.cell(row=r, column=18).value or '').strip()
+            cmt = str(ws.cell(row=r, column=19).value or '').strip()
+            
+            if est_global in ('APROBADO', 'RECHAZADO') or est_n1 in ('APROBADO', 'RECHAZADO') or est_n2 in ('APROBADO', 'RECHAZADO') or cmt:
+                cursor.execute("""
+                    UPDATE aprobaciones
+                    SET estado = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado END,
+                        estado_n1 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado_n1 END,
+                        estado_n2 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado_n2 END,
+                        aprobado_por = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobado_por END,
+                        fecha_aprobacion = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE fecha_aprobacion END,
+                        comentario_supervisor = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE comentario_supervisor END
+                    WHERE dni = ? AND fecha = ?
+                """, (
+                    est_global, est_global, est_global,
+                    est_n1, est_n1, est_n1,
+                    est_n2, est_n2, est_n2,
+                    ap_n1, ap_n1, ap_n1,
+                    f_aprob, f_aprob, f_aprob,
+                    cmt, cmt, cmt,
+                    dni, fecha
+                ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Aviso sincronizacion rehidratacion: {e}")
 
 
 def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_PATH) -> pd.DataFrame:
