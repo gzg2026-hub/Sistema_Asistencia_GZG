@@ -1160,6 +1160,17 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
                 ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
 
+                # Extraer comentarios individuales de N1 y N2 si existen en el comentario consolidado
+                c_n1_extracted = None
+                c_n2_extracted = None
+                if cmt:
+                    for line in cmt.split('\n'):
+                        l_clean = line.strip()
+                        if l_clean.upper().startswith('N1'):
+                            c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+                        elif l_clean.upper().startswith('N2'):
+                            c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+
                 cursor.execute("""
                     UPDATE aprobaciones
                     SET estado = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado END,
@@ -1171,6 +1182,8 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                         aprobado_por_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE aprobado_por_n2 END,
                         aprobado_por = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobado_por END,
                         fecha_aprobacion = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE fecha_aprobacion END,
+                        comentario_n1 = CASE WHEN ? IS NOT NULL THEN ? ELSE comentario_n1 END,
+                        comentario_n2 = CASE WHEN ? IS NOT NULL THEN ? ELSE comentario_n2 END,
                         comentario_supervisor = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE comentario_supervisor END
                     WHERE dni = ? AND fecha = ?
                 """, (
@@ -1183,6 +1196,8 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     est_n2, ap_n2_final,
                     ap_n1_final, ap_n1_final, ap_n1_final,
                     f_aprob, f_aprob, f_aprob,
+                    c_n1_extracted, c_n1_extracted,
+                    c_n2_extracted, c_n2_extracted,
                     cmt, cmt, cmt,
                     dni, fecha
                 ))

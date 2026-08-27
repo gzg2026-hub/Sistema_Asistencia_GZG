@@ -1311,14 +1311,34 @@ def render_tab_pendientes():
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Mostrar validación previa de Nivel 1 si ya fue aprobada por el supervisor
+                # Mostrar validación previa de Nivel 1 si ya fue aprobada por el supervisor / jefe
+                est_n1_str = str(row.get('estado_n1', '') or '').strip().upper()
+                ap_n1_name = str(row.get('aprobado_por_n1', '') or row.get('aprobador_n1', '') or 'Supervisor').strip()
+                if ap_n1_name.lower() in ('nan', 'none', '-', ''):
+                    ap_n1_name = 'Supervisor'
+
                 c_n1_prev = str(row.get('comentario_n1', '') or '').strip()
-                if c_n1_prev and c_n1_prev.lower() not in ('none', 'nan', ''):
-                    ap_n1_name = str(row.get('aprobado_por_n1', '') or 'Supervisor').strip()
+                if c_n1_prev.lower() in ('none', 'nan'):
+                    c_n1_prev = ""
+
+                # Si no hay comentario_n1 explícito, extraer de comentario_supervisor si contiene N1
+                if not c_n1_prev:
+                    csup_raw = str(row.get('comentario_supervisor', '') or '').strip()
+                    if csup_raw and csup_raw.lower() not in ('none', 'nan'):
+                        for line in csup_raw.split('\n'):
+                            if line.upper().startswith('N1'):
+                                c_n1_prev = line.split(':', 1)[1].strip() if ':' in line else line
+                                break
+
+                if est_n1_str in ('APROBADO', 'RECHAZADO') or c_n1_prev:
+                    txt_n1_show = c_n1_prev if c_n1_prev else ("Aprobado" if est_n1_str == 'APROBADO' else "Rechazado")
+                    icon_n1 = "✅" if est_n1_str == 'APROBADO' else "❌"
+                    color_n1 = "#2ECC71" if est_n1_str == 'APROBADO' else "#E74C3C"
+                    bg_n1 = "rgba(46, 204, 113, 0.12)" if est_n1_str == 'APROBADO' else "rgba(231, 76, 60, 0.12)"
                     st.markdown(f"""
-                    <div style="background: rgba(46, 204, 113, 0.12); border-left: 3px solid #2ECC71; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
-                        <strong style="color: #2ECC71;">✅ Validación Nivel 1 ({ap_n1_name}):</strong><br>
-                        <span style="color: #E5E7EB;">{c_n1_prev}</span>
+                    <div style="background: {bg_n1}; border-left: 3px solid {color_n1}; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
+                        <strong style="color: {color_n1};">{icon_n1} Validación Nivel 1 ({ap_n1_name}):</strong><br>
+                        <span style="color: #E5E7EB;">{txt_n1_show}</span>
                     </div>
                     """, unsafe_allow_html=True)
 
