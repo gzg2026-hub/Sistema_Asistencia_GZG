@@ -591,7 +591,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
 
                 comentarios_list = []
                 if obs_trab:
-                    comentarios_list.append(f"Trabajador: {obs_trab}")
+                    comentarios_list.append(obs_trab)
                 if c_n1:
                     ap_n1_name = str(row.get('aprobado_por_n1', '') or row.get('aprobador_n1', '') or '').strip()
                     pref_1 = f"N1 ({ap_n1_name}): " if ap_n1_name and ap_n1_name != '-' else "N1: "
