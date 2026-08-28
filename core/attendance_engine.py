@@ -482,12 +482,23 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 if not block1.empty: sub_blocks.append(block1)
                 if not block2.empty: sub_blocks.append(block2)
         elif morning_entries and late_night_he:
-            # Separar el Turno Día del segundo bloque independiente de Horas Extras nocturnas que inicia el mismo día
-            cut_sec = time_to_seconds(late_night_he[0]['Hora_Clean']) - 60
-            block1 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) < cut_sec)]
-            block2 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) >= cut_sec)]
-            if not block1.empty: sub_blocks.append(block1)
-            if not block2.empty: sub_blocks.append(block2)
+            # Solo separar en un segundo bloque adicional si el trabajador ya tiene una sesión previa de H.E. en la mañana
+            morning_he_starts = [
+                r for _, r in valid_rows.iterrows()
+                if 'inicio' in str(r.get(tipo_col, '')).strip().lower()
+                and ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
+                and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) < 43200
+            ]
+            if morning_he_starts:
+                # Caso de MÚLTIPLES sesiones de H.E. (Madrugada + Turno Día + Noche): separar el segundo bloque nocturno
+                cut_sec = time_to_seconds(late_night_he[0]['Hora_Clean']) - 60
+                block1 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) < cut_sec)]
+                block2 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) >= cut_sec)]
+                if not block1.empty: sub_blocks.append(block1)
+                if not block2.empty: sub_blocks.append(block2)
+            else:
+                # Sesión única de H.E.: se mantiene en la misma fila del Turno Día
+                sub_blocks = [valid_rows]
         else:
             sub_blocks = [valid_rows]
 
