@@ -73,8 +73,15 @@ except PermissionError:
     print(f"   [AVISO] El archivo 'Sistema_Asistencia_GZG_v1.0.xlsx' está ABIERTO en Excel.")
     print(f"   Cierra Excel en tu PC y vuelve a ejecutar el comando, o guarda una copia.")
 
-# 6. Sincronizar y exportar Aprobaciones_GZG_2026-08.xlsx
-print("\n5. Actualizando Aprobaciones_GZG_2026-08.xlsx...")
+# 6. Sincronizar y exportar Aprobaciones del mes
+print("\n5. Actualizando Aprobaciones...")
+# 1. Rehidratar PRIMERO desde Google Drive para absorber aprobaciones de Streamlit Cloud
+try:
+    from data.database import sincronizar_aprobaciones_con_gdrive
+    sincronizar_aprobaciones_con_gdrive(DB_PATH)
+except Exception as e_rehid:
+    print(f"   [Aviso rehidratación]: {e_rehid}")
+
 sincronizar_aprobaciones_desde_asistencia(DB_PATH)
 
 conn = get_connection(DB_PATH)
@@ -95,9 +102,10 @@ conn.commit()
 df_aprob_final = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
 conn.close()
 
-out_aprob = os.path.join(ROOT_DIR, "downloads", "data_procesada", "Aprobaciones_GZG_2026-08.xlsx")
+mes_str = datetime.date.today().strftime('%Y-%m')
+out_aprob = os.path.join(ROOT_DIR, "downloads", "data_procesada", f"Aprobaciones_GZG_{mes_str}.xlsx")
 exportar_aprobaciones_excel(df_aprob_final, out_aprob)
-print(f"   [OK] Aprobaciones_GZG_2026-08.xlsx actualizado ({len(df_aprob_final)} filas acumuladas).")
+print(f"   [OK] Aprobaciones_GZG_{mes_str}.xlsx actualizado ({len(df_aprob_final)} filas acumuladas).")
 
 print("\n" + "=" * 70)
 print("ACTUALIZACION COMPLETA REALIZADA EXITOSAMENTE")

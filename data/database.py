@@ -1017,9 +1017,17 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     """)
     cursor.execute("""
         DELETE FROM aprobaciones 
-        WHERE LOWER(cargo) LIKE '%administrativo%' 
-           OR dni IN ('74546819', '77134790', '48455175')
-           OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
+        WHERE (
+            LOWER(cargo) LIKE '%administrativo%' 
+            OR dni IN ('74546819', '77134790', '48455175')
+            OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
+        )
+        AND estado = 'PENDIENTE'
+        AND estado_n1 = 'PENDIENTE'
+        AND (comentario_n1 IS NULL OR TRIM(comentario_n1) = '')
+        AND (comentario_n2 IS NULL OR TRIM(comentario_n2) = '')
+        AND (observacion_trabajador IS NULL OR TRIM(observacion_trabajador) = '')
+        AND (adjuntos IS NULL OR TRIM(adjuntos) = '')
     """)
     
     # 2. Leer registros de asistencia usando el cargo oficial del Padrón (t.cargo)
@@ -1147,30 +1155,58 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             else:
                 fecha = fecha_raw
                 
-            est_global = str(ws.cell(row=r, column=13).value or '').strip().upper()
+            apellidos = str(ws.cell(row=r, column=2).value or '').strip()
+            nombres = str(ws.cell(row=r, column=3).value or '').strip()
+            cargo = str(ws.cell(row=r, column=4).value or '').strip()
+            area = str(ws.cell(row=r, column=5).value or '').strip()
+            entrada = str(ws.cell(row=r, column=8).value or '').strip()
+            salida = str(ws.cell(row=r, column=9).value or '').strip()
+            jornada_hhmm = str(ws.cell(row=r, column=10).value or '00:00').strip()
+            he_hhmm = str(ws.cell(row=r, column=11).value or '00:00').strip()
+            exceso_hhmm = str(ws.cell(row=r, column=12).value or '00:00').strip()
+            est_global = str(ws.cell(row=r, column=13).value or 'PENDIENTE').strip().upper()
             ap_n1 = str(ws.cell(row=r, column=14).value or '').strip()
-            est_n1 = str(ws.cell(row=r, column=15).value or '').strip().upper()
+            est_n1 = str(ws.cell(row=r, column=15).value or 'PENDIENTE').strip().upper()
             ap_n2 = str(ws.cell(row=r, column=16).value or '').strip()
-            est_n2 = str(ws.cell(row=r, column=17).value or '').strip().upper()
+            est_n2 = str(ws.cell(row=r, column=17).value or '-').strip().upper()
             f_aprob = str(ws.cell(row=r, column=18).value or '').strip()
             cmt = str(ws.cell(row=r, column=19).value or '').strip()
             
+            # Detectar si fue aprobado por admin según el comentario
+            ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
+            ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
+
+            # Extraer comentarios individuales de N1 y N2 si existen en el comentario consolidado
+            c_n1_extracted = None
+            c_n2_extracted = None
+            if cmt:
+                for line in cmt.split('\n'):
+                    l_clean = line.strip()
+                    if l_clean.upper().startswith('N1'):
+                        c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+                    elif l_clean.upper().startswith('N2'):
+                        c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+
+            # 1. Insertar fila si no existe aún en SQLite (para no depender exclusivamente de git redeploy)
+            cursor.execute("""
+                INSERT OR IGNORE INTO aprobaciones (
+                    dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
+                    jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
+                    estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
+                    fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
+                    aprobado_por_n1, aprobado_por_n2
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
+                jornada_hhmm, he_hhmm, exceso_hhmm,
+                est_global, ap_n1, est_n1, ap_n2, est_n2,
+                f_aprob, cmt, c_n1_extracted, c_n2_extracted,
+                ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None,
+                ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
+            ))
+
+            # 2. Actualizar estados y firmas sobre filas existentes
             if est_global in ('APROBADO', 'RECHAZADO') or est_n1 in ('APROBADO', 'RECHAZADO') or est_n2 in ('APROBADO', 'RECHAZADO') or cmt:
-                # Detectar si fue aprobado por admin según el comentario
-                ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
-                ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
-
-                # Extraer comentarios individuales de N1 y N2 si existen en el comentario consolidado
-                c_n1_extracted = None
-                c_n2_extracted = None
-                if cmt:
-                    for line in cmt.split('\n'):
-                        l_clean = line.strip()
-                        if l_clean.upper().startswith('N1'):
-                            c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
-                        elif l_clean.upper().startswith('N2'):
-                            c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
-
                 cursor.execute("""
                     UPDATE aprobaciones
                     SET estado = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado END,
