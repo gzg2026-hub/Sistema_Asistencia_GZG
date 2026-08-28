@@ -28,6 +28,9 @@
 - En los archivos de data cruda (`Transacciones_Acumuladas.xlsx`), se deben mantener **los valores reales exactos** exportados por el biométrico HikCentral (`Registro de entrada`, `Registrar salida`, `Imagen de cara`, `Huella dactilar`, departamentos y cargos reales).
 - **Integridad Estricta de Marcaciones 1-a-1**: El total de marcaciones en `Transacciones_Acumuladas.xlsx` debe ser un reflejo EXACTO del 100% de transacciones de HikCentral Web (ejemplo: 533 en Web = 533 en Excel). Queda estrictamente prohibido usar parsers que descarten o silencien archivos descargados con encabezados nativos (`DNI`, `APELLIDOS`, `NOMBRES`, `FECHA`, `HORA`, `DISPOSITIVO`, `TIPO`).
 - **Multi-Alias de Encabezados en Lectura**: Toda lectura o parseo de Excel en `data/data_loader.py` debe soportar explícitamente tanto el formato formateado (`ID`, `Tiempo`) como el formato nativo descargado de HikCentral (`DNI`, `HORA`, `DISPOSITIVO`, `TIPO`).
+- **Descarga Robusta con Espera Activa y Reintentos (`core/hikvision_downloader.py`)**:
+  * La extracción de transacciones de HikCentral debe utilizar espera activa de red (`networkidle`) y bucle de reintentos (mínimo 3 intentos) con validación de registros no vacíos, asegurando la captura integral de entradas, salidas y transacciones de medianoche antes de emitir los reportes diarios de días cerrados.
+  * Queda prohibida la sobreescritura de data cruda acumulada con archivos desfasados o incompletos de carpetas externas.
 - Queda prohibido hardcodear o inventar valores por defecto (como "MINA", "OPERATIVO", "Semana 34", "Marcación", "Rostro").
 
 ---
@@ -163,6 +166,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Persistencia Total y Blindaje contra Reinicios de Servidor / Cloud**:
   * Queda estrictamente PROHIBIDO reiniciar contadores o solicitudes en la base de datos o en los archivos Excel sin orden explícita del usuario.
   * **Rehidratación Obligatoria desde Drive al Inicio (`mobile.py`)**: Al iniciar sesión en `mobile.py`, el sistema ejecuta obligatoriamente `sincronizar_aprobaciones_con_gdrive()` utilizando `st.secrets["gcp_service_account"]` para descargar y restaurar en memoria los estados reales desde Google Drive, blindando la persistencia contra cualquier reinicio de Streamlit Cloud.
+- **Rehidratación Bidireccional Previa Obligatoria en la PC Local**:
+  * En la ejecución programada de las 9:00 AM (`scripts/schedule_downloader.py`) y en el monitor local (`scripts/auto_sync_approvals.py`), es **mandatorio** ejecutar `sincronizar_aprobaciones_con_gdrive(DB_PATH)` **antes** de generar el Excel de aprobaciones o subirlo a Google Drive.
+  * Esta regla garantiza que la base de datos local SQLite absorba primero todas las aprobaciones, rechazos y comentarios registrados desde la app móvil en Streamlit Cloud, impidiendo que la PC local sobreescriba accidentalmente la nube con estados pendientes antiguos.
 - **Bloqueo Estricto de Botones para Personal con Reporte Directo a Superintendencia (`msanchez`)**:
   * Para trabajadores, supervisores o jefes cuyo reporte sea directo a Superintendencia (`aprobador_n1 == 'msanchez'` y sin N2 intermedio), los botones `❌ RECHAZAR` y `✅ APROBAR` en la bandeja de `msanchez` permanecen estrictamente **bloqueados y desactivados (`disabled=True`)** mientras la solicitud no cuente con justificación o fotos registradas por el trabajador en `📝 Mis Horas Extras`.
   * Se muestra un recuadro de advertencia indicando que el trabajador debe registrar su sustento antes de poder evaluar.
