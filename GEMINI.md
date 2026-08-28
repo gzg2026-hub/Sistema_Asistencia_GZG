@@ -4,14 +4,14 @@
 
 ## 1. REGLA DE EXCEPCIÓN Y DESVINCULACIÓN TOTAL DE GOOGLE DRIVE
 - **Cero Sincronización Local en PC**: La carpeta del proyecto en el disco local (`c:\Users\GZG Minerales 2026\Desktop\GZG\Sistema_Asistencia_GZG\`) está **100% desvinculada de Google Drive Desktop** (PROHIBIDO totalmente usar, copiar o vincular con la unidad `G:\` o carpetas de sincronización local de Windows).
-- **Cero Subidas en Sesiones Interactivas**: Durante conversaciones, pruebas manuales o ejecuciones interactivas con el usuario, **NUNCA se sube ni se actualiza nada a Google Drive, ÚNICAMENTE SE HARÁ A LA ORDEN O CONFIRMACIÓN EXPLÍCITA DEL USUARIO**.
-- **Cero Regeneraciones o Subidas durante Modificaciones de Código**: Al editar código fuente, componentes o estilos, queda estrictamente prohibido ejecutar scripts de regeneración de bases de datos o forzar subidas a Google Drive de forma proactiva. Toda regeneración o subida manual se ejecuta ÚNICAMENTE bajo orden explícita y textual del usuario.
-- **Archivos Autorizados para Google Drive (3 en Total)**:
+- **Consulta Previa Obligatoria Siempre (Cero Subidas Autónomas)**: Durante conversaciones, pruebas manuales o ejecuciones interactivas con el usuario, **NUNCA se sube, modifica ni se actualiza nada a Google Drive de forma directa**. El asistente debe presentar el análisis, detallar con precisión el archivo y la fecha que se propone afectar, y esperar ÚNICAMENTE la orden o confirmación explícita del usuario antes de ejecutar.
+- **Inmutabilidad Estricta de Días Históricos Cerrados (Cero Regeneraciones en Lote)**: Queda estrictamente prohibido regenerar, recalcular o sobreescribir reportes diarios de días cerrados previos en lote. Toda atención a una consulta o corrección interactiva se acota **exclusivamente a la fecha puntual involucrada (`YYYY-MM-DD`)**.
+- **Integridad Absoluta de la Tríada de Archivos Autorizados (Cero Omisiones Técnicas)**: Cualquier rutina oficial de sincronización o procesamiento debe mantener la integridad y consistencia de los **3 únicos archivos autorizados en Google Drive**, quedando prohibido el uso de scripts ad-hoc que omitan alguno de ellos:
   - **Subida Automática 9:00 AM** (`scripts/schedule_downloader.py`) → Carpeta raíz `AGOSTO` en Drive:
     1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
     2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
   - **Subida Inmediata Triggered** (cada vez que un aprobador valida/rechaza en el app móvil) → Misma carpeta `AGOSTO` en Drive:
-    3. `Aprobaciones_GZG_YYYY-MM.xlsx` *(Registro mensual de HE y Excesos de Jornada con estados de aprobación N1/N2)*. La subida ocurre en un **hilo background** para no bloquear la UI del app. Sin horario fijo: se actualiza en Drive en el momento exacto en que se registra la acción.
+    3. `Aprobaciones_GZG_YYYY-MM.xlsx` *(Registro mensual de HE y Excesos de Jornada con estados de aprobación N1/N2)*. La subida ocurre en un **hilo background** para no bloquear la UI del app. Sin horario fijo: se actualiza en Drive en el momento exacto en que se registra la acción (con previa rehidratación de seguridad).
   - **Definición Estricta de Día Cerrado (Regla de 9:00 AM)**: Un día calendárico (ej. día 22) se considera **Día Cerrado** ÚNICAMENTE a partir de la ejecución automática de las 9:00 AM del día posterior (ej. día 23 a las 9:00 AM). Antes de las 9:00 AM del día posterior, el día se considera EN CURSO. Queda estrictamente PROHIBIDO emitir el reporte diario individual antes de las 9:00 AM del día siguiente.
 - **Ubicaciones Exclusivas Locales de Reportes**:
   - Reportes diarios: `downloads/data_procesada/diario/Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx`
