@@ -338,12 +338,23 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             continue
 
         # Caso Jhon Agreda / Raul Lazaro (Punto 1): Marcación accidental de 'Inicio de horas extra' o 'Fin de horas extra' en la mañana (05:00 a 09:30 AM).
-        # Reclasificar como 'Registro de entrada' para evaluar Turno Día correctamente.
-        for r_idx, r in valid_rows.iterrows():
-            tipo_str = str(r.get(tipo_col, '')).lower()
-            t_sec = time_to_seconds(r['Hora_Clean'])
-            if ('horas extra' in tipo_str or 'h.e.' in tipo_str) and 18000 <= t_sec < 34200:
-                valid_rows.loc[r_idx, tipo_col] = 'Registro de entrada'
+        # Reclasificar como 'Registro de entrada' ÚNICAMENTE si NO existe ninguna entrada matutina explícita previa
+        # y NO existe un 'Inicio de horas extra' previo en la madrugada.
+        has_explicit_morning_entry = any(
+            'entrada' in str(r.get(tipo_col, '')).lower() and not ('horas extra' in str(r.get(tipo_col, '')).lower() or 'he' in str(r.get(tipo_col, '')).lower())
+            and time_to_seconds(r['Hora_Clean']) < 34200
+            for _, r in valid_rows.iterrows()
+        )
+        has_prior_he_start = any(
+            'inicio' in str(r.get(tipo_col, '')).lower() and ('horas extra' in str(r.get(tipo_col, '')).lower() or 'he' in str(r.get(tipo_col, '')).lower())
+            for _, r in valid_rows.iterrows()
+        )
+        if not has_explicit_morning_entry and not has_prior_he_start:
+            for r_idx, r in valid_rows.iterrows():
+                tipo_str = str(r.get(tipo_col, '')).lower()
+                t_sec = time_to_seconds(r['Hora_Clean'])
+                if ('horas extra' in tipo_str or 'h.e.' in tipo_str) and 18000 <= t_sec < 34200:
+                    valid_rows.loc[r_idx, tipo_col] = 'Registro de entrada'
 
         # Caso Yenkli Ordoñez / Doble marcación al retirarse en la tarde (Punto 6):
         # Entrada 06:41 AM, luego 19:01 Entrada y 19:01 Salida. Descartar la entrada errónea de las 19:01 silenciosamente sin poner mensaje de corrección.
@@ -495,8 +506,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             # 2. Detectar entrada, salida principal y marcaciones de Horas Extra
             has_explicit_entrada = False
             has_explicit_salida = False
-            he_start = None
-            he_end = None
+            he_starts_list = []
+            he_ends_list = []
 
             for _, r in current_block.iterrows():
                 tipo_pase = str(r.get(tipo_col, '')).strip().lower()
@@ -511,42 +522,63 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     if salida is None or h > salida:
                         salida = h
                 elif ('inicio' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase)) or 'inicio de horas extra' in tipo_pase:
-                    he_start = h
+                    he_starts_list.append((fecha, h))
                 elif ('fin' in tipo_pase and ('horas extra' in tipo_pase or 'he' in tipo_pase)) or 'fin de horas extra' in tipo_pase:
-                    he_end = h
+                    he_ends_list.append((fecha, h))
 
             # Resetear salida si ocurrió ANTES de la entrada en la misma fecha
             if entrada and salida and time_to_seconds(salida) <= time_to_seconds(entrada):
                 salida = None
                 has_explicit_salida = False
 
-            # Búsqueda cruzada de medianoche para Fin de Horas Extra
-            he_end_fecha = fecha
-            if he_start and not he_end:
-                try:
-                    fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
-                    fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
-                    next_day_he_swipes = df_marcaciones[
-                        (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
-                        (df_marcaciones['Fecha_Clean'] == fecha_next_str)
-                    ]
-                    he_fin_next_rows = [
-                        r for _, r in next_day_he_swipes.iterrows()
-                        if ('fin' in str(r.get(tipo_col, '')).strip().lower() and ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower()))
-                        or 'fin de horas extra' in str(r.get(tipo_col, '')).strip().lower()
-                    ]
-                    if he_fin_next_rows:
-                        he_fin_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
-                        he_end = he_fin_next_rows[0]['Hora_Clean']
-                        he_end_fecha = fecha_next_str
-                        consumed_swipes.add((dni_clean, fecha_next_str, he_end.strftime('%H:%M')))
-                except Exception as e:
-                    pass
+            # Emparejar pares de Horas Extras (mismo día o medianoche en D+1)
+            he_pairs_found = []
+            consumed_he_ends = set()
 
-            if he_start and he_end:
-                i_sec = time_to_seconds(he_start)
-                f_sec = time_to_seconds(he_end)
-                dur_block_min = ((86400 - i_sec) + f_sec) // 60 if he_end_fecha != fecha else ((f_sec - i_sec) // 60 if f_sec >= i_sec else ((86400 - i_sec) + f_sec) // 60)
+            for (f_s, h_s) in he_starts_list:
+                s_sec = time_to_seconds(h_s)
+                # Buscar fin de HE en el mismo día después de inicio
+                matching_same_day = [
+                    (f_e, h_e) for (f_e, h_e) in he_ends_list
+                    if f_e == f_s and time_to_seconds(h_e) > s_sec and (f_e, h_e.strftime('%H:%M')) not in consumed_he_ends
+                ]
+                if matching_same_day:
+                    matching_end = matching_same_day[0]
+                    consumed_he_ends.add((matching_end[0], matching_end[1].strftime('%H:%M')))
+                    he_pairs_found.append(((f_s, h_s), matching_end))
+                else:
+                    # Búsqueda cruzada de medianoche en D+1
+                    try:
+                        fecha_dt = datetime.strptime(f_s, '%Y-%m-%d').date()
+                        fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                        next_day_he_swipes = df_marcaciones[
+                            (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
+                            (df_marcaciones['Fecha_Clean'] == fecha_next_str)
+                        ]
+                        he_fin_next_rows = [
+                            r for _, r in next_day_he_swipes.iterrows()
+                            if (('fin' in str(r.get(tipo_col, '')).strip().lower() and ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower()))
+                            or 'fin de horas extra' in str(r.get(tipo_col, '')).strip().lower())
+                            and (fecha_next_str, r['Hora_Clean'].strftime('%H:%M')) not in consumed_he_ends
+                        ]
+                        if he_fin_next_rows:
+                            he_fin_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
+                            h_fin_next = he_fin_next_rows[0]['Hora_Clean']
+                            consumed_he_ends.add((fecha_next_str, h_fin_next.strftime('%H:%M')))
+                            consumed_swipes.add((dni_clean, fecha_next_str, h_fin_next.strftime('%H:%M')))
+                            he_pairs_found.append(((f_s, h_s), (fecha_next_str, h_fin_next)))
+                    except Exception:
+                        pass
+
+            he_start_disp = None
+            he_end_disp = None
+            he_start_f_disp = None
+            he_end_f_disp = None
+
+            for ((f_s, h_s), (f_e, h_e)) in he_pairs_found:
+                i_sec = time_to_seconds(h_s)
+                f_sec = time_to_seconds(h_e)
+                dur_block_min = ((86400 - i_sec) + f_sec) // 60 if f_e != f_s else ((f_sec - i_sec) // 60 if f_sec >= i_sec else ((86400 - i_sec) + f_sec) // 60)
                 if dur_block_min > 0:
                     he_explicita_total_min += dur_block_min
                     horario_tmp = detectar_horario(entrada or salida, is_salida_only=(entrada is None and salida is not None), config=config)
@@ -556,14 +588,22 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         'CARGO': worker_info.get('CARGO', ''),
                         'ÁREA': worker_info.get('AREA', worker_info.get('ÁREA', '')),
                         'TURNO': horario_tmp,
-                        'FECHA_INICIO_HE': fecha,
-                        'INICIO H.E.': he_start.strftime('%H:%M'),
-                        'FECHA_FIN_HE': he_end_fecha,
-                        'FIN H.E.': he_end.strftime('%H:%M'),
+                        'FECHA_INICIO_HE': f_s,
+                        'INICIO H.E.': h_s.strftime('%H:%M'),
+                        'FECHA_FIN_HE': f_e,
+                        'FIN H.E.': h_e.strftime('%H:%M'),
                         'DURACIÓN (HH:MM)': format_hhmm_str(dur_block_min, is_hours_float=False),
                         'DURACIÓN': dur_block_min,
-                        'OBSERVACIÓN': f'Horas extra marcadas en biométrico ({fecha} -> {he_end_fecha})' if he_end_fecha != fecha else 'Horas extra marcadas en biométrico'
+                        'OBSERVACIÓN': f'Horas extra marcadas en biométrico ({f_s} -> {f_e})' if f_e != f_s else 'Horas extra marcadas en biométrico'
                     })
+                    if he_start_disp is None:
+                        he_start_disp = h_s
+                        he_start_f_disp = f_s
+                        he_end_disp = h_e
+                        he_end_f_disp = f_e
+                    else:
+                        he_end_disp = h_e
+                        he_end_f_disp = f_e
 
             # Fallback marcaciones genéricas
             if not has_explicit_entrada and not has_explicit_salida and len(times) > 0:
@@ -587,10 +627,19 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
                         (df_marcaciones['Fecha_Clean'] == fecha_next_str)
                     ]
+                    # Solo considerar salidas del día siguiente que ocurran ANTES de cualquier entrada del día siguiente
+                    next_day_entries = [
+                        time_to_seconds(r['Hora_Clean']) for _, r in next_day_swipes.iterrows()
+                        if 'entrada' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
+                        and r['Hora_Clean'] is not None
+                    ]
+                    first_next_entry_sec = min(next_day_entries) if next_day_entries else 43200
+
                     salida_next_rows = [
                         r for _, r in next_day_swipes.iterrows()
                         if 'salida' in str(r.get(tipo_col, '')).strip().lower() and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
                         and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) <= 43200 # <= 12:00 PM del día siguiente
+                        and time_to_seconds(r['Hora_Clean']) <= first_next_entry_sec # DEBE SER ANTES DE CUALQUIER ENTRADA DE D+1
                     ]
                     if salida_next_rows:
                         salida_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
@@ -805,10 +854,10 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 total_horas_adic_min=total_horas_adicionales_min
             )
             
-            f_inicio_he = fecha if he_start else "-"
-            h_inicio_he = he_start.strftime('%H:%M') if he_start else "-"
-            f_fin_he = he_end_fecha if he_end else "-"
-            h_fin_he = he_end.strftime('%H:%M') if he_end else "-"
+            f_inicio_he = he_start_f_disp if he_start_disp else "-"
+            h_inicio_he = he_start_disp.strftime('%H:%M') if he_start_disp else "-"
+            f_fin_he = he_end_f_disp if he_end_disp else "-"
+            h_fin_he = he_end_disp.strftime('%H:%M') if he_end_disp else "-"
 
             rows_asistencia.append({
                 'FECHA': fecha,
