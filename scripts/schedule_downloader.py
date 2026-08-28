@@ -52,18 +52,20 @@ def _log(msg: str):
 
 
 def _sincronizar_downloadcenter():
-    """Copia archivos de data cruda exportados manualmente en Downloadcenter hacia downloads/data_cruda."""
+    """Copia archivos de data cruda exportados manualmente en Downloadcenter hacia downloads/data_cruda si son recientes."""
     if os.path.exists(CARPETA_DOWNLOADCENTER):
         try:
             import shutil
+            ahora_ts = time.time()
             for root_dir, dirs, files in os.walk(CARPETA_DOWNLOADCENTER):
                 for f in files:
-                    if f.endswith(".xlsx") and not f.startswith("~$"):
+                    if f.endswith(".xlsx") and not f.startswith("~$") and ("transacciones" in f.lower() or "informacion personal" in f.lower()):
                         src = os.path.join(root_dir, f)
-                        dst = os.path.join(CARPETA_DATA_CRUDA, f)
-                        if not os.path.exists(dst):
+                        # Solo sincronizar si fue modificado en las últimas 48 horas
+                        if (ahora_ts - os.path.getmtime(src)) <= (48 * 3600):
+                            dst = os.path.join(CARPETA_DATA_CRUDA, f)
                             shutil.copy2(src, dst)
-                            _log(f"Sincronizado archivo desde Downloadcenter: {f}")
+                            _log(f"Sincronizado archivo reciente desde Downloadcenter: {f}")
         except Exception as e:
             _log(f"Aviso al sincronizar Downloadcenter: {e}")
 

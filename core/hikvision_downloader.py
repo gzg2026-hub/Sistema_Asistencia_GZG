@@ -148,11 +148,15 @@ def descargar_transacciones_hikvision(
                 }}
             """)
 
-            time.sleep(1)
+            time.sleep(2)
             login_btn = page.locator(".login-btn, button:has-text('Iniciar'), button:has-text('Log In')").first
             if login_btn.count() > 0:
                 login_btn.click()
-            time.sleep(5)
+            
+            try:
+                page.wait_for_load_state("networkidle", timeout=10000)
+            except Exception:
+                time.sleep(6)
 
             payload_js = json.dumps({
                 "RecordRequest": {
@@ -169,21 +173,28 @@ def descargar_transacciones_hikvision(
                 }
             })
 
-            res = page.evaluate(f"""
-                async () => {{
-                    const resp = await fetch('/ISAPI/Bumblebee/AttendancePlugin/V1/Record?MT=GET', {{
-                        method: 'POST',
-                        headers: {{
-                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                        }},
-                        body: JSON.stringify({payload_js})
-                    }});
-                    return await resp.json();
-                }}
-            """)
+            for intento in range(1, 4):
+                try:
+                    res = page.evaluate(f"""
+                        async () => {{
+                            const resp = await fetch('/ISAPI/Bumblebee/AttendancePlugin/V1/Record?MT=GET', {{
+                                method: 'POST',
+                                headers: {{
+                                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                }},
+                                body: JSON.stringify({payload_js})
+                            }});
+                            return await resp.json();
+                        }}
+                    """)
+                    records = res.get("ResponseStatus", {}).get("Data", {}).get("OriginalRecord", [])
+                    if records and len(records) > 0:
+                        break
+                    time.sleep(3)
+                except Exception as e_retry:
+                    time.sleep(3)
 
             browser.close()
-            records = res.get("ResponseStatus", {}).get("Data", {}).get("OriginalRecord", [])
             print(f"[HikCentral] Autenticación exitosa. {len(records)} marcaciones extraídas.")
 
     except Exception as e:
