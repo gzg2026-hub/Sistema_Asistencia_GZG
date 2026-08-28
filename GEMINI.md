@@ -49,7 +49,8 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * Si el trabajador cuenta con un `Inicio de horas extra` en la madrugada (ej. 02:42 AM), `Fin de horas extra` a las 06:41 AM y `Registro de entrada` a las 06:42 AM, el motor preserva el bloque real de Horas Extras matutino y evalúa el Turno Día limpiamente sin generar observaciones de "Entrada duplicada".
   * **Botón de Entrada al Salir del Turno Día (Caso Clari Tocto)**: Si un trabajador registra una entrada matutina (05:00 a 08:30 AM) y luego una marcación en la tarde/noche (17:00 a 20:30 PM) etiquetada por error como `"Registro de entrada"`, y no existen salidas intermedias en la tarde ni salida nocturna en la madrugada del día siguiente (D+1), o si el trabajador es personal Administrativo, el motor deduce **error de botón al salir**. Se reclasifica la segunda marcación como `"Registrar salida"`, evitando duplicar filas falsas con `00:00` y evaluando la jornada de 12 horas en Turno DÍA como `ASISTIO`.
 - **Soporte y Acumulación de Múltiples Sesiones de Horas Extras Diarias (Caso Bryan Cruz / Alan Rojas)**:
-  * Si un trabajador realiza más de una sesión de Horas Extras en el mismo día calendárico (ej. sesión madrugada 01:26 a 06:42 y sesión nocturna 22:50 a 06:57 del día siguiente), el motor empareja cada par de forma independiente, sumando el total de minutos de todas las sesiones (`he_explicita_total_min`) para su reflejo consolidado en los reportes de asistencia y bandeja de aprobaciones.
+  * Si un trabajador realiza más de una sesión de Horas Extras en el mismo día calendárico (ej. sesión madrugada 01:26 a 06:42 y sesión nocturna 22:50 a 06:57 del día siguiente), el motor empareja cada par de forma independiente y **divide la jornada en sub-bloques independientes**.
+  * **Generación de Filas Independientes en el Día de Inicio**: Cada sesión de Horas Extras nocturnas o desconectada de la jornada ordinaria genera su **propia fila asignada estrictamente a la fecha calendárica en que inició la labor**, reflejando `00:00` en horas de turno y la duración exacta en Horas Extras (ej. Fila 1: Turno Día 12:08 con H.E. matutina 05:16; Fila 2: H.E. Nocturna 22:50-06:57 con 08:07 H.E.). Queda prohibido fusionar en una sola fila sesiones desconectadas con turnos intermedios.
 - **Asignación Universal de Turnos (DÍA / NOCHE / MANTENIMIENTO)**:
   * **Turno DÍA**: Entrada 07:00 AM (tolerancia hasta 07:15 AM). Salida 19:00 PM (12 Horas de Turno).
   * **Turno NOCHE**: Entrada 19:00 PM (tolerancia hasta 19:15 PM). Salida 07:00 AM del día siguiente (12 Horas de Turno).
@@ -71,8 +72,8 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
     - Únicamente se calculan y visualizan sus horas de turno trabajadas (`HORAS TRABAJADAS (HH:MM)`).
 - **Doble Turno / Doble Entrada en el Mismo Día**:
   * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente y se sombrea la fila en durazno pastel.
-- **Filtro de Filas Fantasma / Sin Marcación (Regla Punto 9)**:
-  * Se eliminan automáticamente de la vista procesada las filas donde tanto la Entrada (Fecha/Hora) como la Salida (Fecha/Hora) sean nulas, vacías o `NaN`.
+- **Filtro de Filas Fantasma / Sin Marcación (Regla Punto 9) y Excepción de H.E.**:
+  * Se eliminan automáticamente de la vista procesada las filas donde tanto la Entrada (Fecha/Hora) como la Salida (Fecha/Hora) sean nulas, vacías o `NaN`, **salvo que la fila corresponda a un bloque exclusivo de Horas Extras** con marcaciones explícitas de biométrico.
 - **Prohibición Total de Observaciones Asumidas o Textos Hardcodeados (Cero Suposiciones)**:
   * Queda estrictamente prohibido insertar o asumir observaciones automáticas por defecto en el motor de cálculo de asistencia (`core/attendance_engine.py`) o en la base de datos (como *"Abastecer petróleo / Recoger personal / Varios"*).
   * El campo `OBSERVACIONES` en asistencia y `observacion_trabajador` en aprobaciones permanecerá **limpio y vacío por defecto**, y se llenará **únicamente** con el sustento real o fotos que el trabajador o supervisor registre explícitamente desde la aplicación móvil.
@@ -86,9 +87,11 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * **Anchos de Columna Holgados sin Truncamiento**: Ningún título de columna debe quedar recortado o tapado por las flechas de filtro de Excel (ej. "Departamento", "Tiempo", "Tipo de pase de tarjeta", "Método de verificación", "Punto de control de asistencia"). Los anchos deben calcularse sumando una holgura de al menos +6 caracteres sobre la longitud del texto y un ancho mínimo de 16.
   * **Prohibición de `to_excel` Crudo**: Queda estrictamente PROHIBIDO guardar `Transacciones_Acumuladas.xlsx` o cualquier reporte de asistencia usando `pandas.to_excel` directo sin formato. Se debe invocar obligatoriamente la función `guardar_transacciones_acumuladas_excel(df, path)` de `data/exporter.py` en todos los scripts, tareas automáticas y rutinas para preservar los encabezados azul oscuro (`#1F4E78`), filtros activos y formato de celdas.
 - **Sombreado Pastel de Incidencias y Registros**:
-  * **Azul Pastel (`#D9E1F2`)**: Horas Extras (H.E.), Tipo de Registro con Horas Extras y Exceso de Jornada.
+  * **Azul Pastel (`#D9E1F2`)**: Horas Extras (H.E.), Tipo de Registro con Horas Extras, bloques exclusivos de H.E. y Exceso de Jornada.
   * **Durazno Pastel (`#FCE4D6`)**: Faltas, Pendientes, Sin Registro, Salidas Anticipadas, Doble Turno (doble entrada el mismo día), Cambio de Guardia y Jornada Parcial.
   * **Sin Relleno (Blanco)**: Asistencias normales.
+- **Preservación de Filas Exclusivas de Horas Extras (Excepción a Regla Punto 9)**:
+  * Las filas que representen un bloque independiente de Horas Extras (sin marcaciones de entrada/salida de turno ordinario) se preservan y exportan con normalidad manteniendo su sombreado en **Azul Pastel (`#D9E1F2`)**.
 - **Formato de Celdas**:
   * Columna A (DNI / ID): Formateada strictly como Texto (`@`) con `cell.number_format = '@'` en TODOS los archivos Excel generados (`Reporte_Asistencia_GZG` y `Transacciones_Acumuladas.xlsx`) para conservar ceros a la izquierda y evitar advertencias de Excel.
   * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
