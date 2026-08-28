@@ -149,6 +149,8 @@ def calcular_exceso_jornada(horario: str, hora_salida: time, hora_entrada: time,
 
 def calcular_estado_asistencia(tiene_entrada: bool, tiene_salida: bool, tardanza: int, salida_ant: int, incidencias: str, total_horas_adic_min: int) -> str:
     if not tiene_entrada and not tiene_salida:
+        if total_horas_adic_min > 0:
+            return "ASISTIO CON H.E."
         return "FALTA"
     if tiene_entrada and not tiene_salida:
         return "SALIDA PENDIENTE"
@@ -433,6 +435,12 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             and not ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower()) 
             and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) >= 57600 # >= 16:00 PM
         ]
+        late_night_he = [
+            r for _, r in valid_rows.iterrows()
+            if 'inicio' in str(r.get(tipo_col, '')).strip().lower() 
+            and ('horas extra' in str(r.get(tipo_col, '')).strip().lower() or 'he' in str(r.get(tipo_col, '')).strip().lower())
+            and r['Hora_Clean'] is not None and time_to_seconds(r['Hora_Clean']) >= 57600 # >= 16:00 PM
+        ]
 
         sub_blocks = []
         if morning_entries and late_night_entries:
@@ -473,6 +481,13 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 block2 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) >= cut_sec)]
                 if not block1.empty: sub_blocks.append(block1)
                 if not block2.empty: sub_blocks.append(block2)
+        elif morning_entries and late_night_he:
+            # Separar el Turno Día del segundo bloque independiente de Horas Extras nocturnas que inicia el mismo día
+            cut_sec = time_to_seconds(late_night_he[0]['Hora_Clean']) - 60
+            block1 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) < cut_sec)]
+            block2 = valid_rows[valid_rows['Hora_Clean'].apply(lambda h: time_to_seconds(h) >= cut_sec)]
+            if not block1.empty: sub_blocks.append(block1)
+            if not block2.empty: sub_blocks.append(block2)
         else:
             sub_blocks = [valid_rows]
 
@@ -605,14 +620,14 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         he_end_disp = h_e
                         he_end_f_disp = f_e
 
-            # Fallback marcaciones genéricas
-            if not has_explicit_entrada and not has_explicit_salida and len(times) > 0:
+            # Fallback marcaciones genéricas (solo si no fueron consumidas como Horas Extras explícitas)
+            if not has_explicit_entrada and not has_explicit_salida and not he_pairs_found and len(times) > 0:
                 entrada = times[0]
                 if len(times) > 1:
                     salida = times[-1]
 
             # Detectar Horario (DÍA vs NOCHE)
-            hora_ref = entrada if entrada is not None else salida
+            hora_ref = entrada if entrada is not None else (salida if salida is not None else he_start_disp)
             horario = detectar_horario(hora_ref, is_salida_only=(entrada is None and salida is not None), config=config)
 
             # Búsqueda cruzada de medianoche para TURNO NOCHE o entrada >= 16:00
