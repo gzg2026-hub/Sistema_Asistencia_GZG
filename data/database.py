@@ -1205,38 +1205,46 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
             ))
 
-            # 2. Actualizar estados y firmas sobre filas existentes
-            if est_global in ('APROBADO', 'RECHAZADO') or est_n1 in ('APROBADO', 'RECHAZADO') or est_n2 in ('APROBADO', 'RECHAZADO') or cmt:
-                cursor.execute("""
-                    UPDATE aprobaciones
-                    SET estado = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado END,
-                        estado_n1 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado_n1 END,
-                        estado_n2 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE estado_n2 END,
-                        aprobador_n1 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobador_n1 END,
-                        aprobador_n2 = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobador_n2 END,
-                        aprobado_por_n1 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE aprobado_por_n1 END,
-                        aprobado_por_n2 = CASE WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ? ELSE aprobado_por_n2 END,
-                        aprobado_por = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE aprobado_por END,
-                        fecha_aprobacion = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE fecha_aprobacion END,
-                        comentario_n1 = CASE WHEN ? IS NOT NULL THEN ? ELSE comentario_n1 END,
-                        comentario_n2 = CASE WHEN ? IS NOT NULL THEN ? ELSE comentario_n2 END,
-                        comentario_supervisor = CASE WHEN ? != '' AND ? != 'NONE' THEN ? ELSE comentario_supervisor END
-                    WHERE dni = ? AND fecha = ?
-                """, (
-                    est_global, est_global, est_global,
-                    est_n1, est_n1, est_n1,
-                    est_n2, est_n2, est_n2,
-                    ap_n1, ap_n1, ap_n1,
-                    ap_n2, ap_n2, ap_n2,
-                    est_n1, ap_n1_final,
-                    est_n2, ap_n2_final,
-                    ap_n1_final, ap_n1_final, ap_n1_final,
-                    f_aprob, f_aprob, f_aprob,
-                    c_n1_extracted, c_n1_extracted,
-                    c_n2_extracted, c_n2_extracted,
-                    cmt, cmt, cmt,
-                    dni, fecha
-                ))
+            # Calcular variables finales en Python
+            final_app_n1 = ap_n1 if (ap_n1 and ap_n1.upper() != 'NONE') else None
+            final_app_n2 = ap_n2 if (ap_n2 and ap_n2.upper() != 'NONE') else None
+            final_aprobado_por_n1 = ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None
+            final_aprobado_por_n2 = ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
+            final_aprobado_por = ap_n1_final if (est_global in ('APROBADO', 'RECHAZADO') and ap_n1_final) else None
+            final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
+
+            # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
+            cursor.execute("""
+                UPDATE aprobaciones
+                SET estado = ?,
+                    estado_n1 = ?,
+                    estado_n2 = ?,
+                    aprobador_n1 = COALESCE(?, aprobador_n1),
+                    aprobador_n2 = COALESCE(?, aprobador_n2),
+                    aprobado_por_n1 = ?,
+                    aprobado_por_n2 = ?,
+                    aprobado_por = ?,
+                    fecha_aprobacion = ?,
+                    comentario_n1 = ?,
+                    comentario_n2 = ?,
+                    comentario_supervisor = ?
+                WHERE dni = ? AND fecha = ?
+            """, (
+                est_global,
+                est_n1,
+                est_n2,
+                final_app_n1,
+                final_app_n2,
+                final_aprobado_por_n1,
+                final_aprobado_por_n2,
+                final_aprobado_por,
+                final_fecha_aprob,
+                c_n1_extracted,
+                c_n2_extracted,
+                cmt,
+                dni,
+                fecha
+            ))
         conn.commit()
         conn.close()
     except Exception as e:
