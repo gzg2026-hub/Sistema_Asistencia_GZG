@@ -23,7 +23,7 @@ def crear_backup_seguridad_sqlite(db_path: str = DB_PATH, sufijo: str = "") -> s
         if not os.path.exists(db_path):
             return ""
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(db_path)))
-        backup_dir = os.path.join(root_dir, "downloads", "backups")
+        backup_dir = os.path.join(root_dir, "backups_locales")
         os.makedirs(backup_dir, exist_ok=True)
         
         ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

@@ -25,6 +25,7 @@ Thumbs.db
 logs/
 downloads/
 descargas_biometrico/
+backups_locales/
 
 # Credenciales y llaves de servicio (Google Cloud, Hikvision)
 credentials.json
