@@ -1219,18 +1219,36 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     elif l_clean.upper().startswith('N2'):
                         c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
 
+            he_min = 0
+            if he_hhmm and he_hhmm != '00:00':
+                try:
+                    p_he = he_hhmm.split(':')
+                    if len(p_he) >= 2: he_min = int(p_he[0]) * 60 + int(p_he[1])
+                except Exception:
+                    pass
+
+            exceso_min = 0
+            if exceso_hhmm and exceso_hhmm != '00:00':
+                try:
+                    p_ex = exceso_hhmm.split(':')
+                    if len(p_ex) >= 2: exceso_min = int(p_ex[0]) * 60 + int(p_ex[1])
+                except Exception:
+                    pass
+
             # 1. Insertar fila si no existe aún en SQLite (para no depender exclusivamente de git redeploy)
             cursor.execute("""
                 INSERT OR IGNORE INTO aprobaciones (
                     dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
                     jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
+                    horas_extras_min, exceso_jornada_min,
                     estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
                     fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
                     aprobado_por_n1, aprobado_por_n2
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
                 jornada_hhmm, he_hhmm, exceso_hhmm,
+                he_min, exceso_min,
                 est_global, ap_n1, est_n1, ap_n2, est_n2,
                 f_aprob, cmt, c_n1_extracted, c_n2_extracted,
                 ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None,
@@ -1251,6 +1269,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 SET estado = ?,
                     estado_n1 = ?,
                     estado_n2 = ?,
+                    horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
+                    exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
+                    horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
+                    exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
                     aprobador_n1 = COALESCE(?, aprobador_n1),
                     aprobador_n2 = COALESCE(?, aprobador_n2),
                     aprobado_por_n1 = ?,
@@ -1265,6 +1287,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 est_global,
                 est_n1,
                 est_n2,
+                he_min,
+                exceso_min,
+                he_hhmm,
+                exceso_hhmm,
                 final_app_n1,
                 final_app_n2,
                 final_aprobado_por_n1,

@@ -25,11 +25,18 @@ from data.database import (
     sincronizar_padron_desde_excel,
     guardar_asistencia_y_reportes,
     sincronizar_aprobaciones_desde_asistencia,
-    get_connection
+    get_connection,
+    crear_backup_seguridad_sqlite
 )
 from data.data_loader import parse_hikvision_transaction_file
 from core.attendance_engine import procesar_asistencia_df
 from data.exporter import exportar_asistencia_excel, exportar_aprobaciones_excel
+
+# 0. Respaldo de seguridad previo
+try:
+    crear_backup_seguridad_sqlite(DB_PATH, sufijo="pre_actualizar_total")
+except Exception as e_bk:
+    print(f"   [Aviso backup]: {e_bk}")
 
 # 1. Padrón oficial
 print("\n1. Sincronizando padrón de trabajadores...")

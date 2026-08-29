@@ -78,6 +78,13 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
     # Sincronizar descargas manuales de Downloadcenter si existen
     _sincronizar_downloadcenter()
 
+    # Respaldo preventivo fechado de SQLite antes de cualquier procesamiento
+    try:
+        from data.database import crear_backup_seguridad_sqlite
+        crear_backup_seguridad_sqlite(sufijo="schedule_9am")
+    except Exception as e_bk:
+        _log(f"Aviso al crear backup preventivo: {e_bk}")
+
     try:
         from core.hikvision_downloader import descargar_transacciones_hikvision
         from data.data_loader import cargar_datos_excel, fusionar_y_deduplicar_data_cruda
