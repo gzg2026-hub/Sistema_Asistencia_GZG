@@ -12,6 +12,32 @@ def get_connection(db_path: str = DB_PATH):
     conn = sqlite3.connect(db_path)
     return conn
 
+def crear_backup_seguridad_sqlite(db_path: str = DB_PATH, sufijo: str = "") -> str:
+    """
+    Crea un respaldo de seguridad fechado de la base de datos SQLite
+    en 'downloads/backups/asistencia_backup_YYYYMMDD_HHMMSS.db'.
+    Garantiza que cualquier operación de resincronización o reinicio tenga respaldo previo.
+    """
+    import shutil, datetime
+    try:
+        if not os.path.exists(db_path):
+            return ""
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(db_path)))
+        backup_dir = os.path.join(root_dir, "downloads", "backups")
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        suf = f"_{sufijo}" if sufijo else ""
+        backup_name = f"asistencia_backup_{ts}{suf}.db"
+        backup_path = os.path.join(backup_dir, backup_name)
+        
+        shutil.copy2(db_path, backup_path)
+        print(f"[Backup] Respaldo de seguridad creado: {backup_path}")
+        return backup_path
+    except Exception as e:
+        print(f"[Backup Warning] No se pudo crear respaldo de seguridad: {e}")
+        return ""
+
 def init_db(db_path: str = DB_PATH):
     """Inicializa la base de datos con las tablas estructuradas si no existen."""
     conn = get_connection(db_path)
@@ -998,6 +1024,12 @@ def sincronizar_desde_hcweb_downloadcenter(db_path: str = DB_PATH):
 
 def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     """Sincronizar marcaciones con incidencias/HE hacia la tabla aprobaciones asociando N1 y N2."""
+    # Respaldo de seguridad previo automático
+    try:
+        crear_backup_seguridad_sqlite(db_path, sufijo="pre_sync_aprob")
+    except Exception:
+        pass
+
     conn = get_connection(db_path)
     cursor = conn.cursor()
     
