@@ -1133,7 +1133,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
             n1_app, n2_app, st_n2_init, turno_asist
         ))
 
-        # Actualizar datos de marcación y aprobadores en el registro existente
+        # 1. Actualizar datos de marcación y horas SOLO si la solicitud aún está PENDIENTE (sin evaluar)
         cursor.execute("""
             UPDATE aprobaciones
             SET entrada = ?, salida = ?, turno = ?,
@@ -1144,12 +1144,30 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
                 aprobador_n2 = COALESCE(?, aprobador_n2),
                 estado_n2 = CASE WHEN ? = '-' THEN '-' ELSE estado_n2 END
             WHERE fecha = ? AND dni = ?
+              AND estado = 'PENDIENTE'
+              AND estado_n1 = 'PENDIENTE'
+              AND (aprobado_por_n1 IS NULL OR TRIM(aprobado_por_n1) = '')
+              AND (aprobado_por_n2 IS NULL OR TRIM(aprobado_por_n2) = '')
         """, (
             entrada, salida, turno_asist,
             h_trab, jornada_str,
             he_min, exceso_min,
             he_str, exceso_str,
             n1_app, n2_app, n2_app,
+            fecha, dni
+        ))
+
+        # 2. Para solicitudes ya evaluadas/firmadas, las horas y estados son 100% INTANGIBLES.
+        # Solo se completan campos informativos de marcación si estaban vacíos (NULL o ''), sin alterar horas ni aprobaciones.
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET turno = CASE WHEN (turno IS NULL OR TRIM(turno) = '' OR LOWER(TRIM(turno)) = 'nan') THEN ? ELSE turno END,
+                entrada = CASE WHEN (entrada IS NULL OR TRIM(entrada) = '' OR LOWER(TRIM(entrada)) = 'nan') THEN ? ELSE entrada END,
+                salida = CASE WHEN (salida IS NULL OR TRIM(salida) = '' OR LOWER(TRIM(salida)) = 'nan') THEN ? ELSE salida END
+            WHERE fecha = ? AND dni = ?
+              AND (estado != 'PENDIENTE' OR estado_n1 != 'PENDIENTE' OR (aprobado_por_n1 IS NOT NULL AND TRIM(aprobado_por_n1) != ''));
+        """, (
+            turno_asist, entrada, salida,
             fecha, dni
         ))
         
