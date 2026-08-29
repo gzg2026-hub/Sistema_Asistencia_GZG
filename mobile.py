@@ -1131,12 +1131,19 @@ except Exception:
 
 
 # Rehidratar estados de aprobación desde Google Drive al inicio de sesión para persistencia total
-if "gdrive_rehydrated" not in st.session_state:
-    st.session_state["gdrive_rehydrated"] = True
-    try:
-        sincronizar_aprobaciones_con_gdrive()
-    except Exception:
-        pass
+if not st.session_state.get("gdrive_rehydrated"):
+    exito_rehid = False
+    for intento in range(1, 4):
+        try:
+            sincronizar_aprobaciones_con_gdrive()
+            exito_rehid = True
+            st.session_state["gdrive_rehydrated"] = True
+            break
+        except Exception as e_rh:
+            print(f"[Aviso] Reintento {intento}/3 rehidratando desde Drive: {e_rh}")
+            time.sleep(0.5)
+    if not exito_rehid:
+        print("[Alerta] No se pudo rehidratar aprobaciones desde Drive tras 3 intentos. Usando datos locales de SQLite.")
 
 # Cargar data de aprobaciones directamente de SQLite sin bloqueos de red
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
