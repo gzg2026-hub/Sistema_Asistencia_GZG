@@ -159,7 +159,7 @@
     let swRegistration = null;
 
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js?v=36').then(function(reg) {
+      navigator.serviceWorker.register('sw.js?v=38').then(function(reg) {
         swRegistration = reg;
         reg.update();
       }).catch(function(e) {

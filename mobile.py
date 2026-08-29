@@ -1037,15 +1037,23 @@ try:
 
     # Inyección de script JS para registro de Service Worker y suscripción a Web Push
     st.components.v1.html(f"""
-    <div id="push_card_container" style="margin-bottom: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+    <style>
+      * {{ box-sizing: border-box; }}
+      body {{
+        margin: 0;
+        padding: 0;
+        background: transparent;
+      }}
+    </style>
+    <div id="push_card_container" style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
       <button id="btn_push_req" onclick="solicitarPermisoPush()" style="
         width: 100%;
         background: {btn_bg};
         border: 1px solid {btn_border};
         border-radius: 10px;
-        padding: 10px 14px;
+        padding: 11px 14px;
         color: {btn_color};
-        font-size: 13px;
+        font-size: 13.5px;
         font-weight: 700;
         cursor: pointer;
         display: flex;
@@ -1138,7 +1146,7 @@ try:
       }}
     }}
     </script>
-    """, height=50)
+    """, height=62)
 except Exception:
     pass
 
