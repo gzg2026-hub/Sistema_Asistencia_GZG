@@ -50,6 +50,16 @@ def inicializar_tabla_push(db_path: str = DB_PATH):
 
 def obtener_o_crear_claves_vapid() -> dict:
     """Obtiene o genera el par de claves VAPID criptográficas para Web Push."""
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and "vapid" in st.secrets:
+            return {
+                "public_key_b64": st.secrets["vapid"]["public_key_b64"],
+                "private_key": st.secrets["vapid"]["private_key"]
+            }
+    except Exception:
+        pass
+
     if os.path.exists(VAPID_KEY_FILE):
         try:
             with open(VAPID_KEY_FILE, "r") as f:

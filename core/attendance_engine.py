@@ -753,9 +753,6 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             # 6. Exceso de Jornada (Punto 1: Lógica General >= 30 min para TODOS)
             if es_cambio_guardia or es_media_jornada:
                 exceso_jornada_min = 0
-            # 6. Exceso de Jornada (Punto 1: Lógica General >= 30 min para TODOS)
-            if es_cambio_guardia or es_media_jornada:
-                exceso_jornada_min = 0
             elif horas_trabajadas > 12.0:
                 exceso_jornada_min = int(round((horas_trabajadas - 12.0) * 60))
             else:
