@@ -86,6 +86,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Prohibición Total de Observaciones Asumidas o Textos Hardcodeados (Cero Suposiciones)**:
   * Queda estrictamente prohibido insertar o asumir observaciones automáticas por defecto en el motor de cálculo de asistencia (`core/attendance_engine.py`) o en la base de datos (como *"Abastecer petróleo / Recoger personal / Varios"*).
   * El campo `OBSERVACIONES` en asistencia y `observacion_trabajador` en aprobaciones permanecerá **limpio y vacío por defecto**, y se llenará **únicamente** con el sustento real o fotos que el trabajador o supervisor registre explícitamente desde la aplicación móvil.
+- **Sincronización Bidireccional Continua de Asistencia hacia Aprobaciones**:
+  * Cada vez que se procese la asistencia o se recalcule una jornada, la rutina de sincronización en `data/database.py` actualiza obligatoriamente los campos de marcación (`entrada`, `salida`, `turno`, `horas_trabajadas`, `jornada_trabajada_hhmm`, `horas_extras_hhmm`, `exceso_jornada_hhmm`) en todos los registros existentes de la tabla `aprobaciones`.
+  * Esta sincronización preserva intactos e inmutables los estados (`estado`, `estado_n1`, `estado_n2`), firmas (`aprobado_por_n1`, `aprobado_por_n2`), marcas de tiempo y comentarios históricos (`comentario_n1`, `comentario_n2`, `observacion_trabajador`).
 
 ---
 
@@ -106,6 +109,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * Horas trabajadas, tardanzas y excesos: Formateadas strictly en `HH:MM`.
 - **Formato Limpio e Identificación de Autor en Comentarios de Aprobaciones (Columna S)**:
   * En la Columna S (*Comentario Supervisor*) de `Aprobaciones_GZG_YYYY-MM.xlsx`, cuando el trabajador o jefe registre su sustento personal en *Mis Horas Extras*, se antepone automáticamente el usuario o nombre del autor (ej. `jalva: <sustento>`, `respinoza: <sustento>`), complementado de forma ordenada por las validaciones de las jefaturas y aprobadores (ej. `N1 (msanchez): <comentario>`). Queda prohibido anteponer prefijos genéricos hardcodeados como `"Trabajador: "`.
+- **Sanitización Estricta contra 'nan' y 'none' en Aprobaciones y Reportes**:
+  * En la generación y exportación del archivo `Aprobaciones_GZG_YYYY-MM.xlsx` (`data/exporter.py`), todo campo de texto, turno, entrada, salida o fecha con valor nulo, `None` o `NaN` debe exportarse limpiamente como celda vacía (`""`).
+  * Queda estrictamente prohibido que aparezcan textos como `"nan"`, `"none"`, `"<NA>"` o `"null"` en ninguna celda del Excel de Aprobaciones o de reportes diarios.
 
 ---
 
