@@ -333,7 +333,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         
         # Filtrar marcaciones ya consumidas en Turno NOCHE del día anterior
         valid_rows = group[
-            ~group.apply(lambda r: (dni_clean, fecha, r['Hora_Clean'].strftime('%H:%M') if pd.notna(r['Hora_Clean']) else '') in consumed_swipes, axis=1)
+            ~group.apply(lambda r: (dni_clean, fecha, r['Hora_Clean'].strftime('%H:%M:%S') if pd.notna(r['Hora_Clean']) else '', str(r.get(tipo_col, '')).strip().lower()) in consumed_swipes, axis=1)
         ].dropna(subset=['Hora_Clean']).sort_values('Hora_Clean')
 
         if valid_rows.empty:
@@ -380,14 +380,16 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
         # Caso Error Humano en Biométrico (Turno Noche):
         # Si NO existe ninguna entrada previa en el día (antes de las 16:00 PM)
+        # y el trabajador NO es administrativo
         # y el trabajador marca entre las 16:00 y las 21:00 PM etiquetada como 'salida' por error humano,
-        # y al día siguiente existe salida en la mañana (<= 09:00 AM) de Turno Noche:
+        # y al día siguiente existe salida explícita en la mañana (<= 09:30 AM) de Turno Noche SIN entrada matutina en D+1:
         # Reclasificar lógicamente la marcación de la tarde como ENTRADA para Turno Noche.
+        is_worker_admin = 'admin' in str(worker_info.get('CARGO', '')).lower() or 'admin' in str(worker_info.get('AREA', '')).lower() or dni_clean in ('74546819', '77134790', '48455175', '75227437')
         no_prior_entry = not any(
             'entrada' in str(r.get(tipo_col, '')).lower() and time_to_seconds(r['Hora_Clean']) < 57600
             for _, r in valid_rows.iterrows()
         )
-        if no_prior_entry:
+        if not is_worker_admin and no_prior_entry:
             evening_swipes_salida = [
                 idx_r for idx_r, r in valid_rows.iterrows()
                 if 57600 <= time_to_seconds(r['Hora_Clean']) <= 75600 # 16:00 a 21:00 PM
@@ -402,22 +404,17 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
                         (df_marcaciones['Fecha_Clean'] == fecha_next_str)
                     ]
-                    next_morning_swipes = [
-                        r for _, r in next_day_swipes.iterrows()
-                        if time_to_seconds(r['Hora_Clean']) <= 32400 # <= 09:00 AM
-                    ]
-                    next_evening_exits = [
-                        r for _, r in next_day_swipes.iterrows()
-                        if time_to_seconds(r['Hora_Clean']) >= 57600 # >= 16:00 PM
-                    ]
-                    is_real_night_exit = False
-                    if next_morning_swipes:
-                        if any('salida' in str(r.get(tipo_col, '')).lower() for r in next_morning_swipes):
-                            is_real_night_exit = True
-                        elif not next_evening_exits:
-                            is_real_night_exit = True
-
-                    if is_real_night_exit:
+                    has_explicit_morning_exit_d1 = any(
+                        time_to_seconds(r['Hora_Clean']) <= 34200 and 'salida' in str(r.get(tipo_col, '')).lower()
+                        and not ('horas extra' in str(r.get(tipo_col, '')).lower() or 'he' in str(r.get(tipo_col, '')).lower())
+                        for _, r in next_day_swipes.iterrows()
+                    )
+                    has_morning_entry_d1 = any(
+                        time_to_seconds(r['Hora_Clean']) <= 34200 and 'entrada' in str(r.get(tipo_col, '')).lower()
+                        and not ('horas extra' in str(r.get(tipo_col, '')).lower() or 'he' in str(r.get(tipo_col, '')).lower())
+                        for _, r in next_day_swipes.iterrows()
+                    )
+                    if has_explicit_morning_exit_d1 and not has_morning_entry_d1:
                         valid_rows.loc[evening_swipes_salida[0], tipo_col] = 'Registro de entrada'
                 except Exception:
                     pass
@@ -590,8 +587,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         if he_fin_next_rows:
                             he_fin_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
                             h_fin_next = he_fin_next_rows[0]['Hora_Clean']
-                            consumed_he_ends.add((fecha_next_str, h_fin_next.strftime('%H:%M')))
-                            consumed_swipes.add((dni_clean, fecha_next_str, h_fin_next.strftime('%H:%M')))
+                            consumed_he_ends.add((fecha_next_str, h_fin_next.strftime('%H:%M:%S')))
+                            consumed_swipes.add((dni_clean, fecha_next_str, h_fin_next.strftime('%H:%M:%S'), str(he_fin_next_rows[0].get(tipo_col, '')).strip().lower()))
                             he_pairs_found.append(((f_s, h_s), (fecha_next_str, h_fin_next)))
                     except Exception:
                         pass
@@ -671,7 +668,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         salida_next_rows.sort(key=lambda r: time_to_seconds(r['Hora_Clean']))
                         salida = salida_next_rows[0]['Hora_Clean']
                         fecha_salida = fecha_next_str
-                        consumed_swipes.add((dni_clean, fecha_next_str, salida.strftime('%H:%M')))
+                        consumed_swipes.add((dni_clean, fecha_next_str, salida.strftime('%H:%M:%S'), str(salida_next_rows[0].get(tipo_col, '')).strip().lower()))
                 except Exception as e:
                     pass
 
