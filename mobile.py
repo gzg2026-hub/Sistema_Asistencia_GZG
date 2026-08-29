@@ -1147,8 +1147,8 @@ try:
     }}
     </script>
     """, height=62)
-except Exception:
-    pass
+except Exception as e_push:
+    st.error(f"⚠️ Error cargando sistema de notificaciones: {e_push}")
 
 
 # Rehidratar estados de aprobación desde Google Drive al inicio de sesión para persistencia total
