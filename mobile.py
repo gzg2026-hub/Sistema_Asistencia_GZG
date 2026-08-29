@@ -1090,8 +1090,21 @@ try:
       const btn = document.getElementById('btn_push_req');
       
       // 1. Si estamos dentro de un iframe (GitHub Pages PWA Wrapper), solicitar permiso a la ventana principal (window.top)
-      if (window.top && window.top !== window) {{
-        window.top.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+      let sentToParent = false;
+      try {{
+        if (window.top && window.top !== window) {{
+          window.top.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+          sentToParent = true;
+        }}
+        if (window.parent && window.parent !== window && window.parent !== window.top) {{
+          window.parent.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+          sentToParent = true;
+        }}
+      }} catch(e_msg) {{
+        console.error('Error enviando postMessage:', e_msg);
+      }}
+
+      if (sentToParent) {{
         return;
       }}
 

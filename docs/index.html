@@ -175,7 +175,10 @@
       if (ev.data && ev.data.type === 'GZG_REQUEST_PUSH') {
         try {
           const perm = await Notification.requestPermission();
-          if (perm !== 'granted') return;
+          if (perm !== 'granted') {
+            alert('⚠️ Para recibir alertas de aprobación, debes permitir las notificaciones en tu navegador o aplicación.');
+            return;
+          }
           const reg = await navigator.serviceWorker.ready;
           let sub = await reg.pushManager.getSubscription();
           if (!sub) {
@@ -184,15 +187,25 @@
               applicationServerKey: urlBase64ToUint8Array(ev.data.vapid_pub || VAPID_PUB_KEY)
             });
           }
-          if (ev.source) {
-            ev.source.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: JSON.stringify(sub) }, '*');
-          }
+          const subJson = JSON.stringify(sub);
           const iframe = document.getElementById('app-frame');
-          if (iframe && iframe.contentWindow && iframe.contentWindow !== ev.source) {
-            iframe.contentWindow.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: JSON.stringify(sub) }, '*');
+          if (iframe) {
+            try {
+              const curUrl = new URL(iframe.src);
+              curUrl.searchParams.set('push_sub', encodeURIComponent(subJson));
+              iframe.src = curUrl.toString();
+            } catch(e_url) {
+              console.error('Error al actualizar url del iframe:', e_url);
+            }
+          }
+          if (ev.source) {
+            try {
+              ev.source.postMessage({ type: 'GZG_PUSH_SUB_SUCCESS', sub: subJson }, '*');
+            } catch(e_post) {}
           }
         } catch (err) {
           console.error('Error suscribiendo push:', err);
+          alert('Aviso al activar notificaciones: ' + (err.message || err));
         }
       }
     });
