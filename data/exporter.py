@@ -657,6 +657,14 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                         return f"{int(m2.group(1)):02d}:{int(m2.group(2)):02d}"
                     return v_str
 
+                def _clean_text(val):
+                    if val is None or pd.isna(val):
+                        return ""
+                    v_str = str(val).strip()
+                    if v_str.lower() in ('nan', 'none', '<na>', 'null'):
+                        return ""
+                    return v_str
+
                 jornada_fmt = _clean_hhmm(row.get('jornada_trabajada_hhmm', ''))
                 he_fmt = _clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
                 exceso_fmt = _clean_hhmm(row.get('exceso_jornada_hhmm', '00:00'))
@@ -665,12 +673,12 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     dni_val,
                     quitar_tildes(str(row.get('apellidos', '') or '')),
                     quitar_tildes(str(row.get('nombres', '') or '')),
-                    str(row.get('cargo', '') or ''),
-                    str(row.get('area', '') or ''),
+                    _clean_text(row.get('cargo', '')),
+                    _clean_text(row.get('area', '')),
                     fecha_fmt,
-                    str(row.get('turno', '') or ''),
-                    str(row.get('entrada', '') or ''),
-                    str(row.get('salida', '') or ''),
+                    _clean_text(row.get('turno', '')),
+                    _clean_text(row.get('entrada', '')),
+                    _clean_text(row.get('salida', '')),
                     jornada_fmt,
                     he_fmt,
                     exceso_fmt,

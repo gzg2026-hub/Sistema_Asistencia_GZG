@@ -243,6 +243,8 @@ def init_db(db_path: str = DB_PATH):
         cursor.execute("ALTER TABLE aprobaciones ADD COLUMN fecha_n2 TIMESTAMP")
     if 'comentario_n2' not in cols_aprob:
         cursor.execute("ALTER TABLE aprobaciones ADD COLUMN comentario_n2 TEXT")
+    if 'turno' not in cols_aprob:
+        cursor.execute("ALTER TABLE aprobaciones ADD COLUMN turno TEXT")
 
     # Migración segura de columnas de validación en horas_extra e incidencias
     cols_he = [row[1] for row in cursor.execute("PRAGMA table_info(horas_extra)").fetchall()]
@@ -1082,7 +1084,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     cursor.execute("""
         SELECT a.fecha, a.dni, a.apellidos, a.nombres, COALESCE(t.cargo, a.cargo) as cargo, COALESCE(t.area, a.area) as area, a.entrada, a.salida,
                a.horas_trabajadas, a.exceso_jornada_min, a.total_horas_adicionales_min,
-               a.observaciones, t.aprobador_n1, t.aprobador_n2
+               a.observaciones, t.aprobador_n1, t.aprobador_n2, a.turno
         FROM asistencia a
         LEFT JOIN trabajadores t ON a.dni = t.dni
         WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
@@ -1092,7 +1094,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     rows = cursor.fetchall()
     
     for r in rows:
-        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs, n1_app, n2_app = r
+        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs, n1_app, n2_app, turno_asist = r
         
         # Formatear HH:MM
         exceso_min = exceso_min or 0
@@ -1123,22 +1125,33 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
                 fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
                 horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
                 horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador,
-                aprobador_n1, aprobador_n2, estado_n1, estado_n2
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, 'PENDIENTE', ?)
+                aprobador_n1, aprobador_n2, estado_n1, estado_n2, turno
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, 'PENDIENTE', ?, ?)
         """, (
             fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
             h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str,
-            n1_app, n2_app, st_n2_init
+            n1_app, n2_app, st_n2_init, turno_asist
         ))
 
-        # Actualizar N1 y N2 solo si tenemos valores válidos desde trabajadores
-        if n1_app:
-            cursor.execute("""
-                UPDATE aprobaciones
-                SET aprobador_n1 = ?, aprobador_n2 = ?,
-                    estado_n2 = CASE WHEN ? = '-' THEN '-' ELSE estado_n2 END
-                WHERE fecha = ? AND dni = ?
-            """, (n1_app, n2_app, n2_app, fecha, dni))
+        # Actualizar datos de marcación y aprobadores en el registro existente
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET entrada = ?, salida = ?, turno = ?,
+                horas_trabajadas = ?, jornada_trabajada_hhmm = ?,
+                horas_extras_min = ?, exceso_jornada_min = ?,
+                horas_extras_hhmm = ?, exceso_jornada_hhmm = ?,
+                aprobador_n1 = COALESCE(?, aprobador_n1),
+                aprobador_n2 = COALESCE(?, aprobador_n2),
+                estado_n2 = CASE WHEN ? = '-' THEN '-' ELSE estado_n2 END
+            WHERE fecha = ? AND dni = ?
+        """, (
+            entrada, salida, turno_asist,
+            h_trab, jornada_str,
+            he_min, exceso_min,
+            he_str, exceso_str,
+            n1_app, n2_app, n2_app,
+            fecha, dni
+        ))
         
     # Sincronizar inicio y fin de marcación de horas extras desde horas_extra
     cursor.execute("""
