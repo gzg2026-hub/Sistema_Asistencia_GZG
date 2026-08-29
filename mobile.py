@@ -1366,11 +1366,16 @@ def render_tab_pendientes():
                 # Mostrar fotos previas si existen
                 adj_list = parse_adjuntos(row.get('adjuntos'))
                 if adj_list:
-                    caption_foto = f"📷 Foto adjuntada por {worker_name}" if worker_name else "📷 Foto de sustento"
+                    noms = str(row.get('nombres') or '').strip().split()
+                    apells = str(row.get('apellidos') or '').strip().split()
+                    p_nom = noms[0].title() if noms else ''
+                    p_ap = apells[0].title() if apells else ''
+                    nombre_corto = f"{p_nom} {p_ap}".strip() if (p_nom or p_ap) else worker_name
+                    caption_foto = f"📷 Foto adjuntada por {nombre_corto}" if nombre_corto else "📷 Foto de sustento"
                     if len(adj_list) == 1:
                         st.image(adj_list[0], caption=caption_foto, use_container_width=True)
                     else:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos adjuntas ({len(adj_list)} fotos):</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos adjuntas por {nombre_corto} ({len(adj_list)} fotos):</div>", unsafe_allow_html=True)
                         for i in range(0, len(adj_list), 2):
                             c_img1, c_img2 = st.columns(2)
                             with c_img1:
