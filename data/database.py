@@ -1165,7 +1165,12 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
                 entrada = CASE WHEN (entrada IS NULL OR TRIM(entrada) = '' OR LOWER(TRIM(entrada)) = 'nan') THEN ? ELSE entrada END,
                 salida = CASE WHEN (salida IS NULL OR TRIM(salida) = '' OR LOWER(TRIM(salida)) = 'nan') THEN ? ELSE salida END
             WHERE fecha = ? AND dni = ?
-              AND (estado != 'PENDIENTE' OR estado_n1 != 'PENDIENTE' OR (aprobado_por_n1 IS NOT NULL AND TRIM(aprobado_por_n1) != ''));
+              AND (
+                  estado != 'PENDIENTE' 
+                  OR estado_n1 != 'PENDIENTE' 
+                  OR (aprobado_por_n1 IS NOT NULL AND TRIM(aprobado_por_n1) != '')
+                  OR (aprobado_por_n2 IS NOT NULL AND TRIM(aprobado_por_n2) != '')
+              );
         """, (
             turno_asist, entrada, salida,
             fecha, dni
