@@ -1144,6 +1144,7 @@ if not st.session_state.get("gdrive_rehydrated"):
             time.sleep(0.5)
     if not exito_rehid:
         print("[Alerta] No se pudo rehidratar aprobaciones desde Drive tras 3 intentos. Usando datos locales de SQLite.")
+        st.warning("⚠️ No se pudo sincronizar con Google Drive. Los datos mostrados podrían no estar actualizados. Contacta al administrador si es urgente.")
 
 # Cargar data de aprobaciones directamente de SQLite sin bloqueos de red
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
