@@ -27,8 +27,10 @@ downloads/
 descargas_biometrico/
 backups_locales/
 
-# Credenciales y llaves de servicio (Google Cloud, Hikvision)
+# Credenciales y llaves de servicio (Google Cloud, Hikvision, VAPID)
 credentials.json
 gzg-*.json
 config_hikvision.json
+vapid_keys.json
+data/vapid_keys.json
 *.pem
