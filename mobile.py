@@ -1003,152 +1003,152 @@ if st.session_state.get("show_change_pw_box", False):
 
 
 # ---------------------------------------------------------
-# SISTEMA DE NOTIFICACIONES WEB PUSH PWA
+# SISTEMA DE NOTIFICACIONES WEB PUSH PWA (DESHABILITADO TEMPORALMENTE)
 # ---------------------------------------------------------
-try:
-    from data.database import get_connection, DB_PATH
-    from core.push_notifications import obtener_o_crear_claves_vapid, guardar_suscripcion_push, inicializar_tabla_push
-    vapid_k = obtener_o_crear_claves_vapid()
-    vapid_pub = vapid_k.get("public_key_b64", "")
-    
-    if "push_sub" in st.query_params:
-        try:
-            import urllib.parse
-            sub_raw = urllib.parse.unquote(st.query_params["push_sub"])
-            sub_data = json.loads(sub_raw)
-            guardar_suscripcion_push(username, sub_data)
-            del st.query_params["push_sub"]
-            st.toast("🔔 ¡Notificaciones push activadas en este dispositivo!", icon="📱")
-        except Exception:
-            pass
-
-    # Verificar si el usuario ya tiene suscripciones push activas en la BD
-    inicializar_tabla_push()
-    conn_p = get_connection(DB_PATH)
-    cur_p = conn_p.cursor()
-    cur_p.execute("SELECT COUNT(*) FROM push_subscriptions WHERE username = ?", (username.strip().lower(),))
-    has_push = (cur_p.fetchone()[0] > 0)
-    conn_p.close()
-
-    btn_text = "✅ Alertas Activas en este Celular" if has_push else "🔔 Activar Alertas de Aprobación en Celular"
-    btn_color = "#2ECC71" if has_push else "#F58220"
-    btn_border = "rgba(46, 204, 113, 0.4)" if has_push else "rgba(245, 130, 32, 0.4)"
-    btn_bg = "rgba(46, 204, 113, 0.1)" if has_push else "linear-gradient(135deg, rgba(245, 130, 32, 0.15) 0%, rgba(245, 130, 32, 0.05) 100%)"
-
-    # Inyección de script JS para registro de Service Worker y suscripción a Web Push
-    st.components.v1.html(f"""
-    <style>
-      * {{ box-sizing: border-box; }}
-      body {{
-        margin: 0;
-        padding: 0;
-        background: transparent;
-      }}
-    </style>
-    <div id="push_card_container" style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <button id="btn_push_req" onclick="solicitarPermisoPush()" style="
-        width: 100%;
-        background: {btn_bg};
-        border: 1px solid {btn_border};
-        border-radius: 10px;
-        padding: 11px 14px;
-        color: {btn_color};
-        font-size: 13.5px;
-        font-weight: 700;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-sizing: border-box;
-      ">
-        {btn_text}
-      </button>
-    </div>
-
-    <script>
-    function urlBase64ToUint8Array(base64String) {{
-      const padding = '='.repeat((4 - base64String.length % 4) % 4);
-      const base64 = (base64String + padding).replace(/\\-/g, '+').replace(/_/g, '/');
-      const rawData = window.atob(base64);
-      const outputArray = new Uint8Array(rawData.length);
-      for (let i = 0; i < rawData.length; ++i) {{
-        outputArray[i] = rawData.charCodeAt(i);
-      }}
-      return outputArray;
-    }}
-
-    // Escuchar respuesta de la ventana principal (si corre dentro del wrapper PWA de GitHub Pages)
-    window.addEventListener('message', function(event) {{
-      if (event.data && event.data.type === 'GZG_PUSH_SUB_SUCCESS' && event.data.sub) {{
-        const subStr = encodeURIComponent(event.data.sub);
-        try {{
-          const curUrl = new URL(window.top.location.href);
-          curUrl.searchParams.set('push_sub', subStr);
-          window.top.location.replace(curUrl.toString());
-        }} catch(e) {{
-          const curUrl = new URL(window.location.href);
-          curUrl.searchParams.set('push_sub', subStr);
-          window.location.replace(curUrl.toString());
-        }}
-      }}
-    }});
-
-    async function solicitarPermisoPush() {{
-      const btn = document.getElementById('btn_push_req');
-      
-      // 1. Si estamos dentro de un iframe (GitHub Pages PWA Wrapper), solicitar permiso a la ventana principal (window.top)
-      let sentToParent = false;
-      try {{
-        if (window.top && window.top !== window) {{
-          window.top.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
-          sentToParent = true;
-        }}
-        if (window.parent && window.parent !== window && window.parent !== window.top) {{
-          window.parent.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
-          sentToParent = true;
-        }}
-      }} catch(e_msg) {{
-        console.error('Error enviando postMessage:', e_msg);
-      }}
-
-      if (sentToParent) {{
-        return;
-      }}
-
-      // 2. Si estamos directo en la web de Streamlit
-      if (!('Notification' in window)) {{
-        alert('Este navegador no soporta notificaciones push.');
-        return;
-      }}
-
-      try {{
-        const perm = await Notification.requestPermission();
-        if (perm === 'granted') {{
-          const reg = await navigator.serviceWorker.register('/sw.js');
-          await navigator.serviceWorker.ready;
-          let sub = await reg.pushManager.getSubscription();
-          if (!sub) {{
-            sub = await reg.pushManager.subscribe({{
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array("{vapid_pub}")
-            }});
-          }}
-          const subStr = encodeURIComponent(JSON.stringify(sub));
-          const curUrl = new URL(window.location.href);
-          curUrl.searchParams.set('push_sub', subStr);
-          window.location.replace(curUrl.toString());
-        }} else if (perm === 'denied') {{
-          alert('Las notificaciones están bloqueadas en tu navegador. Ve a Configuración de Sitios y selecciona Permitir.');
-        }}
-      }} catch(err) {{
-        console.error('Error al suscribir push:', err);
-      }}
-    }}
-    </script>
-    """, height=62)
-except Exception as e_push:
-    st.error(f"⚠️ Error cargando sistema de notificaciones: {e_push}")
+# try:
+#     from data.database import get_connection, DB_PATH
+#     from core.push_notifications import obtener_o_crear_claves_vapid, guardar_suscripcion_push, inicializar_tabla_push
+#     vapid_k = obtener_o_crear_claves_vapid()
+#     vapid_pub = vapid_k.get("public_key_b64", "")
+#     
+#     if "push_sub" in st.query_params:
+#         try:
+#             import urllib.parse
+#             sub_raw = urllib.parse.unquote(st.query_params["push_sub"])
+#             sub_data = json.loads(sub_raw)
+#             guardar_suscripcion_push(username, sub_data)
+#             del st.query_params["push_sub"]
+#             st.toast("🔔 ¡Notificaciones push activadas en este dispositivo!", icon="📱")
+#         except Exception:
+#             pass
+# 
+#     # Verificar si el usuario ya tiene suscripciones push activas en la BD
+#     inicializar_tabla_push()
+#     conn_p = get_connection(DB_PATH)
+#     cur_p = conn_p.cursor()
+#     cur_p.execute("SELECT COUNT(*) FROM push_subscriptions WHERE username = ?", (username.strip().lower(),))
+#     has_push = (cur_p.fetchone()[0] > 0)
+#     conn_p.close()
+# 
+#     btn_text = "✅ Alertas Activas en este Celular" if has_push else "🔔 Activar Alertas de Aprobación en Celular"
+#     btn_color = "#2ECC71" if has_push else "#F58220"
+#     btn_border = "rgba(46, 204, 113, 0.4)" if has_push else "rgba(245, 130, 32, 0.4)"
+#     btn_bg = "rgba(46, 204, 113, 0.1)" if has_push else "linear-gradient(135deg, rgba(245, 130, 32, 0.15) 0%, rgba(245, 130, 32, 0.05) 100%)"
+# 
+#     # Inyección de script JS para registro de Service Worker y suscripción a Web Push
+#     st.components.v1.html(f"""
+#     <style>
+#       * {{ box-sizing: border-box; }}
+#       body {{
+#         margin: 0;
+#         padding: 0;
+#         background: transparent;
+#       }}
+#     </style>
+#     <div id="push_card_container" style="width: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+#       <button id="btn_push_req" onclick="solicitarPermisoPush()" style="
+#         width: 100%;
+#         background: {btn_bg};
+#         border: 1px solid {btn_border};
+#         border-radius: 10px;
+#         padding: 11px 14px;
+#         color: {btn_color};
+#         font-size: 13.5px;
+#         font-weight: 700;
+#         cursor: pointer;
+#         display: flex;
+#         align-items: center;
+#         justify-content: center;
+#         gap: 8px;
+#         box-sizing: border-box;
+#       ">
+#         {btn_text}
+#       </button>
+#     </div>
+# 
+#     <script>
+#     function urlBase64ToUint8Array(base64String) {{
+#       const padding = '='.repeat((4 - base64String.length % 4) % 4);
+#       const base64 = (base64String + padding).replace(/\\-/g, '+').replace(/_/g, '/');
+#       const rawData = window.atob(base64);
+#       const outputArray = new Uint8Array(rawData.length);
+#       for (let i = 0; i < rawData.length; ++i) {{
+#         outputArray[i] = rawData.charCodeAt(i);
+#       }}
+#       return outputArray;
+#     }}
+# 
+#     // Escuchar respuesta de la ventana principal (si corre dentro del wrapper PWA de GitHub Pages)
+#     window.addEventListener('message', function(event) {{
+#       if (event.data && event.data.type === 'GZG_PUSH_SUB_SUCCESS' && event.data.sub) {{
+#         const subStr = encodeURIComponent(event.data.sub);
+#         try {{
+#           const curUrl = new URL(window.top.location.href);
+#           curUrl.searchParams.set('push_sub', subStr);
+#           window.top.location.replace(curUrl.toString());
+#         }} catch(e) {{
+#           const curUrl = new URL(window.location.href);
+#           curUrl.searchParams.set('push_sub', subStr);
+#           window.location.replace(curUrl.toString());
+#         }}
+#       }}
+#     }});
+# 
+#     async function solicitarPermisoPush() {{
+#       const btn = document.getElementById('btn_push_req');
+#       
+#       // 1. Si estamos dentro de un iframe (GitHub Pages PWA Wrapper), solicitar permiso a la ventana principal (window.top)
+#       let sentToParent = false;
+#       try {{
+#         if (window.top && window.top !== window) {{
+#           window.top.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+#           sentToParent = true;
+#         }}
+#         if (window.parent && window.parent !== window && window.parent !== window.top) {{
+#           window.parent.postMessage({{ type: 'GZG_REQUEST_PUSH', vapid_pub: "{vapid_pub}" }}, '*');
+#           sentToParent = true;
+#         }}
+#       }} catch(e_msg) {{
+#         console.error('Error enviando postMessage:', e_msg);
+#       }}
+# 
+#       if (sentToParent) {{
+#         return;
+#       }}
+# 
+#       // 2. Si estamos directo en la web de Streamlit
+#       if (!('Notification' in window)) {{
+#         alert('Este navegador no soporta notificaciones push.');
+#         return;
+#       }}
+# 
+#       try {{
+#         const perm = await Notification.requestPermission();
+#         if (perm === 'granted') {{
+#           const reg = await navigator.serviceWorker.register('/sw.js');
+#           await navigator.serviceWorker.ready;
+#           let sub = await reg.pushManager.getSubscription();
+#           if (!sub) {{
+#             sub = await reg.pushManager.subscribe({{
+#               userVisibleOnly: true,
+#               applicationServerKey: urlBase64ToUint8Array("{vapid_pub}")
+#             }});
+#           }}
+#           const subStr = encodeURIComponent(JSON.stringify(sub));
+#           const curUrl = new URL(window.location.href);
+#           curUrl.searchParams.set('push_sub', subStr);
+#           window.location.replace(curUrl.toString());
+#         }} else if (perm === 'denied') {{
+#           alert('Las notificaciones están bloqueadas en tu navegador. Ve a Configuración de Sitios y selecciona Permitir.');
+#         }}
+#       }} catch(err) {{
+#         console.error('Error al suscribir push:', err);
+#       }}
+#     }}
+#     </script>
+#     """, height=62)
+# except Exception as e_push:
+#     st.error(f"⚠️ Error cargando sistema de notificaciones: {e_push}")
 
 
 # Rehidratar estados de aprobación desde Google Drive al inicio de sesión para persistencia total

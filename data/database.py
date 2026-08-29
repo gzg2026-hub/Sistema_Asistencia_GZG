@@ -1438,19 +1438,19 @@ def actualizar_estado_aprobacion(
         db_path=db_path
     )
     
-    # Si N1 aprueba y hay un N2 asignado, notificar por Push al N2
-    if resultado and nivel == 1 and str(nuevo_estado).upper() == 'APROBADO' and row and row[1]:
-        n2_target = str(row[1]).strip().lower()
-        if n2_target not in ('', 'none', 'nan', '-'):
-            try:
-                import threading
-                from core.push_notifications import enviar_notificacion_push
-                threading.Thread(
-                    target=enviar_notificacion_push,
-                    args=(n2_target, "⭐ Aprobación Nivel 2 Requerida", f"{aprobado_por} dio V°B° a horas extras. Requiere tu aprobación final.")
-                ).start()
-            except Exception:
-                pass
+    # Si N1 aprueba y hay un N2 asignado, notificar por Push al N2 (DESHABILITADO TEMPORALMENTE)
+    # if resultado and nivel == 1 and str(nuevo_estado).upper() == 'APROBADO' and row and row[1]:
+    #     n2_target = str(row[1]).strip().lower()
+    #     if n2_target not in ('', 'none', 'nan', '-'):
+    #         try:
+    #             import threading
+    #             from core.push_notifications import enviar_notificacion_push
+    #             threading.Thread(
+    #                 target=enviar_notificacion_push,
+    #                 args=(n2_target, "⭐ Aprobación Nivel 2 Requerida", f"{aprobado_por} dio V°B° a horas extras. Requiere tu aprobación final.")
+    #             ).start()
+    #         except Exception:
+    #             pass
 
     try:
         regenerar_aprobaciones_excel(db_path)
