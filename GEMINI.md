@@ -69,9 +69,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
     - **Horarios Oficiales**: 07:00 AM a 13:00 PM (Turno Mañana) y 13:00 PM a 19:00 PM (Turno Tarde).
     - Aplica únicamente para personal en cambio de guardia o que ingresa/retorna de sus días libres (Régimen 20x10 u otros).
   * **Regla de Exceso de Jornada**: Se reporta únicamente cuando las horas trabajadas superan las 12.0 horas de turno por 30 minutos o más (se omiten excesos < 30 min). Quedan excluidos Cambio de Guardia, Jornada Parcial (5-8h) y Régimen Especial (DNI 46181231 - José Moncada). Se formatea como `Exceso de Jornada (HH:MM)`.
-  * **Exclusión Total de H.E. y Exceso para Personal Administrativo**:
-    - El personal cuya posición / cargo sea `"Administrativo"` (DNI `74546819` Leila Lostaunau, DNI `77134790` Clari Tocto, DNI `48455175` Iván Vásquez) NO realiza ni acumula Horas Extras ni Exceso de Jornada bajo ninguna circunstancia.
-    - En todos los cálculos y reportes del sistema, sus campos `HORAS EXTRAS (HH:MM)`, `EXCESO JORNADA (HH:MM)` y `TOTAL HORAS ADICIONALES (HH:MM)` permanecen estrictamente en `'00:00'` (0.0).
+  * **Exclusión Total de H.E. y Exceso para Personal Administrativo y Auxiliar de Seguridad**:
+    - El personal administrativo y de seguridad de confianza (DNI `74546819` Leila Lostaunau, DNI `77134790` Clari Tocto, DNI `48455175` Iván Vásquez, DNI `75227437` Liliana Pretel) NO realiza ni acumula Horas Extras ni Exceso de Jornada bajo ninguna circunstancia.
+    - En todos los cálculos y reportes del sistema, sus campos `HORAS EXTRAS (HH:MM)`, `EXCESO JORNADA (HH:MM)` y `TOTAL HORAS ADICIONALES (HH:MM)` permanecen estrictamente en `'00:00'` (0.0), y quedan excluidos de la bandeja de aprobaciones y del archivo `Aprobaciones_GZG_YYYY-MM.xlsx`.
     - Únicamente se calculan y visualizan sus horas de turno trabajadas (`HORAS TRABAJADAS (HH:MM)`).
 - **Doble Turno / Doble Entrada en el Mismo Día**:
   * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente y se sombrea la fila en durazno pastel.

@@ -765,8 +765,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
             total_horas_adicionales_min = exceso_jornada_min_reporte + he_explicita_total_min
 
-            # Regla especial Personal Administrativo: No realizan H.E. ni Exceso de Jornada, solo visualización de Horas Trabajadas
-            is_administrativo = "administrativo" in cargo_val
+            # Regla especial Personal Administrativo y Auxiliar de Seguridad (Liliana Pretel): No realizan H.E. ni Exceso de Jornada, solo visualización de Horas Trabajadas
+            is_administrativo = "administrativo" in cargo_val or str(dni_clean).strip() in ("74546819", "77134790", "48455175", "75227437")
             if is_administrativo:
                 he_explicita_total_min = 0
                 exceso_jornada_min = 0

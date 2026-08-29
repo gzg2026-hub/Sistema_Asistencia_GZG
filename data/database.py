@@ -1067,7 +1067,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         DELETE FROM aprobaciones 
         WHERE (
             LOWER(cargo) LIKE '%administrativo%' 
-            OR dni IN ('74546819', '77134790', '48455175')
+            OR dni IN ('74546819', '77134790', '48455175', '75227437')
             OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
         )
         AND estado = 'PENDIENTE'
@@ -1087,7 +1087,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         LEFT JOIN trabajadores t ON a.dni = t.dni
         WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
           AND LOWER(COALESCE(t.cargo, a.cargo, '')) NOT LIKE '%administrativo%'
-          AND a.dni NOT IN ('74546819', '77134790', '48455175')
+          AND a.dni NOT IN ('74546819', '77134790', '48455175', '75227437')
     """)
     rows = cursor.fetchall()
     
