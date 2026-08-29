@@ -89,7 +89,7 @@ def calcular_salida_anticipada(horario: str, hora_salida: time, hora_entrada: ti
     ent_sec = time_to_seconds(hora_entrada) if hora_entrada else None
 
     if horario == "DIA":
-        if ent_sec and 4 * 3600 + 30 * 60 <= ent_sec <= 5 * 3600 + 30 * 60:
+        if ent_sec and 4 * 3600 + 20 * 60 <= ent_sec <= 5 * 3600 + 30 * 60:
             hora_prog_salida = time(17, 0)
         else:
             hora_prog_salida = time(19, 0)
@@ -125,7 +125,7 @@ def calcular_exceso_jornada(horario: str, hora_salida: time, hora_entrada: time,
     ent_sec = time_to_seconds(hora_entrada) if hora_entrada else None
 
     if horario == "DIA":
-        if ent_sec and 4 * 3600 + 30 * 60 <= ent_sec <= 5 * 3600 + 30 * 60:
+        if ent_sec and 4 * 3600 + 20 * 60 <= ent_sec <= 5 * 3600 + 30 * 60:
             hora_prog_salida = time(17, 0)
         else:
             hora_prog_salida = time(19, 0)
@@ -724,13 +724,13 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
             if 5.0 <= horas_trabajadas <= 8.0:
                 es_media_jornada = True
 
-            # Identificar Cambio de Guardia / Relevo Cuadrilla (Ventana de Relevo Día: 04:30-06:00 AM, Relevo Noche: 16:30-18:00 PM)
+            # Identificar Cambio de Guardia / Relevo Cuadrilla (Ventana de Relevo Día: 04:20-06:00 AM, Relevo Noche: 16:30-18:00 PM)
             es_cambio_guardia = False
             if entrada and salida and not es_mantenimiento:
                 e_sec = time_to_seconds(entrada)
                 s_sec = time_to_seconds(salida)
-                if (4 * 3600 + 30 * 60 <= e_sec <= 6 * 3600) or \
-                   (4 * 3600 + 30 * 60 <= s_sec <= 6 * 3600) or \
+                if (4 * 3600 + 20 * 60 <= e_sec <= 6 * 3600) or \
+                   (4 * 3600 + 20 * 60 <= s_sec <= 6 * 3600) or \
                    (16 * 3600 + 30 * 60 <= e_sec <= 18 * 3600) or \
                    (16 * 3600 + 30 * 60 <= s_sec <= 18 * 3600):
                     es_cambio_guardia = True

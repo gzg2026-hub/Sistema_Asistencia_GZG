@@ -64,7 +64,7 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
     - **Turno Día en Cambio de Guardia**: 05:00 AM a 17:00 PM (12 Horas). Aplica para el personal que baja de turno para salir temprano.
     - **Turno Noche en Cambio de Guardia**: 17:00 PM a 07:00 AM del día siguiente (14 Horas). Aplica para el personal que recupera las 2 horas del previo noche.
     - **Tolerancia y Exceso**: Mantener 15 min de tolerancia en entrada/salida para estos horarios. NO considerar Exceso de Jornada en Cambios de Guardia, pero SÍ registrar Horas Extras si hay marcación explícita de biométrico.
-    - **Etiquetado y Sombreado Obligatorio**: Todo registro evaluado como Cambio de Guardia o Relevo en ventana de transición (04:30-06:00 AM / 16:30-18:00 PM) debe etiquetarse explícitamente como `"Cambio de guardia"` en la columna **Tipo de Registro** (Columna V), garantizando su sombreado automático en **Durazno Pastel (`#FCE4D6`)** en el reporte exportado.
+    - **Etiquetado y Sombreado Obligatorio**: Todo registro evaluado como Cambio de Guardia o Relevo en ventana de transición (04:20-06:00 AM / 16:30-18:00 PM) debe etiquetarse explícitamente como `"Cambio de guardia"` en la columna **Tipo de Registro** (Columna V), garantizando su sombreado automático en **Durazno Pastel (`#FCE4D6`)** en el reporte exportado.
   * **Lógica de Media Jornada (Jornada Parcial)**:
     - **Horarios Oficiales**: 07:00 AM a 13:00 PM (Turno Mañana) y 13:00 PM a 19:00 PM (Turno Tarde).
     - Aplica únicamente para personal en cambio de guardia o que ingresa/retorna de sus días libres (Régimen 20x10 u otros).
