@@ -33,6 +33,22 @@ def crear_backup_seguridad_sqlite(db_path: str = DB_PATH, sufijo: str = "") -> s
         
         shutil.copy2(db_path, backup_path)
         print(f"[Backup] Respaldo de seguridad creado: {backup_path}")
+        
+        # Limpieza de retención: conservar solo los últimos 30 respaldos
+        try:
+            backups_existentes = sorted(
+                [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.startswith("asistencia_backup_") and f.endswith(".db")],
+                key=os.path.getmtime
+            )
+            if len(backups_existentes) > 30:
+                for b_old in backups_existentes[:-30]:
+                    try:
+                        os.remove(b_old)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
         return backup_path
     except Exception as e:
         print(f"[Backup Warning] No se pudo crear respaldo de seguridad: {e}")
@@ -1027,8 +1043,8 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     # Respaldo de seguridad previo automático
     try:
         crear_backup_seguridad_sqlite(db_path, sufijo="pre_sync_aprob")
-    except Exception:
-        pass
+    except Exception as e_bk:
+        print(f"[Aviso backup]: {e_bk}")
 
     conn = get_connection(db_path)
     cursor = conn.cursor()
