@@ -1293,20 +1293,21 @@ def render_tab_pendientes():
                         <div style="font-size: 12px; color: #9A9EA7;">{cargo} ({fecha_sol})</div>
                     </div>
                 </div>
+                """, unsafe_allow_html=True)
 
-                    ent_disp = str(row.get('entrada') or '').strip()
-                    sal_disp = str(row.get('salida') or '').strip()
-                    if ent_disp.lower() in ('none', 'nan', '', '-'): ent_disp = '-'
-                    if sal_disp.lower() in ('none', 'nan', '', '-'): sal_disp = '-'
+                ent_disp = str(row.get('entrada') or '').strip()
+                sal_disp = str(row.get('salida') or '').strip()
+                if ent_disp.lower() in ('none', 'nan', '', '-'): ent_disp = '-'
+                if sal_disp.lower() in ('none', 'nan', '', '-'): sal_disp = '-'
 
-                    st.markdown(f"""
-                    <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
-                        <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{ent_disp}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{sal_disp}</code></div>
-                        <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {jornada_hhmm}</div>
-                        <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
-                        <div>⚠️ <strong style="color: #FFFFFF;">Exceso de jornada:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                st.markdown(f"""
+                <div style="margin: 6px 0 10px 0; font-size: 13px; line-height: 1.6; color: #D1D5DB;">
+                    <div>🕒 <strong style="color: #FFFFFF;">Entrada:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{ent_disp}</code> &nbsp;|&nbsp; <strong style="color: #FFFFFF;">Salida:</strong> <code style="background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 4px; color: #2ECC71;">{sal_disp}</code></div>
+                    <div>⏱️ <strong style="color: #FFFFFF;">Jornada trabajada:</strong> {jornada_hhmm}</div>
+                    <div>⏰ <strong style="color: #FFFFFF;">Horas extras:</strong> <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
+                    <div>⚠️ <strong style="color: #FFFFFF;">Exceso de jornada:</strong> <b style="color: #E67E22;">{exceso_hhmm}</b></div>
+                </div>
+                """, unsafe_allow_html=True)
                 
                 # Mostrar sustento personal del trabajador si existe
                 if obs_trab:
