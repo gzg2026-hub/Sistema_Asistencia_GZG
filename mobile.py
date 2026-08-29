@@ -1006,7 +1006,8 @@ if st.session_state.get("show_change_pw_box", False):
 # SISTEMA DE NOTIFICACIONES WEB PUSH PWA
 # ---------------------------------------------------------
 try:
-    from core.push_notifications import obtener_o_crear_claves_vapid, guardar_suscripcion_push
+    from data.database import get_connection, DB_PATH
+    from core.push_notifications import obtener_o_crear_claves_vapid, guardar_suscripcion_push, inicializar_tabla_push
     vapid_k = obtener_o_crear_claves_vapid()
     vapid_pub = vapid_k.get("public_key_b64", "")
     
@@ -1022,7 +1023,6 @@ try:
             pass
 
     # Verificar si el usuario ya tiene suscripciones push activas en la BD
-    from core.push_notifications import inicializar_tabla_push
     inicializar_tabla_push()
     conn_p = get_connection(DB_PATH)
     cur_p = conn_p.cursor()
