@@ -60,6 +60,9 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
   * ÚNICAMENTE cuando el trabajador realiza **dos o más sesiones independientes de Horas Extras en el mismo día calendárico** (ej. sesión 1 de madrugada 01:26 a 06:42 y sesión 2 de noche 22:50 a 06:57 del día siguiente), el motor divide la jornada en sub-bloques independientes:
     - **Fila 1 (Turno Día + H.E. Previa)**: Refleja el Turno Día con sus horas trabajadas y su primera sesión matutina de H.E. (ej. Turno Día 12:08 con H.E. matutina 05:16).
     - **Fila 2 (Segundo Bloque Adicional H.E.)**: Cada bloque adicional o nocturno genera su **propia fila asignada estrictamente a la fecha calendárica en que inició la labor**, con `00:00` en horas de turno y la duración exacta en Horas Extras (ej. 08:07 H.E.). Queda prohibido dividir filas cuando el trabajador realiza una sola sesión de H.E. en el día.
+- **Tratamiento de Horas Extras Incompletas (Regla de H.E. Pendiente)**:
+  * Si un trabajador registra una marcación de `"Inicio de horas extra"` pero no registra `"Fin de horas extra"` ni salida válida de cierre (o viceversa), el motor preserva y refleja la marcación en la columna correspondiente (`INICIO H.E.` o `FIN H.E.`).
+  * Las horas extras calculadas permanecen en `00:00` (evitando cálculos erróneos sin cierre de biométrico) y el registro se clasifica automáticamente con Tipo de Registro e Incidencia **`"Fin H.E. pendiente"`** (o `"Inicio H.E. pendiente"`), garantizando su sombreado en **Durazno Pastel (`#FCE4D6`)** en el reporte diario para alertar a la supervisión.
 - **Asignación Universal de Turnos (DÍA / NOCHE / MANTENIMIENTO)**:
   * **Turno DÍA**: Entrada 07:00 AM (tolerancia hasta 07:15 AM). Salida 19:00 PM (12 Horas de Turno).
   * **Turno NOCHE**: Entrada 19:00 PM (tolerancia hasta 19:15 PM). Salida 07:00 AM del día siguiente (12 Horas de Turno).
