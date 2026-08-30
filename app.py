@@ -20,6 +20,7 @@ from core.auth import (
     init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password
 )
 from scripts.generate_test_transactions import generar_lote_pruebas
+from scripts.schedule_downloader import reprocesar_fecha
 from views.mobile_approvals import render_mobile_approvals
 
 st.set_page_config(
@@ -1807,12 +1808,14 @@ opciones_pestanas = [
 ]
 if current_user and current_user.get('rol') == 'ADMINISTRACION':
     opciones_pestanas.append("👥 Gestión de Usuarios")
+    opciones_pestanas.append("🔄 Reprocesar Datos")
 
 pestanas_objs = st.tabs(opciones_pestanas)
 tab_dash = pestanas_objs[0]
 tab_bandeja = pestanas_objs[1]
 tab_mobile = pestanas_objs[2]
 tab_usuarios = pestanas_objs[3] if len(pestanas_objs) > 3 else None
+tab_reproceso = pestanas_objs[4] if len(pestanas_objs) > 4 else None
 
 # PESTAÑA 1: DASHBOARD ANALÍTICO
 with tab_dash:
@@ -2411,3 +2414,35 @@ if tab_usuarios:
                     eliminar_usuario(u_del_id)
                     st.toast("✅ Usuario eliminado correctamente")
                     st.rerun()
+
+# PESTAÑA 4: REPROCESAR DATOS (SOLO ADMIN)
+if tab_reproceso:
+    with tab_reproceso:
+        st.subheader("🔄 Reproceso Manual de Data del Biométrico")
+        st.markdown(
+            "Red de seguridad para cuando el biométrico se demoró en sincronizar con "
+            "HikCentral más de lo que cubren las 3 pasadas automáticas (09:00 / 09:30 / 10:00). "
+            "Vuelve a descargar, fusionar (sin duplicar) y regenerar reportes/aprobaciones "
+            "para la fecha que elijas."
+        )
+
+        fecha_reproceso = st.date_input(
+            "Fecha a reprocesar",
+            value=date.today() - timedelta(days=1),
+            help="Normalmente el día recién cerrado (ayer)."
+        )
+
+        if st.button("🔄 REPROCESAR ESTA FECHA", type="primary", use_container_width=True):
+            with st.spinner(f"Descargando y reprocesando {fecha_reproceso.strftime('%Y-%m-%d')}... esto puede tardar uno o dos minutos."):
+                ok = reprocesar_fecha(fecha_reproceso.strftime("%Y-%m-%d"))
+            if ok:
+                st.toast("✅ Reproceso completado con éxito", icon="🎉")
+                st.success(
+                    f"Reproceso de {fecha_reproceso.strftime('%d/%m/%Y')} completado: data cruda, "
+                    f"reporte diario, aprobaciones y Google Drive actualizados."
+                )
+            else:
+                st.error(
+                    "Ocurrió un error durante el reproceso. Revisa logs/descarga_diaria.log "
+                    "para el detalle exacto."
+                )

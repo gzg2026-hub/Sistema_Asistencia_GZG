@@ -1,15 +1,25 @@
 """
 schedule_downloader.py
 ======================
-Descarga automática diaria de transacciones Hikvision a las 8:00 AM.
-Descarga el DIA ANTERIOR al actual (ejemplo: si hoy es 18/08, descarga el 17/08).
+Descarga automática de transacciones Hikvision en 3 pasadas espaciadas por la mañana
+(09:00, 09:30 y 10:00), para tolerar que el biométrico físico tarde en sincronizar sus
+eventos offline con el servidor HikCentral. El merge/dedup es idempotente, así que cada
+pasada es segura de repetir; si una pasada no trae marcaciones nuevas respecto a la
+anterior, se omite el reproceso y la subida a Drive/GitHub de esa pasada.
 
 MODOS DE USO:
-  - Automático (Tarea Programada Windows): ejecutar sin argumentos
+  - Manual inmediato (siempre procesa completo, sin omitir nada):
         python schedule_downloader.py
-
-  - Manual inmediato (día anterior):
         python schedule_downloader.py ahora
+
+  - Automático con 3 Tareas Programadas de Windows separadas (recomendado en producción):
+        python schedule_downloader.py pase1   (09:00 AM)
+        python schedule_downloader.py pase2   (09:30 AM)
+        python schedule_downloader.py pase3   (10:00 AM, dispara la alerta de antigüedad si aplica)
+
+  - Alternativa: un solo proceso en segundo plano (usa la librería 'schedule' internamente,
+    registra las 3 pasadas automáticamente):
+        python schedule_downloader.py daemon
 
   - Manual con fecha específica:
         python schedule_downloader.py manual
@@ -17,16 +27,26 @@ MODOS DE USO:
   - Manual con fecha desde argumento:
         python schedule_downloader.py 2026-08-17
         python schedule_downloader.py 2026-08-15 2026-08-17   (rango)
+
+  - Reproceso puntual desde código (usado por el botón "Reprocesar Datos" en app.py):
+        from scripts.schedule_downloader import reprocesar_fecha
+        reprocesar_fecha("2026-08-29")
 """
 
 import os
 import sys
 import time
 import datetime
+import subprocess
 import pandas as pd
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT_DIR)
+
+# Si la marcación más reciente encontrada tras la ÚLTIMA pasada programada del día
+# tiene más antigüedad que esto (en minutos), se registra una alerta visible en el log:
+# probable señal de que el biométrico no terminó de sincronizar con HikCentral hoy.
+UMBRAL_ALERTA_ANTIGUEDAD_MIN = 120
 
 # ── Carpetas de descargas y procesamiento ──────────────────────────────────────
 CARPETA_DATA_CRUDA = os.path.join(ROOT_DIR, "downloads", "data_cruda")
@@ -70,10 +90,24 @@ def _sincronizar_downloadcenter():
             _log(f"Aviso al sincronizar Downloadcenter: {e}")
 
 
-def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
-    """Descarga, procesa y guarda las transacciones del rango de fechas dado."""
+def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bool = False, es_ultima_pasada: bool = False) -> bool:
+    """
+    Descarga, procesa y guarda las transacciones del rango de fechas dado.
+
+    es_pase_programada: True cuando la llamada viene de una de las pasadas automáticas
+        espaciadas del día (09:00 / 09:30 / 10:00). En ese caso, si esta pasada no trae
+        marcaciones nuevas respecto al maestro acumulado, se omite el reproceso y la
+        subida a Drive/GitHub (ya se hizo en una pasada anterior del mismo día).
+    es_ultima_pasada: True solo en la última pasada programada del día (10:00). Si en ese
+        momento la marcación más reciente sigue teniendo más de UMBRAL_ALERTA_ANTIGUEDAD_MIN
+        minutos de antigüedad, se registra una alerta visible en el log.
+
+    Retorna True si el procesamiento se ejecutó (o se omitió por no haber novedades) sin
+    errores, False si ocurrió una excepción durante el procesamiento principal.
+    """
     _log("=" * 60)
     _log(f"Descargando transacciones del {fecha_inicio} al {fecha_fin}...")
+    exito = True
 
     # Sincronizar descargas manuales de Downloadcenter si existen
     _sincronizar_downloadcenter()
@@ -81,13 +115,14 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
     # Respaldo preventivo fechado de SQLite antes de cualquier procesamiento
     try:
         from data.database import crear_backup_seguridad_sqlite
-        crear_backup_seguridad_sqlite(sufijo="schedule_9am")
+        sufijo_bk = "schedule_pase" if es_pase_programada else "manual"
+        crear_backup_seguridad_sqlite(sufijo=sufijo_bk)
     except Exception as e_bk:
         _log(f"Aviso al crear backup preventivo: {e_bk}")
 
     try:
         from core.hikvision_downloader import descargar_transacciones_hikvision
-        from data.data_loader import cargar_datos_excel, fusionar_y_deduplicar_data_cruda
+        from data.data_loader import cargar_datos_excel, fusionar_y_deduplicar_data_cruda, parse_hikvision_transaction_file
         from core.attendance_engine import procesar_asistencia_df
         from data.database import (guardar_trabajadores, guardar_marcaciones_raw,
                                    guardar_asistencia_y_reportes)
@@ -106,7 +141,53 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
         df_trab_nuevo, df_marc_nuevo, df_he_nuevo = cargar_datos_excel(excel_path_nuevo)
         
         ruta_maestro_raw = os.path.join(CARPETA_DATA_CRUDA, "Transacciones_Acumuladas.xlsx")
+
+        # Conteo previo a la fusión para saber si esta pasada trajo marcaciones nuevas
+        conteo_previo = 0
+        if os.path.exists(ruta_maestro_raw):
+            try:
+                df_previo = parse_hikvision_transaction_file(ruta_maestro_raw)
+                conteo_previo = len(df_previo)
+            except Exception:
+                conteo_previo = 0
+
         df_marc_master = fusionar_y_deduplicar_data_cruda(df_marc_nuevo, ruta_maestro_raw)
+        conteo_nuevo = len(df_marc_master)
+        hay_marcaciones_nuevas = (conteo_nuevo > conteo_previo)
+
+        # Antigüedad de la marcación más reciente (detecta biométrico aún sin sincronizar)
+        antiguedad_min = None
+        try:
+            col_f = 'Fecha' if 'Fecha' in df_marc_master.columns else None
+            col_t = 'Tiempo' if 'Tiempo' in df_marc_master.columns else None
+            if col_f and col_t and not df_marc_master.empty:
+                dt_series = pd.to_datetime(
+                    df_marc_master[col_f].astype(str) + ' ' + df_marc_master[col_t].astype(str),
+                    errors='coerce'
+                )
+                ultima_marcacion = dt_series.max()
+                if pd.notna(ultima_marcacion):
+                    antiguedad_min = (datetime.datetime.now() - ultima_marcacion.to_pydatetime()).total_seconds() / 60
+        except Exception as e_fresh:
+            _log(f"Aviso calculando antigüedad de última marcación: {e_fresh}")
+
+        if es_pase_programada:
+            msg_pase = f"Pasada programada: {conteo_previo} -> {conteo_nuevo} marcaciones acumuladas"
+            if antiguedad_min is not None:
+                msg_pase += f" | última marcación hace {antiguedad_min:.0f} min"
+            _log(msg_pase)
+
+            if es_ultima_pasada and antiguedad_min is not None and antiguedad_min > UMBRAL_ALERTA_ANTIGUEDAD_MIN:
+                _log(f"🚨 ALERTA: tras todas las pasadas de hoy, la marcación más reciente tiene "
+                     f"{antiguedad_min:.0f} min de antigüedad (umbral: {UMBRAL_ALERTA_ANTIGUEDAD_MIN} min). "
+                     f"El biométrico podría no haber terminado de sincronizar con HikCentral hoy. "
+                     f"Revisar manualmente o usar 'Reprocesar Datos' en la app.")
+
+            if not hay_marcaciones_nuevas:
+                _log("Sin marcaciones nuevas en esta pasada. Se omite reproceso, subida a Drive y sincronización con GitHub.")
+                _log("Descarga finalizada (sin cambios).")
+                _log("=" * 60)
+                return True
 
         # Limpieza estricta e inmediata de cualquier descarga o reporte en downloads/data_cruda
         # para conservar ÚNICAMENTE Transacciones_Acumuladas.xlsx
@@ -242,12 +323,12 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
         import traceback
         _log(f"ERROR: {e}")
         _log(traceback.format_exc())
+        exito = False
 
     # 5. Sincronización Automática con GitHub para Streamlit Cloud
     try:
         _log("Sincronizando cambios diarios con GitHub / Streamlit Cloud...")
-        import subprocess
-        subprocess.run(["git", "add", "data/asistencia.db"], cwd=ROOT_DIR, check=True)
+        subprocess.run(["git", "add", "data/asistencia.db", "downloads/data_procesada/", "Padron_Trabajadores_GZG.xlsx"], cwd=ROOT_DIR, check=False)
         subprocess.run(["git", "commit", "-m", "auto: Daily attendance & approvals update 9AM"], cwd=ROOT_DIR, check=False)
         subprocess.run(["git", "push", "origin", "main"], cwd=ROOT_DIR, check=True)
         _log("[OK] Sincronizado exitosamente con GitHub.")
@@ -256,6 +337,18 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str):
 
     _log("Descarga finalizada.")
     _log("=" * 60)
+    return exito
+
+
+def reprocesar_fecha(fecha_str: str, fecha_inicio_base: str = "2026-08-17") -> bool:
+    """
+    Reproceso manual bajo demanda para una fecha específica (pensado para ser llamado
+    desde la app, ej. un botón de administración). Siempre corre completo —no aplica
+    la lógica de "omitir si no hay novedades" de las pasadas programadas— porque es
+    una acción explícita del usuario.
+    """
+    _log(f"Reproceso MANUAL solicitado desde la app para: {fecha_str}")
+    return _ejecutar_descarga(fecha_inicio_base, fecha_str, es_pase_programada=False, es_ultima_pasada=False)
 
 
 def _hoy() -> str:
@@ -336,7 +429,7 @@ def _parsear_fecha(s: str) -> str | None:
 
 
 def _iniciar_programador():
-    """Servicio que espera hasta las 09:00 AM y ejecuta la descarga del día anterior."""
+    """Servicio que ejecuta 3 pasadas matutinas espaciadas (09:00, 09:30 y 10:00 AM)."""
     try:
         import schedule
     except ImportError:
@@ -344,18 +437,24 @@ def _iniciar_programador():
         import schedule
 
     _log("Servicio de descarga diaria iniciado.")
-    _log(f"  Horario    : todos los días a las 09:00 AM")
-    _log(f"  Descarga   : día ANTERIOR al de ejecución (ayer)")
+    _log(f"  Horario    : 3 pasadas espaciadas por día -> 09:00, 09:30 y 10:00 AM")
+    _log(f"  Motivo     : el biométrico físico puede tardar en sincronizar sus eventos")
+    _log(f"               offline con el servidor HikCentral; el merge es idempotente,")
+    _log(f"               así que reintentar en pasadas espaciadas es más confiable que")
+    _log(f"               reintentos apretados dentro de la misma ejecución.")
+    _log(f"  Descarga   : acumulado desde 2026-08-17 hasta HOY en cada pasada")
     _log(f"  Data Cruda : {CARPETA_DATA_CRUDA}")
     _log(f"  Procesada  : {CARPETA_DATA_PROCESADA}")
     _log(f"  Log        : {LOG_FILE}")
 
-    def _tarea_9am():
-        fecha = _ayer()
-        _log(f"Tarea programada: descargando acumulado desde 2026-08-17 hasta {fecha}")
-        _ejecutar_descarga("2026-08-17", _hoy())
+    def _tarea_programada(es_ultima: bool = False):
+        _log(f"Tarea programada: descargando acumulado desde 2026-08-17 hasta {_hoy()}"
+             + (" [ÚLTIMA PASADA DEL DÍA]" if es_ultima else ""))
+        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=es_ultima)
 
-    schedule.every().day.at("09:00").do(_tarea_9am)
+    schedule.every().day.at("09:00").do(lambda: _tarea_programada(es_ultima=False))
+    schedule.every().day.at("09:30").do(lambda: _tarea_programada(es_ultima=False))
+    schedule.every().day.at("10:00").do(lambda: _tarea_programada(es_ultima=True))
 
     while True:
         schedule.run_pending()
@@ -367,12 +466,28 @@ if __name__ == '__main__':
     args = sys.argv[1:]
 
     if not args or args[0].lower() in ("ahora", "now", "auto", "automatico"):
-        # Modo por defecto / Tarea Programada de Windows (a las 9:00 AM):
-        # Descarga acumulada desde la fecha base (2026-08-17) hasta HOY a las 9:00 AM
+        # Modo por defecto (ejecución manual inmediata, sin la lógica de "omitir si no hay
+        # novedades" de las pasadas programadas): siempre procesa completo.
         ini = "2026-08-17"
         fin = _hoy()
-        _log(f"Ejecución AUTOMÁTICA (9:00 AM): descargando acumulado {ini} -> {fin} para emparejamiento completo de Turno Noche...")
+        _log(f"Ejecución MANUAL/INMEDIATA: descargando acumulado {ini} -> {fin} para emparejamiento completo de Turno Noche...")
         _ejecutar_descarga(ini, fin)
+
+    elif args[0].lower() in ("pase1", "pase09", "pase_0900"):
+        # Para usar con 3 Tareas Programadas de Windows separadas (09:00/09:30/10:00)
+        # en vez del modo "daemon". Esta es la 1ra pasada del día.
+        _log("Ejecución PROGRAMADA - Pasada 1/3 (09:00 AM)")
+        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=False)
+
+    elif args[0].lower() in ("pase2", "pase0930", "pase_0930"):
+        # 2da pasada del día (09:30 AM)
+        _log("Ejecución PROGRAMADA - Pasada 2/3 (09:30 AM)")
+        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=False)
+
+    elif args[0].lower() in ("pase3", "pase_final", "pasefinal", "pase1000"):
+        # Última pasada del día (10:00 AM) — aquí se dispara la alerta de antigüedad si aplica
+        _log("Ejecución PROGRAMADA - Pasada 3/3 FINAL (10:00 AM)")
+        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=True)
 
     elif args[0].lower() in ("daemon", "service", "servicio"):
         # Modo servicio continuo 24/7 (bucle)
