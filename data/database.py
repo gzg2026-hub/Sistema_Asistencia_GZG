@@ -1189,9 +1189,11 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
 
 def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
     """
-    Sincroniza y rehidrata estados de aprobación desde Google Drive hacia SQLite en caso de reinicio de contenedor.
-    Solo actualiza solicitudes existentes con estados reales ('APROBADO', 'RECHAZADO') o comentarios,
-    garantizando que nunca se pierdan aprobaciones ni se reinicien contadores.
+    Sincroniza y reconcilia estados de aprobación desde Google Drive hacia SQLite local (puente
+    entre la base SQLite efímera de Streamlit Cloud donde aprueban los celulares y la base SQLite
+    persistente en la PC local).
+    Garantiza que cualquier estado ya resuelto ('APROBADO' o 'RECHAZADO') en SQLite sea inmutable
+    y nunca pueda ser alterado ni degradado por un archivo rezagado de Drive.
     """
     try:
         import datetime, openpyxl
@@ -1316,22 +1318,22 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
 
             # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
-            # BLINDAJE ESTRICTO: NUNCA revertir una aprobación/rechazo, firma o fecha resuelta en SQLite a 'PENDIENTE'
+            # BLINDAJE ESTRICTO: SQLite resuelto ('APROBADO' o 'RECHAZADO') gana SIEMPRE (inmutable).
             cursor.execute("""
                 UPDATE aprobaciones
                 SET estado = CASE 
-                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
                         WHEN estado IN ('APROBADO', 'RECHAZADO') THEN estado
+                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
                         ELSE ?
                     END,
                     estado_n1 = CASE 
-                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
                         WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN estado_n1
+                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
                         ELSE ?
                     END,
                     estado_n2 = CASE 
-                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
                         WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN estado_n2
+                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
                         ELSE ?
                     END,
                     horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
