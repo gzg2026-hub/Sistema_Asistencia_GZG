@@ -1340,8 +1340,14 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
                     horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
                     exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
-                    aprobador_n1 = COALESCE(?, aprobador_n1),
-                    aprobador_n2 = COALESCE(?, aprobador_n2),
+                    aprobador_n1 = CASE 
+                        WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n1 
+                        ELSE COALESCE(?, aprobador_n1) 
+                    END,
+                    aprobador_n2 = CASE 
+                        WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n2 
+                        ELSE COALESCE(?, aprobador_n2) 
+                    END,
                     aprobado_por_n1 = CASE 
                         WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n1 
                         ELSE COALESCE(?, aprobado_por_n1) 
