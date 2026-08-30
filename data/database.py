@@ -1316,29 +1316,42 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
 
             # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
+            # BLINDAJE ESTRICTO: NUNCA revertir una aprobación o rechazo existente en SQLite a 'PENDIENTE'
             cursor.execute("""
                 UPDATE aprobaciones
-                SET estado = ?,
-                    estado_n1 = ?,
-                    estado_n2 = ?,
+                SET estado = CASE 
+                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                        WHEN estado IN ('APROBADO', 'RECHAZADO') THEN estado
+                        ELSE ?
+                    END,
+                    estado_n1 = CASE 
+                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                        WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN estado_n1
+                        ELSE ?
+                    END,
+                    estado_n2 = CASE 
+                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                        WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN estado_n2
+                        ELSE ?
+                    END,
                     horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
                     exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
                     horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
                     exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
                     aprobador_n1 = COALESCE(?, aprobador_n1),
                     aprobador_n2 = COALESCE(?, aprobador_n2),
-                    aprobado_por_n1 = ?,
-                    aprobado_por_n2 = ?,
-                    aprobado_por = ?,
-                    fecha_aprobacion = ?,
-                    comentario_n1 = ?,
-                    comentario_n2 = ?,
-                    comentario_supervisor = ?
+                    aprobado_por_n1 = COALESCE(?, aprobado_por_n1),
+                    aprobado_por_n2 = COALESCE(?, aprobado_por_n2),
+                    aprobado_por = COALESCE(?, aprobado_por),
+                    fecha_aprobacion = COALESCE(?, fecha_aprobacion),
+                    comentario_n1 = COALESCE(?, comentario_n1),
+                    comentario_n2 = COALESCE(?, comentario_n2),
+                    comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END
                 WHERE dni = ? AND fecha = ?
             """, (
-                est_global,
-                est_n1,
-                est_n2,
+                est_global, est_global, est_global,
+                est_n1, est_n1, est_n1,
+                est_n2, est_n2, est_n2,
                 he_min,
                 exceso_min,
                 he_hhmm,
@@ -1351,7 +1364,7 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 final_fecha_aprob,
                 c_n1_extracted,
                 c_n2_extracted,
-                cmt,
+                cmt, cmt,
                 dni,
                 fecha
             ))
