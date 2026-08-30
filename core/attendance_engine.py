@@ -628,6 +628,24 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                         he_end_disp = h_e
                         he_end_f_disp = f_e
 
+            # Manejo de Horas Extras Incompletas (Marcación Huérfana de Inicio o Fin H.E.)
+            he_incompleta_str = None
+            if not he_pairs_found:
+                if he_starts_list:
+                    f_s_orphan, h_s_orphan = he_starts_list[0]
+                    if he_start_disp is None:
+                        he_start_disp = h_s_orphan
+                        he_start_f_disp = f_s_orphan
+                        he_incompleta_str = "Fin H.E. pendiente"
+                elif he_ends_list:
+                    unconsumed_ends = [(f_e, h_e) for (f_e, h_e) in he_ends_list if (f_e, h_e.strftime('%H:%M')) not in consumed_he_ends]
+                    if unconsumed_ends:
+                        f_e_orphan, h_e_orphan = unconsumed_ends[0]
+                        if he_end_disp is None:
+                            he_end_disp = h_e_orphan
+                            he_end_f_disp = f_e_orphan
+                            he_incompleta_str = "Inicio H.E. pendiente"
+
             # Fallback marcaciones genéricas (solo si no fueron consumidas como Horas Extras explícitas)
             if not has_explicit_entrada and not has_explicit_salida and not he_pairs_found and len(times) > 0:
                 entrada = times[0]
@@ -786,6 +804,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                 # 1. Horas extras explícitas (botones biométrico) - PRIMERO
                 if he_explicita_total_min > 0:
                     incidencias_list.append(f"Horas extras ({format_hhmm_str(he_explicita_total_min, is_hours_float=False)})")
+                elif he_incompleta_str:
+                    incidencias_list.append(he_incompleta_str)
 
                 # 2. Exceso de Jornada (si es >= 30 min)
                 if exceso_jornada_min_reporte >= 30:
@@ -845,6 +865,8 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
                     tipo_registro = "Horas extras"
                 elif has_exceso:
                     tipo_registro = "Exceso de Jornada"
+                elif he_incompleta_str:
+                    tipo_registro = he_incompleta_str
                 elif not entrada and salida:
                     tipo_registro = "Entrada pendiente"
                 elif entrada and not salida:
