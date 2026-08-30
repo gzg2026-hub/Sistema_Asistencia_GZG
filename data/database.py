@@ -1316,7 +1316,7 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
 
             # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
-            # BLINDAJE ESTRICTO: NUNCA revertir una aprobación o rechazo existente en SQLite a 'PENDIENTE'
+            # BLINDAJE ESTRICTO: NUNCA revertir una aprobación/rechazo, firma o fecha resuelta en SQLite a 'PENDIENTE'
             cursor.execute("""
                 UPDATE aprobaciones
                 SET estado = CASE 
@@ -1340,10 +1340,22 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
                     aprobador_n1 = COALESCE(?, aprobador_n1),
                     aprobador_n2 = COALESCE(?, aprobador_n2),
-                    aprobado_por_n1 = COALESCE(?, aprobado_por_n1),
-                    aprobado_por_n2 = COALESCE(?, aprobado_por_n2),
-                    aprobado_por = COALESCE(?, aprobado_por),
-                    fecha_aprobacion = COALESCE(?, fecha_aprobacion),
+                    aprobado_por_n1 = CASE 
+                        WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n1 
+                        ELSE COALESCE(?, aprobado_por_n1) 
+                    END,
+                    aprobado_por_n2 = CASE 
+                        WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n2 
+                        ELSE COALESCE(?, aprobado_por_n2) 
+                    END,
+                    aprobado_por = CASE 
+                        WHEN estado IN ('APROBADO', 'RECHAZADO') THEN aprobado_por 
+                        ELSE COALESCE(?, aprobado_por) 
+                    END,
+                    fecha_aprobacion = CASE 
+                        WHEN estado IN ('APROBADO', 'RECHAZADO') THEN fecha_aprobacion 
+                        ELSE COALESCE(?, fecha_aprobacion) 
+                    END,
                     comentario_n1 = COALESCE(?, comentario_n1),
                     comentario_n2 = COALESCE(?, comentario_n2),
                     comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END
