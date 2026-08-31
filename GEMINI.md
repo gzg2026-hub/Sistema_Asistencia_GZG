@@ -31,6 +31,10 @@
 - **Descarga Robusta con Espera Activa y Reintentos (`core/hikvision_downloader.py`)**:
   * La extracción de transacciones de HikCentral debe utilizar espera activa de red (`networkidle`) y bucle de reintentos (mínimo 3 intentos) con validación de registros no vacíos, asegurando la captura integral de entradas, salidas y transacciones de medianoche antes de emitir los reportes diarios de días cerrados.
   * Queda prohibida la sobreescritura de data cruda acumulada con archivos desfasados o incompletos de carpetas externas.
+- **Preservación Obligatoria de Marcaciones "Indefinido" (SwipeType 0)**:
+  * Queda estrictamente PROHIBIDO eliminar o filtrar transacciones crudas donde el campo `Tipo de pase de tarjeta` sea `"Indefinido"`, vacío o nulo. Toda marcación física exportada por HikCentral debe ser preservada íntegramente en `Transacciones_Acumuladas.xlsx` y procesada lógicamente por el motor de asistencia.
+- **Arquitectura de 3 Pasadas Matutinas Escalonadas (09:00, 09:30 y 10:00 AM)**:
+  * Debido a que los terminales biométricos físicos en mina transmiten sus eventos offline en ráfagas que pueden terminar de sincronizarse en el servidor local de HikCentral entre las 09:05 y 09:20 AM, el sistema ejecuta 3 pasadas automáticas programadas. Si a las 09:00 AM el servidor aún no tiene los nuevos eventos, la pasada de las 09:30 AM recoge automáticamente el volcado final sin intervención manual.
 - Queda prohibido hardcodear o inventar valores por defecto (como "MINA", "OPERATIVO", "Semana 34", "Marcación", "Rostro").
 
 ---
@@ -47,6 +51,11 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Consumo de Marcaciones Cruzadas con Precisión de Segundos (`%H:%M:%S`)**:
   * Toda exclusión o consumo de transacciones vinculadas a sesiones cruzadas (ej. cierre matutino de horas extras nocturnas o salidas de turno noche en D+1) se realiza identificando la clave compuesta `(DNI, Fecha, Hora_HH:MM:SS, Tipo_Pase)`.
   * Queda estrictamente prohibido consumir marcaciones utilizando únicamente la hora y minuto (`HH:MM`), asegurando que dos marcaciones dentro del mismo minuto (ej. `06:58:27` Fin H.E. y `06:58:49` Registro de entrada) se procesen de forma independiente sin canibalizarse.
+- **Deducción Contextual de Marcaciones "Indefinido" (SwipeType 0)**:
+  * Cuando una transacción cruda presenta tipo `"Indefinido"`, el motor deduce su función según la secuencia temporal:
+    - **Mañana (< 12:00):** Si no existe entrada previa $\rightarrow$ `"Registro de entrada"`; si ya existe entrada previa $\rightarrow$ `"Registrar salida"`.
+    - **Mediodía (12:00 a 16:00):** Si hubo entrada matutina $\rightarrow$ `"Registrar salida"`; si no hubo entrada $\rightarrow$ `"Registro de entrada"` (Media jornada tarde).
+    - **Tarde/Noche ($\ge$ 16:00):** Si el trabajador completó una jornada diurna previa o tiene salida matutina en D+1 $\rightarrow$ `"Registro de entrada"` (Turno Noche). Si tenía una jornada diurna abierta sin salida previa $\rightarrow$ `"Registrar salida"` (Cierre de turno diurno).
 - **Deducción de Salidas Vespertinas sin Entrada Matutina (Regla de Entrada Pendiente)**:
   * Si un trabajador solo registra una marcación en la tarde/noche (17:00 a 21:00 PM) etiquetada como `"Registrar salida"` sin contar con entrada matutina previa, el motor la clasifica como término de su **Turno DÍA** con Estado `"ENTRADA PENDIENTE"` y sombreado en **Durazno Pastel (`#FCE4D6`)**.
   * Queda prohibido reclasificar dicha marcación como inicio de Turno Noche, a menos que en la mañana del día siguiente (D+1) exista una marcación explícita de `"Registrar salida"` y NO exista un `"Registro de entrada"` matutino en D+1.
@@ -76,16 +85,21 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
     - **Etiquetado y Sombreado Obligatorio**: Todo registro evaluado como Cambio de Guardia o Relevo en ventana de transición (04:20-06:00 AM / 16:30-18:00 PM) debe etiquetarse explícitamente como `"Cambio de guardia"` en la columna **Tipo de Registro** (Columna V), garantizando su sombreado automático en **Durazno Pastel (`#FCE4D6`)** en el reporte exportado.
   * **Lógica de Media Jornada (Jornada Parcial)**:
     - **Horarios Oficiales**: 07:00 AM a 13:00 PM (Turno Mañana) y 13:00 PM a 19:00 PM (Turno Tarde).
-    - Aplica únicamente para personal en cambio de guardia o que ingresa/retorna de sus días libres (Régimen 20x10 u otros).
-  * **Regla de Exceso de Jornada**: Se reporta únicamente cuando las horas trabajadas superan las 12.0 horas de turno por 30 minutos o más (se omiten excesos < 30 min). Quedan excluidos Cambio de Guardia, Jornada Parcial (5-8h) y Régimen Especial (DNI 46181231 - José Moncada). Se formatea como `Exceso de Jornada (HH:MM)`.
+    - **Rango Efectivo**: Aplica para jornadas de **4.0 a 8.5 horas** en cambio de guardia o retorno/bajada de régimen (20x10 u otros).
+    - **Cero Salida Anticipada**: En Media Jornada o Cambio de Guardia, la salida anticipada se fija estrictamente en `00:00` (`salida_ant_min = 0`).
+    - **Tolerancia en Turno Tarde**: En Media Jornada de Tarde (11:00 a 14:00), el inicio oficial es **13:00 PM** con tolerancia hasta 13:15 PM (0 tardanza para ingresos entre 12:40 y 13:15).
+  * **Regla de Exceso de Jornada**: Se reporta únicamente cuando las horas trabajadas superan las 12.0 horas de turno por 30 minutos o más (se omiten excesos < 30 min). Quedan excluidos Cambio de Guardia, Jornada Parcial (4-8.5h) y Régimen Especial (DNI 46181231 - José Moncada). Se formatea como `Exceso de Jornada (HH:MM)`.
   * **Exclusión Total de H.E. y Exceso para Personal Administrativo y Auxiliar de Seguridad**:
     - El personal administrativo y de seguridad de confianza (DNI `74546819` Leila Lostaunau, DNI `77134790` Clari Tocto, DNI `48455175` Iván Vásquez, DNI `75227437` Liliana Pretel) NO realiza ni acumula Horas Extras ni Exceso de Jornada bajo ninguna circunstancia.
     - En todos los cálculos y reportes del sistema, sus campos `HORAS EXTRAS (HH:MM)`, `EXCESO JORNADA (HH:MM)` y `TOTAL HORAS ADICIONALES (HH:MM)` permanecen estrictamente en `'00:00'` (0.0), y quedan excluidos de la bandeja de aprobaciones y del archivo `Aprobaciones_GZG_YYYY-MM.xlsx`.
     - Únicamente se calculan y visualizan sus horas de turno trabajadas (`HORAS TRABAJADAS (HH:MM)`).
-- **Doble Turno / Doble Entrada en el Mismo Día**:
-  * Si un trabajador tiene 2 marcaciones de entrada el mismo día calendárico (doble turno / reingreso), se procesan ambos registros de forma independiente y se sombrea la fila en durazno pastel.
+- **Doble Turno / Relevo en el Mismo Día (Media Jornada Mañana + Turno Noche)**:
+  * Si un trabajador realiza Media Jornada en la mañana (07:00-13:00) y luego ingresa a Turno Noche (19:00-07:00 D+1), se dividen limpiamente en 2 filas asignadas a la fecha de inicio:
+    - **Fila 1 (Turno Día / Media Jornada)**: Refleja su labor matutina (ej. 05:44 hrs) con Tipo de Registro `"Cambio de guardia"` y sombreado en Durazno Pastel.
+    - **Fila 2 (Turno Noche Completo)**: Refleja su turno normal (ej. 11:50 hrs) con salida en D+1 y sombreado estándar.
+  * La marcación de salida matutina en D+1 es consumida por el Turno Noche, evitando filas huérfanas con `"Entrada pendiente"` en D+1.
 - **Filtro de Filas Fantasma / Sin Marcación (Regla Punto 9) y Excepción de H.E.**:
-  * Se eliminan automáticamente de la vista procesada las filas donde tanto la Entrada (Fecha/Hora) como la Salida (Fecha/Hora) sean nulas, vacías o `NaN`, **salvo que la fila corresponda a un bloque exclusivo de Horas Extras** con marcaciones explícitas de biométrico.
+  * Se eliminan automáticamente de la vista procesada las filas donde tanto la Entrada (Fecha/Hora) como la Salida (Fecha/Hora) sean nulas, vacías o `NaN`, **salvo que la fila corresponda a un bloque exclusivo de Horas Extras** con marcaciones explícitamente registradas.
 - **Prohibición Total de Observaciones Asumidas o Textos Hardcodeados (Cero Suposiciones)**:
   * Queda estrictamente prohibido insertar o asumir observaciones automáticas por defecto en el motor de cálculo de asistencia (`core/attendance_engine.py`) o en la base de datos (como *"Abastecer petróleo / Recoger personal / Varios"*).
   * El campo `OBSERVACIONES` en asistencia y `observacion_trabajador` en aprobaciones permanecerá **limpio y vacío por defecto**, y se llenará **únicamente** con el sustento real o fotos que el trabajador o supervisor registre explícitamente desde la aplicación móvil.
