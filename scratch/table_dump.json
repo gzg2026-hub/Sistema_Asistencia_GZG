@@ -1,0 +1,92 @@
+[
+  {
+    "idx": 0,
+    "text": "\t | Imagen del perfil | \t | ID | \t | Nombre | \t | Apellido | \t | Departamento | \t | Posición | \t | Información de credenciales | \t | Estado del permiso de control de acceso",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 1,
+    "text": "\t | \t | 46181231 | \t | JOSE ORLANDO MONCADA REJAS | \t | MONCADA REJAS | \t | Oper&Mtto | \t | Ingeniero Metalurgico | \t | 0 | 2 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/116/Photo?Token=4606bf73-163a-4c10-8bcb-f357af231eed&PHOTOTYPE=0"
+  },
+  {
+    "idx": 2,
+    "text": "\t | \t | 75227437 | \t | LILIANA MORELY PRETEL RAMIREZ | \t | PRETEL RAMIREZ | \t | Oper&Mtto | \t | Auxiliar de Seguridad | \t | 0 | 2 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/115/Photo?Token=665b13ad-6969-4ee0-a251-6b7240fd1161&PHOTOTYPE=0"
+  },
+  {
+    "idx": 3,
+    "text": "\t | \t | 006616501 | \t | YENKLI VICENTE ORDOÑEZ ARTEAGA | \t | ORDOÑEZ ARTEAGA | \t | Oper&Mtto | \t | Electricidad | \t | 0 | 2 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/114/Photo?Token=de51e2a2-76cc-4445-9e1f-3dd1c6444b30&PHOTOTYPE=0"
+  },
+  {
+    "idx": 4,
+    "text": "\t | \t | 75741769 | \t | ISAAC MOISES CRISOSTOMO PAREDES | \t | CRISOSTOMO PAREDES | \t | Oper&Mtto | \t | Maquinaria Pesada | \t | 0 | 2 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/113/Photo?Token=0e9daff7-b894-4037-819b-463625f4e58d&PHOTOTYPE=0"
+  },
+  {
+    "idx": 5,
+    "text": "\t | \t | 72909375 | \t | MANUEL GREGORIO BERMEO OJEDA | \t | BERMEO OJEDA | \t | Oper&Mtto | \t | Operaciones | \t | 0 | 2 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/112/Photo?Token=30e1a949-e1aa-4417-8627-a8362c4602f0&PHOTOTYPE=0"
+  },
+  {
+    "idx": 6,
+    "text": "\t | \t | 75464754 | \t | JOSÉ GERONIMO CASANA VÁSQUEZ | \t | CASANA VÁSQUEZ | \t | Oper&Mtto | \t | Operaciones | \t | 0 | 0 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/111/Photo?Token=d092f2cf-cbe8-476d-b870-92cd5e611032&PHOTOTYPE=0"
+  },
+  {
+    "idx": 7,
+    "text": "\t | \t | 45119078 | \t | JOSELITO CURINAMBE SANCHEZ | \t | CURINAMBE SANCHEZ | \t | Oper&Mtto | \t | Operaciones | \t | 0 | 2 | 1 |  0 | \t |  Activado",
+    "src": "https://127.0.0.1/ISAPI/Bumblebee/Platform/V0/PersonCredential/Persons/110/Photo?Token=b2ab9038-41b3-4dfb-8fd1-194086425c55&PHOTOTYPE=0"
+  },
+  {
+    "idx": 8,
+    "text": "\t | \t | 26696602 | \t | MANUEL YSIDORO SÁNCHEZ MONTOYA | \t | SÁNCHEZ MONTOYA | \t | Jefatura | \t | Superintendente | \t | 0 | 0 | 0 |  0 | \t |  Activado",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 9,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 10,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 11,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 12,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 13,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 14,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 15,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 16,
+    "text": "",
+    "src": "NO_IMG"
+  },
+  {
+    "idx": 17,
+    "text": "",
+    "src": "NO_IMG"
+  }
+]

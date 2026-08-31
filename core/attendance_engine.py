@@ -290,11 +290,6 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
         df_marcaciones['Hora_Clean'].notna() &
         ~df_marcaciones['DNI_STR'].str.lower().str.contains('fecha:|semana:|periodo:|desconocido|none|nan', regex=True, na=False)
     ]
-    if tipo_col in df_marcaciones.columns:
-        df_marcaciones = df_marcaciones[
-            ~df_marcaciones[tipo_col].astype(str).str.lower().str.contains('indefinid', regex=True, na=False)
-        ]
-    
     # Deduplicar marcaciones estrictamente idénticas
     df_marcaciones = df_marcaciones.drop_duplicates(
         subset=['DNI_STR', 'Fecha_Clean', 'Hora_Clean', tipo_col]
@@ -338,6 +333,62 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
         if valid_rows.empty:
             continue
+
+        # Resolver marcaciones 'Indefinido' según contexto temporal y secuencias
+        for idx_r, r in valid_rows.iterrows():
+            tipo_str = str(r.get(tipo_col, '')).strip().lower()
+            if 'indefinid' in tipo_str or not tipo_str or tipo_str in ('nan', 'none', '-'):
+                t_sec = time_to_seconds(r['Hora_Clean'])
+                if t_sec < 43200:  # Mañana (< 12:00)
+                    has_prior_ent = any(
+                        'entrada' in str(r2.get(tipo_col, '')).lower() and time_to_seconds(r2['Hora_Clean']) < t_sec
+                        for _, r2 in valid_rows.iterrows()
+                    )
+                    valid_rows.loc[idx_r, tipo_col] = 'Registrar salida' if has_prior_ent else 'Registro de entrada'
+                elif 43200 <= t_sec < 57600:  # Mediodía (12:00 a 16:00)
+                    has_morning_ent = any(
+                        'entrada' in str(r2.get(tipo_col, '')).lower() and time_to_seconds(r2['Hora_Clean']) < 34200
+                        for _, r2 in valid_rows.iterrows()
+                    )
+                    valid_rows.loc[idx_r, tipo_col] = 'Registrar salida' if has_morning_ent else 'Registro de entrada'
+                else:  # Tarde/Noche (>= 16:00 PM)
+                    try:
+                        fecha_dt = datetime.strptime(fecha, '%Y-%m-%d').date()
+                        fecha_next_str = (fecha_dt + timedelta(days=1)).strftime('%Y-%m-%d')
+                        next_day_swipes = df_marcaciones[
+                            (df_marcaciones['DNI_STR'].apply(lambda d: str(d).strip().lstrip('0')) == dni_clean) &
+                            (df_marcaciones['Fecha_Clean'] == fecha_next_str)
+                        ]
+                        has_explicit_morning_exit_d1 = any(
+                            time_to_seconds(r2['Hora_Clean']) <= 34200 and 'salida' in str(r2.get(tipo_col, '')).lower()
+                            for _, r2 in next_day_swipes.iterrows()
+                        )
+                    except Exception:
+                        has_explicit_morning_exit_d1 = False
+
+                    has_completed_morning_shift = any(
+                        'entrada' in str(r2.get(tipo_col, '')).lower() and time_to_seconds(r2['Hora_Clean']) < 43200
+                        for _, r2 in valid_rows.iterrows()
+                    ) and any(
+                        'salida' in str(r2.get(tipo_col, '')).lower() and 36000 <= time_to_seconds(r2['Hora_Clean']) < 57600
+                        for _, r2 in valid_rows.iterrows()
+                    )
+                    has_unclosed_day_entry = any(
+                        'entrada' in str(r2.get(tipo_col, '')).lower() and time_to_seconds(r2['Hora_Clean']) < 57600
+                        for _, r2 in valid_rows.iterrows()
+                    ) and not any(
+                        'salida' in str(r2.get(tipo_col, '')).lower() and time_to_seconds(r2['Hora_Clean']) < 57600
+                        for _, r2 in valid_rows.iterrows()
+                    )
+
+                    if has_completed_morning_shift:
+                        valid_rows.loc[idx_r, tipo_col] = 'Registro de entrada'
+                    elif has_unclosed_day_entry:
+                        valid_rows.loc[idx_r, tipo_col] = 'Registrar salida'
+                    elif has_explicit_morning_exit_d1:
+                        valid_rows.loc[idx_r, tipo_col] = 'Registro de entrada'
+                    else:
+                        valid_rows.loc[idx_r, tipo_col] = 'Registro de entrada'
 
         # Caso Jhon Agreda / Raul Lazaro (Punto 1): Marcación accidental de 'Inicio de horas extra' o 'Fin de horas extra' en la mañana (05:00 a 09:30 AM).
         # Reclasificar como 'Registro de entrada' ÚNICAMENTE si NO existe ninguna entrada matutina explícita previa
@@ -736,7 +787,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
             # Identificar Media Jornada / Jornada Parcial (Punto 3: Formato conciso Jornada Parcial (hh:mm))
             es_media_jornada = False
-            if 5.0 <= horas_trabajadas <= 8.0:
+            if 4.0 <= horas_trabajadas <= 8.5:
                 es_media_jornada = True
 
             # Identificar Cambio de Guardia / Relevo Cuadrilla (Ventana de Relevo Día: 04:20-06:00 AM, Relevo Noche: 16:30-18:00 PM)
@@ -762,7 +813,7 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
 
             # 5. Calcular Salida Anticipada
             salida_ant_min = calcular_salida_anticipada(horario, salida, entrada, config)
-            if es_cambio_guardia:
+            if es_cambio_guardia or es_media_jornada:
                 salida_ant_min = 0
 
             # 6. Exceso de Jornada (Punto 1: Lógica General >= 30 min para TODOS)
