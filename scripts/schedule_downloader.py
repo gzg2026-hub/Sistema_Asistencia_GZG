@@ -379,6 +379,24 @@ def _ayer() -> str:
     return (datetime.date.today() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
 
 
+def _fecha_inicio_acumulado() -> str:
+    """
+    Calcula dinámicamente la fecha de inicio del acumulado.
+    Usa el primer día del mes anterior para cubrir marcaciones de Turno Noche
+    que cruzan el cambio de mes (ej. noche del 31 con salida el 1 del mes sig.).
+    Así el acumulado nunca excede ~60 días, evitando el límite de 5000 registros.
+    """
+    hoy = datetime.date.today()
+    # Primer día del mes actual
+    primer_dia_mes_actual = hoy.replace(day=1)
+    # Primer día del mes anterior (retroceder al mes anterior)
+    if primer_dia_mes_actual.month == 1:
+        primer_dia_mes_anterior = primer_dia_mes_actual.replace(year=primer_dia_mes_actual.year - 1, month=12)
+    else:
+        primer_dia_mes_anterior = primer_dia_mes_actual.replace(month=primer_dia_mes_actual.month - 1)
+    return primer_dia_mes_anterior.strftime("%Y-%m-%d")
+
+
 def _menu_manual():
     """Menú interactivo para elegir la fecha a descargar manualmente."""
     print("\n" + "=" * 58)
@@ -468,9 +486,10 @@ def _iniciar_programador():
     _log(f"  Log        : {LOG_FILE}")
 
     def _tarea_programada(es_ultima: bool = False):
-        _log(f"Tarea programada: descargando acumulado desde 2026-08-17 hasta {_hoy()}"
+        ini = _fecha_inicio_acumulado()
+        _log(f"Tarea programada: descargando acumulado desde {ini} hasta {_hoy()}"
              + (" [ÚLTIMA PASADA DEL DÍA]" if es_ultima else ""))
-        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=es_ultima)
+        _ejecutar_descarga(ini, _hoy(), es_pase_programada=True, es_ultima_pasada=es_ultima)
 
     schedule.every().day.at("09:00").do(lambda: _tarea_programada(es_ultima=False))
     schedule.every().day.at("09:30").do(lambda: _tarea_programada(es_ultima=False))
@@ -488,26 +507,26 @@ if __name__ == '__main__':
     if not args or args[0].lower() in ("ahora", "now", "auto", "automatico"):
         # Modo por defecto (ejecución manual inmediata, sin la lógica de "omitir si no hay
         # novedades" de las pasadas programadas): siempre procesa completo.
-        ini = "2026-08-17"
+        ini = _fecha_inicio_acumulado()
         fin = _hoy()
         _log(f"Ejecución MANUAL/INMEDIATA: descargando acumulado {ini} -> {fin} para emparejamiento completo de Turno Noche...")
         _ejecutar_descarga(ini, fin)
 
     elif args[0].lower() in ("pase1", "pase09", "pase_0900"):
         # Para usar con 3 Tareas Programadas de Windows separadas (09:00/09:30/10:00)
-        # en vez del modo "daemon". Esta es la 1ra pasada del día.
+        # en vez del modo "daemon". Esta es la 1ra pasada del daí.
         _log("Ejecución PROGRAMADA - Pasada 1/3 (09:00 AM)")
-        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=False)
+        _ejecutar_descarga(_fecha_inicio_acumulado(), _hoy(), es_pase_programada=True, es_ultima_pasada=False)
 
     elif args[0].lower() in ("pase2", "pase0930", "pase_0930"):
         # 2da pasada del día (09:30 AM)
         _log("Ejecución PROGRAMADA - Pasada 2/3 (09:30 AM)")
-        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=False)
+        _ejecutar_descarga(_fecha_inicio_acumulado(), _hoy(), es_pase_programada=True, es_ultima_pasada=False)
 
     elif args[0].lower() in ("pase3", "pase_final", "pasefinal", "pase1000"):
         # Última pasada del día (10:00 AM) — aquí se dispara la alerta de antigüedad si aplica
         _log("Ejecución PROGRAMADA - Pasada 3/3 FINAL (10:00 AM)")
-        _ejecutar_descarga("2026-08-17", _hoy(), es_pase_programada=True, es_ultima_pasada=True)
+        _ejecutar_descarga(_fecha_inicio_acumulado(), _hoy(), es_pase_programada=True, es_ultima_pasada=True)
 
     elif args[0].lower() in ("daemon", "service", "servicio"):
         # Modo servicio continuo 24/7 (bucle)

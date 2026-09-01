@@ -146,21 +146,33 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
 
 def parse_adjuntos(val) -> list:
     """Extrae una lista de URLs/Base64/Rutas de adjuntos desde la base de datos."""
-    if not val or pd.isna(val):
+    if not val or (hasattr(val, '__class__') and val.__class__.__name__ in ('float',)):
         return []
+    try:
+        import pandas as pd_inner
+        if pd_inner.isna(val):
+            return []
+    except Exception:
+        pass
     v_str = str(val).strip()
-    if v_str.lower() in ('none', 'nan', ''):
+    if v_str.lower() in ('none', 'nan', 'null', ''):
         return []
     if "|||" in v_str:
-        return [x.strip() for x in v_str.split("|||") if x.strip()]
+        items = [x.strip() for x in v_str.split("|||") if x.strip() and x.strip().lower() not in ('none','nan','null')]
+        return [x for x in items if len(x) > 10]   # descartar strings demasiado cortos
     elif v_str.startswith("[") and v_str.endswith("]"):
         try:
             import json
             res = json.loads(v_str)
-            if isinstance(res, list): return res
+            if isinstance(res, list):
+                return [x for x in res if x and str(x).strip().lower() not in ('none','nan','null','') and len(str(x).strip()) > 10]
         except Exception:
             pass
-    return [v_str]
+    # Solo retornar si parece un data URI base64 o una URL real
+    if v_str.startswith('data:image') or v_str.startswith('http') or v_str.startswith('/'):
+        return [v_str]
+    # Descartar cualquier otro string (evita HTML crudo, paths raros, etc.)
+    return []
 
 def extraer_sustento_trabajador_de_comentario(c_sup: str) -> str:
     """
@@ -195,33 +207,33 @@ def render_zoomable_photo_html(img_src: str, modal_id: str, caption: str = "Foto
     0ms de latencia, sin recargas de página ni saltos de scroll.
     """
     safe_id = "".join([c if c.isalnum() or c in ('_', '-') else '_' for c in str(modal_id)])
-    return f"""
-    <div id="anchor_{safe_id}" style="position: relative; display: block; width: 100%; margin-bottom: 6px;">
-        <a href="#{safe_id}" style="display: block; text-decoration: none; cursor: zoom-in; position: relative; border-radius: 8px; overflow: hidden; border: 1.5px solid #3A3F4D; background: #1E222B; transition: transform 0.15s ease, border-color 0.15s ease;">
-            <img src="{img_src}" style="width: 100%; height: {thumb_height}px; object-fit: cover; display: block;" loading="lazy" />
-            <div style="position: absolute; bottom: 5px; right: 5px; background: rgba(18, 20, 24, 0.88); color: #F58220; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(245, 130, 32, 0.45); pointer-events: none; backdrop-filter: blur(4px);">
-                🔍 <span>AMPLIAR</span>
-            </div>
-        </a>
-        <div id="{safe_id}" class="gzg-lightbox">
-            <a href="#anchor_{safe_id}" class="gzg-lightbox-backdrop" title="Toca para cerrar"></a>
-            <div class="gzg-lightbox-content">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; width: 100%;">
-                    <div style="font-size: 13px; font-weight: 700; color: #F58220; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px;">
-                        📷 <span>{caption}</span>
-                    </div>
-                    <a href="#anchor_{safe_id}" class="gzg-lightbox-close" title="Cerrar">✖</a>
-                </div>
-                <div style="width: 100%; max-height: 74vh; overflow: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; align-items: center; background: #121418; border-radius: 8px; padding: 4px;">
-                    <img src="{img_src}" style="max-width: 100%; max-height: 72vh; object-fit: contain; border-radius: 6px;" />
-                </div>
-                <div style="font-size: 11px; color: #9A9EA7; margin-top: 8px; text-align: center; width: 100%;">
-                    💡 Toca la <b>✖</b> o el fondo para cerrar
-                </div>
-            </div>
-        </div>
-    </div>
-    """
+    return (
+        f'<div id="anchor_{safe_id}" style="position: relative; display: block; width: 100%; margin-bottom: 6px;">'
+        f'<a href="#{safe_id}" style="display: block; text-decoration: none; cursor: zoom-in; position: relative; border-radius: 8px; overflow: hidden; border: 1.5px solid #3A3F4D; background: #1E222B; transition: transform 0.15s ease, border-color 0.15s ease;">'
+        f'<img src="{img_src}" style="width: 100%; height: {thumb_height}px; object-fit: cover; display: block;" loading="lazy" />'
+        f'<div style="position: absolute; bottom: 5px; right: 5px; background: rgba(18, 20, 24, 0.88); color: #F58220; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(245, 130, 32, 0.45); pointer-events: none; backdrop-filter: blur(4px);">'
+        f'🔍 <span>AMPLIAR</span>'
+        f'</div>'
+        f'</a>'
+        f'<div id="{safe_id}" class="gzg-lightbox">'
+        f'<a href="#anchor_{safe_id}" class="gzg-lightbox-backdrop" title="Toca para cerrar"></a>'
+        f'<div class="gzg-lightbox-content">'
+        f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; width: 100%;">'
+        f'<div style="font-size: 13px; font-weight: 700; color: #F58220; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px;">'
+        f'📷 <span>{caption}</span>'
+        f'</div>'
+        f'<a href="#anchor_{safe_id}" class="gzg-lightbox-close" title="Cerrar">✖</a>'
+        f'</div>'
+        f'<div style="width: 100%; max-height: 74vh; overflow: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; align-items: center; background: #121418; border-radius: 8px; padding: 4px;">'
+        f'<img src="{img_src}" style="max-width: 100%; max-height: 72vh; object-fit: contain; border-radius: 6px;" />'
+        f'</div>'
+        f'<div style="font-size: 11px; color: #9A9EA7; margin-top: 8px; text-align: center; width: 100%;">'
+        f'💡 Toca la <b>✖</b> o el fondo para cerrar'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+        f'</div>'
+    )
 
 logo_b64 = get_logo_base64()
 hero_b64 = get_hero_base64()
@@ -1832,29 +1844,34 @@ with tab_historial:
             if adj_list_hist:
                 imgs_blocks = []
                 for idx_f, x_foto in enumerate(adj_list_hist):
-                    imgs_blocks.append(f"""
-                    <div style="flex: 1 1 45%; max-width: 48%; min-width: 120px;">
-                        {render_zoomable_photo_html(x_foto, f"zoom_hist_{row.get('id', idx)}_{idx_f}", f"Foto {idx_f+1} - {worker_name}", thumb_height=105)}
-                    </div>
-                    """)
-                adj_html = f"""<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">{ ''.join(imgs_blocks) }</div>"""
+                    # Validar que sea un data URI base64 o URL antes de renderizar
+                    x_foto_s = str(x_foto).strip()
+                    if not x_foto_s or not (x_foto_s.startswith('data:image') or x_foto_s.startswith('http') or x_foto_s.startswith('/')):
+                        continue
+                    photo_render = render_zoomable_photo_html(x_foto_s, f"zoom_hist_{row.get('id', idx)}_{idx_f}", f"Foto {idx_f+1} - {worker_name}", thumb_height=105)
+                    imgs_blocks.append(f'<div style="flex: 1 1 45%; max-width: 48%; min-width: 120px;">{photo_render}</div>')
+                if imgs_blocks:
+                    adj_html = f'<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">{"".join(imgs_blocks)}</div>'
 
-            cards_list.append(f"""<div class="approval-card">
-<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
-<div class="worker-name" style="flex: 1 1 auto; min-width: 0; word-break: break-word; line-height: 1.25;">{worker_name}</div>
-<div style="flex-shrink: 0; white-space: nowrap; padding-top: 1px;">{badge_html}</div>
-</div>
-<div class="worker-role">{cargo} ({fecha_sol})</div>
-<hr style="border-color: #2A2F3D; margin: 8px 0;">
-<div style="font-size: 12px; line-height: 1.5;">
-<div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>
-<div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>
-</div>
-{c_info_str}
-{adj_html}
-<div style="font-size: 10px; color: #9A9EA7; margin-top: 6px;">{aprob_str}</div>
-</div>""")
-        st.markdown("\n".join(cards_list), unsafe_allow_html=True)
+            card_item = (
+                f'<div class="approval-card">'
+                f'<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">'
+                f'<div class="worker-name" style="flex: 1 1 auto; min-width: 0; word-break: break-word; line-height: 1.25;">{worker_name}</div>'
+                f'<div style="flex-shrink: 0; white-space: nowrap; padding-top: 1px;">{badge_html}</div>'
+                f'</div>'
+                f'<div class="worker-role">{cargo} ({fecha_sol})</div>'
+                f'<hr style="border-color: #2A2F3D; margin: 8px 0;">'
+                f'<div style="font-size: 12px; line-height: 1.5;">'
+                f'<div>⏰ H.E.: <b style="color: #F58220;">{he_hhmm}</b>{he_detail}</div>'
+                f'<div>⚠️ Exceso: <b style="color: #E67E22;">{exceso_hhmm}</b></div>'
+                f'</div>'
+                f'{c_info_str}'
+                f'{adj_html}'
+                f'<div style="font-size: 10px; color: #9A9EA7; margin-top: 6px;">{aprob_str}</div>'
+                f'</div>'
+            )
+            cards_list.append(card_item)
+        st.markdown("".join(cards_list), unsafe_allow_html=True)
 
 # ---------------------------------------------------------
 # TAB 3: DASHBOARD DE ESTADÍSTICAS (100% CORRELACIONADO)

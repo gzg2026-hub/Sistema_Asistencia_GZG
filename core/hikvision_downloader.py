@@ -162,11 +162,37 @@ def descargar_transacciones_hikvision(
                             login_btn.click(timeout=3000)
                         except Exception:
                             pass
-                    
-                    try:
-                        page.wait_for_load_state("networkidle", timeout=8000)
-                    except Exception:
+
+                    # ── Verificar que la sesión quedó establecida ─────────────
+                    # HikCentral V2.4 puede devolver networkidle antes de que la
+                    # cookie de sesión esté lista. Si la URL sigue apuntando al
+                    # login, la sesión NO está activa y el ISAPI devolverá [].
+                    sesion_activa = False
+                    for _espera in range(6):          # máx 12 s
+                        time.sleep(2)
+                        url_actual = page.url.lower()
+                        if "login" not in url_actual and "/#/" != url_actual.split("?")[0].rstrip("/")[-3:]:
+                            sesion_activa = True
+                            break
+                        # Intentar login de nuevo si sigue en pantalla de login
+                        if _espera == 2:
+                            try:
+                                login_btn2 = page.locator(".login-btn, button:has-text('Iniciar'), button:has-text('Log In')").first
+                                if login_btn2.count() > 0:
+                                    login_btn2.click(timeout=2000)
+                            except Exception:
+                                pass
+
+                    if not sesion_activa:
+                        print(f"[HikCentral] Intento {intento_global}/3: sesión no establecida (URL={page.url}). Reintentando ciclo completo...")
+                        browser.close()
                         time.sleep(4)
+                        continue   # siguiente intento_global
+
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=6000)
+                    except Exception:
+                        time.sleep(2)
 
                     payload_js = json.dumps({
                         "RecordRequest": {
