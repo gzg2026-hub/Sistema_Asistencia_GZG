@@ -14,17 +14,28 @@ def signal_ready():
         height=1, width=1
     )
 
-# Asegurar importaciones del proyecto
+# Asegurar importaciones del proyecto y forzar recarga en hot-reload de Streamlit Cloud
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import importlib
+import data.database as db_mod
+try:
+    importlib.reload(db_mod)
+except Exception:
+    pass
 
-from data.database import (
-    init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
-    sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive,
-    regenerar_aprobaciones_excel, guardar_sustento_trabajador,
-    resetear_sustento_solicitud,
-    cambiar_password_usuario, obtener_usuario_by_username,
-    crear_token_sesion, validar_token_sesion, eliminar_token_sesion
-)
+init_db = db_mod.init_db
+obtener_solicitudes_aprobacion = db_mod.obtener_solicitudes_aprobacion
+actualizar_estado_aprobacion = db_mod.actualizar_estado_aprobacion
+sincronizar_aprobaciones_desde_asistencia = db_mod.sincronizar_aprobaciones_desde_asistencia
+sincronizar_aprobaciones_con_gdrive = db_mod.sincronizar_aprobaciones_con_gdrive
+regenerar_aprobaciones_excel = db_mod.regenerar_aprobaciones_excel
+guardar_sustento_trabajador = db_mod.guardar_sustento_trabajador
+resetear_sustento_solicitud = getattr(db_mod, 'resetear_sustento_solicitud', None)
+cambiar_password_usuario = db_mod.cambiar_password_usuario
+obtener_usuario_by_username = db_mod.obtener_usuario_by_username
+crear_token_sesion = db_mod.crear_token_sesion
+validar_token_sesion = db_mod.validar_token_sesion
+eliminar_token_sesion = db_mod.eliminar_token_sesion
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password, verify_password
 
 from PIL import Image, ImageOps
@@ -1695,7 +1706,7 @@ def render_tab_pendientes():
                 if is_admin_user and tiene_sustento:
                     st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
                     if st.button("🔄 Resetear Sustento (Habilitar al trabajador)", key=f"btn_reset_sust_{sol_id}", use_container_width=True):
-                        if resetear_sustento_solicitud(sol_id):
+                        if callable(resetear_sustento_solicitud) and resetear_sustento_solicitud(sol_id):
                             st.toast(f"🔄 Sustento reseteado para {worker_name}", icon="✅")
                             st.rerun()
                         else:
