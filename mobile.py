@@ -1826,25 +1826,30 @@ with tab_mis_horas:
                     my_obs_input = st.text_area(
                         "✍️ Motivo / Detalle del trabajo realizado",
                         value=obs_actual,
-                        placeholder="",
+                        placeholder="Escribe el trabajo o labor realizada..." if not tiene_sustento_my else "",
+                        disabled=tiene_sustento_my,
                         key=f"my_txt_{sol_id}"
                     )
                     
-                    my_uploaded_files = st.file_uploader(
-                        "📷 Adjuntar Fotos (permite múltiples)",
-                        type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
-                        accept_multiple_files=True,
-                        key=f"my_files_{sol_id}"
-                    )
+                    if not tiene_sustento_my:
+                        my_uploaded_files = st.file_uploader(
+                            "📷 Adjuntar Fotos (permite múltiples)",
+                            type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
+                            accept_multiple_files=True,
+                            key=f"my_files_{sol_id}"
+                        )
 
-                    if my_uploaded_files:
-                        st.markdown(f"<div style='font-size: 11.5px; font-weight: 700; color: #2ECC71; margin: 4px 0 6px 0;'>📸 {len(my_uploaded_files)} foto(s) lista(s) para enviar:</div>", unsafe_allow_html=True)
-                        c_prev_my = st.columns(min(len(my_uploaded_files), 3))
-                        for p_idx, p_f in enumerate(my_uploaded_files[:3]):
-                            with c_prev_my[p_idx]:
-                                st.image(p_f, caption=f"Foto {p_idx+1}", use_container_width=True)
+                        if my_uploaded_files:
+                            st.markdown(f"<div style='font-size: 11.5px; font-weight: 700; color: #2ECC71; margin: 4px 0 6px 0;'>📸 {len(my_uploaded_files)} foto(s) lista(s) para enviar:</div>", unsafe_allow_html=True)
+                            c_prev_my = st.columns(min(len(my_uploaded_files), 3))
+                            for p_idx, p_f in enumerate(my_uploaded_files[:3]):
+                                with c_prev_my[p_idx]:
+                                    st.image(p_f, caption=f"Foto {p_idx+1}", use_container_width=True)
+                    else:
+                        my_uploaded_files = None
                     
-                    if st.button("📤 ENVIAR", key=f"btn_send_my_{sol_id}", type="primary", use_container_width=True):
+                    btn_send_label = "🔒 SUSTENTO YA ENVIADO" if tiene_sustento_my else "📤 ENVIAR"
+                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type="secondary" if tiene_sustento_my else "primary", disabled=tiene_sustento_my, use_container_width=True):
                         if not my_obs_input.strip() and not my_uploaded_files and not adj_list_my:
                             st.warning("⚠️ Por favor ingresa el motivo o adjunta al menos una foto antes de enviar.")
                         else:
