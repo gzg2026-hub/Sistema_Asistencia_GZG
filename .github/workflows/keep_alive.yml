@@ -1,17 +1,50 @@
-﻿name: Keep Alive Streamlit App
+name: Keep Alive Streamlit App
 
 on:
   schedule:
-    # Ejecutar cada 2 horas para evitar que Streamlit Cloud hiberne
-    - cron: '0 */2 * * *'
-  workflow_dispatch:
+    # Cada 4 horas para mantener viva la app en Streamlit Cloud
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Permite ejecutarlo manualmente con un clic desde GitHub
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Streamlit App
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Playwright
         run: |
-          echo "Pinging GZG Aprobaciones Móvil Streamlit App..."
-          curl -s -L --max-time 30 https://gzg-aprobaciones-movil.streamlit.app/ > /dev/null || true
-          echo "Ping completado con éxito."
+          pip install playwright
+          playwright install --with-deps chromium
+
+      - name: Visitar la app y despertarla si esta dormida
+        run: |
+          python - <<'EOF'
+          from playwright.sync_api import sync_playwright
+
+          URL = "https://gzg-aprobaciones-movil.streamlit.app/"
+
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              print(f"Visitando {URL} ...")
+              page.goto(URL, wait_until="networkidle", timeout=60000)
+
+              # Si aparece el boton de "despertar", la app estaba dormida: hacer clic
+              boton = page.get_by_text("Yes, get this app back up!", exact=False)
+              try:
+                  if boton.is_visible(timeout=5000):
+                      print("App dormida detectada. Haciendo clic para despertarla...")
+                      boton.click()
+                      page.wait_for_timeout(15000)  # dar tiempo a que arranque
+                      print("Clic realizado. App deberia estar despertando.")
+                  else:
+                      print("App ya estaba despierta. Visita registrada como trafico real.")
+              except Exception as e:
+                  print(f"Aviso: {e}. App probablemente ya activa.")
+
+              browser.close()
+          EOF
