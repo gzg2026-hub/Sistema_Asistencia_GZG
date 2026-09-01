@@ -67,7 +67,11 @@ def subir_archivo_a_gdrive(local_file_path: str, subfolder_name: str = "", sa_di
         ).execute()
         files = results.get("files", [])
 
-        media = MediaFileUpload(local_file_path, resumable=True)
+        media = MediaFileUpload(
+            local_file_path,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            resumable=False
+        )
 
         if files:
             file_id = files[0]["id"]
