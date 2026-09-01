@@ -92,6 +92,10 @@ def get_file_b64(path):
     return ""
 
 @st.cache_data(show_spinner=False)
+def _get_logo_base64_cached(logo_path: str, mtime: float):
+    with open(logo_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
 def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -99,11 +103,14 @@ def get_logo_base64():
         for folder in ["static", "assets", os.path.join("docs", "assets")]:
             logo_path = os.path.join(root_dir, folder, logo_name)
             if os.path.exists(logo_path):
-                with open(logo_path, "rb") as f:
-                    return base64.b64encode(f.read()).decode()
+                return _get_logo_base64_cached(logo_path, os.path.getmtime(logo_path))
     return ""
 
 @st.cache_data(show_spinner=False)
+def _get_hero_base64_cached(hero_path: str, mtime: float):
+    with open(hero_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
+
 def get_hero_base64():
     """Obtiene la imagen de portada minera para el login."""
     root_dir = os.path.dirname(os.path.abspath(__file__))
@@ -111,8 +118,7 @@ def get_hero_base64():
         for folder in ["static", "assets", os.path.join("docs", "assets")]:
             hero_path = os.path.join(root_dir, folder, hero_name)
             if os.path.exists(hero_path):
-                with open(hero_path, "rb") as f:
-                    return base64.b64encode(f.read()).decode()
+                return _get_hero_base64_cached(hero_path, os.path.getmtime(hero_path))
     return ""
 
 @st.cache_data(show_spinner=False)
