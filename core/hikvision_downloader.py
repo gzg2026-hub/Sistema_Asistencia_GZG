@@ -113,92 +113,114 @@ def descargar_transacciones_hikvision(
     try:
         from playwright.sync_api import sync_playwright
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=["--ignore-certificate-errors", "--no-sandbox"]
-            )
-            context = browser.new_context(ignore_https_errors=True)
-            page = context.new_page()
-
-            page.goto(f"{base_url}/#/", wait_until="domcontentloaded")
-            time.sleep(4)
-
-            # Llenar credenciales en componentes Vue (Element UI) forzando eventos input/change/blur
-            page.evaluate(f"""
-                () => {{
-                    const u = document.querySelector('#username') || document.querySelector("input[placeholder='Nombre de usuario']");
-                    const p = document.querySelector('#password') || document.querySelector("input[type='password']");
-                    if (u) {{
-                        u.removeAttribute('readonly');
-                        u.focus();
-                        u.value = '{username}';
-                        u.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                        u.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                        u.dispatchEvent(new Event('blur', {{ bubbles: true }}));
-                    }}
-                    if (p) {{
-                        p.removeAttribute('readonly');
-                        p.focus();
-                        p.value = '{password}';
-                        p.dispatchEvent(new Event('input', {{ bubbles: true }}));
-                        p.dispatchEvent(new Event('change', {{ bubbles: true }}));
-                        p.dispatchEvent(new Event('blur', {{ bubbles: true }}));
-                    }}
-                }}
-            """)
-
-            time.sleep(2)
-            login_btn = page.locator(".login-btn, button:has-text('Iniciar'), button:has-text('Log In')").first
-            if login_btn.count() > 0:
-                login_btn.click()
-            
+        for intento_global in range(1, 4):
             try:
-                page.wait_for_load_state("networkidle", timeout=10000)
-            except Exception:
-                time.sleep(6)
+                with sync_playwright() as p:
+                    browser = p.chromium.launch(
+                        headless=True,
+                        args=["--ignore-certificate-errors", "--no-sandbox"]
+                    )
+                    context = browser.new_context(ignore_https_errors=True)
+                    page = context.new_page()
 
-            payload_js = json.dumps({
-                "RecordRequest": {
-                    "PageIndex": 1,
-                    "PageSize": 5000,
-                    "QueryInfo": {
-                        "SortInfo": { "SortField": 1, "SortType": 1 },
-                        "BeginTime": f"{fecha_inicio}T00:00:00-05:00",
-                        "EndTime": f"{fecha_fin}T23:59:59-05:00",
-                        "PersonID": [],
-                        "PersonCustomFiledID": [],
-                        "RecordType": 1
-                    }
-                }
-            })
+                    page.goto(f"{base_url}/#/", wait_until="domcontentloaded")
+                    time.sleep(3)
 
-            for intento in range(1, 4):
-                try:
-                    res = page.evaluate(f"""
-                        async () => {{
-                            const resp = await fetch('/ISAPI/Bumblebee/AttendancePlugin/V1/Record?MT=GET', {{
-                                method: 'POST',
-                                headers: {{
-                                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                                }},
-                                body: JSON.stringify({payload_js})
-                            }});
-                            return await resp.json();
+                    # Llenar credenciales en componentes Vue (Element UI) forzando eventos input/change/blur
+                    page.evaluate(f"""
+                        () => {{
+                            const u = document.querySelector('#username') || document.querySelector("input[placeholder='Nombre de usuario']");
+                            const p = document.querySelector('#password') || document.querySelector("input[type='password']");
+                            if (u) {{
+                                u.removeAttribute('readonly');
+                                u.focus();
+                                u.value = '{username}';
+                                u.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                u.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                                u.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+                            }}
+                            if (p) {{
+                                p.removeAttribute('readonly');
+                                p.focus();
+                                p.value = '{password}';
+                                p.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                                p.dispatchEvent(new Event('change', {{ bubbles: true }}));
+                                p.dispatchEvent(new Event('blur', {{ bubbles: true }}));
+                            }}
                         }}
                     """)
-                    records = res.get("ResponseStatus", {}).get("Data", {}).get("OriginalRecord", [])
-                    if records and len(records) > 0:
-                        break
-                    time.sleep(3)
-                except Exception as e_retry:
-                    time.sleep(3)
 
-            browser.close()
-            print(f"[HikCentral] Autenticación exitosa. {len(records)} marcaciones extraídas.")
+                    time.sleep(2)
+                    pass_input = page.locator("#password, input[type='password']").first
+                    if pass_input.count() > 0:
+                        pass_input.press("Enter")
+                    time.sleep(1)
+
+                    login_btn = page.locator(".login-btn, button:has-text('Iniciar'), button:has-text('Log In')").first
+                    if login_btn.count() > 0:
+                        try:
+                            login_btn.click(timeout=3000)
+                        except Exception:
+                            pass
+                    
+                    try:
+                        page.wait_for_load_state("networkidle", timeout=8000)
+                    except Exception:
+                        time.sleep(4)
+
+                    payload_js = json.dumps({
+                        "RecordRequest": {
+                            "PageIndex": 1,
+                            "PageSize": 5000,
+                            "QueryInfo": {
+                                "SortInfo": { "SortField": 1, "SortType": 1 },
+                                "BeginTime": f"{fecha_inicio}T00:00:00-05:00",
+                                "EndTime": f"{fecha_fin}T23:59:59-05:00",
+                                "PersonID": [],
+                                "PersonCustomFiledID": [],
+                                "RecordType": 1
+                            }
+                        }
+                    })
+
+                    for intento in range(1, 4):
+                        try:
+                            res = page.evaluate(f"""
+                                async () => {{
+                                    const resp = await fetch('/ISAPI/Bumblebee/AttendancePlugin/V1/Record?MT=GET', {{
+                                        method: 'POST',
+                                        headers: {{
+                                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                                        }},
+                                        body: JSON.stringify({payload_js})
+                                    }});
+                                    return await resp.json();
+                                }}
+                            """)
+                            records = res.get("ResponseStatus", {}).get("Data", {}).get("OriginalRecord", [])
+                            if records and len(records) > 0:
+                                break
+                            time.sleep(3)
+                        except Exception:
+                            time.sleep(3)
+
+                    browser.close()
+                    if records and len(records) > 0:
+                        print(f"[HikCentral] Autenticación exitosa. {len(records)} marcaciones extraídas (intento {intento_global}/3).")
+                        break
+                    else:
+                        print(f"[HikCentral] Intento {intento_global}/3 devolvió 0 marcaciones. Reintentando login...")
+                        time.sleep(3)
+            except Exception as e_ciclo:
+                print(f"[HikCentral] Error en intento {intento_global}/3: {e_ciclo}")
+                time.sleep(3)
 
     except Exception as e:
-        print(f"[HikCentral] Error durante autodescarga: {e}")
+        print(f"[HikCentral] Error general durante autodescarga: {e}")
+
+    if not records or len(records) == 0:
+        print(f"[HikCentral] ADVERTENCIA: No se obtuvieron registros de transacciones para {fecha_inicio} al {fecha_fin}.")
+        return ""
 
     # Generar Excel EXACTO 1:1 idéntico al reporte de 11 columnas de HikCentral Web Client
     wb = Workbook()

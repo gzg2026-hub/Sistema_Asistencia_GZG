@@ -135,11 +135,21 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
             fecha_inicio=fecha_inicio,
             fecha_fin=fecha_fin
         )
-        _log(f"Data Cruda descargada en: {excel_path_nuevo}")
+        _log(f"Data Cruda descargada en: {excel_path_nuevo if excel_path_nuevo else '(Sin archivo generado)'}")
 
-        # 2. Cargar y Fusionar en el Archivo Maestro de Data Cruda sin Duplicados ni Faltantes
-        df_trab_nuevo, df_marc_nuevo, df_he_nuevo = cargar_datos_excel(excel_path_nuevo)
-        
+        # Función auxiliar para limpieza de carpeta data_cruda
+        def _limpiar_temporales_data_cruda():
+            try:
+                for item_tmp in os.listdir(CARPETA_DATA_CRUDA):
+                    item_tmp_path = os.path.join(CARPETA_DATA_CRUDA, item_tmp)
+                    if os.path.isfile(item_tmp_path) and item_tmp.strip().lower() != "transacciones_acumuladas.xlsx" and not item_tmp.startswith("~$"):
+                        try:
+                            os.remove(item_tmp_path)
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+
         ruta_maestro_raw = os.path.join(CARPETA_DATA_CRUDA, "Transacciones_Acumuladas.xlsx")
 
         # Conteo previo a la fusión para saber si esta pasada trajo marcaciones nuevas
@@ -150,6 +160,19 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                 conteo_previo = len(df_previo)
             except Exception:
                 conteo_previo = 0
+
+        if not excel_path_nuevo or not os.path.exists(excel_path_nuevo):
+            _log("⚠️ [HikCentral] No se descargaron nuevas transacciones en este pase. Se preserva el Maestro intacto.")
+            _limpiar_temporales_data_cruda()
+            if es_pase_programada:
+                _log("Descarga finalizada (sin cambios).")
+                _log("=" * 60)
+                return True
+            df_marc_nuevo = pd.DataFrame()
+            df_trab_nuevo = pd.DataFrame()
+        else:
+            # 2. Cargar y Fusionar en el Archivo Maestro de Data Cruda sin Duplicados ni Faltantes
+            df_trab_nuevo, df_marc_nuevo, df_he_nuevo = cargar_datos_excel(excel_path_nuevo)
 
         df_marc_master = fusionar_y_deduplicar_data_cruda(df_marc_nuevo, ruta_maestro_raw)
         conteo_nuevo = len(df_marc_master)
@@ -184,6 +207,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                      f"Revisar manualmente o usar 'Reprocesar Datos' en la app.")
 
             if not hay_marcaciones_nuevas:
+                _limpiar_temporales_data_cruda()
                 _log("Sin marcaciones nuevas en esta pasada. Se omite reproceso, subida a Drive y sincronización con GitHub.")
                 _log("Descarga finalizada (sin cambios).")
                 _log("=" * 60)
@@ -191,17 +215,8 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
 
         # Limpieza estricta e inmediata de cualquier descarga o reporte en downloads/data_cruda
         # para conservar ÚNICAMENTE Transacciones_Acumuladas.xlsx
-        try:
-            for item_tmp in os.listdir(CARPETA_DATA_CRUDA):
-                item_tmp_path = os.path.join(CARPETA_DATA_CRUDA, item_tmp)
-                if os.path.isfile(item_tmp_path) and item_tmp.strip().lower() != "transacciones_acumuladas.xlsx" and not item_tmp.startswith("~$"):
-                    try:
-                        os.remove(item_tmp_path)
-                    except Exception:
-                        pass
-            _log(f"Limpieza estricta de carpeta data_cruda completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
-        except Exception as e_clean:
-            _log(f"Aviso al limpiar temporales en data_cruda: {e_clean}")
+        _limpiar_temporales_data_cruda()
+        _log(f"Limpieza estricta de carpeta data_cruda completada. Conservando únicamente Maestro: {ruta_maestro_raw}")
 
         # Fallback a base de datos de trabajadores si el Excel crudo no incluye pestaña de trabajadores
         df_trab = df_trab_nuevo
@@ -282,7 +297,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                     else:
                         _log(f"Aviso: No se encontraron registros de asistencia para el día cerrado {ayer_str}.")
                 
-                # 4.5 Sincronizar y Regenerar Aprobaciones del mes y subir a Google Drive (AGOSTO)
+                # 4.5 Sincronizar y Regenerar Aprobaciones mensuales y subir a Google Drive
                 try:
                     from data.database import sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive, DB_PATH, get_connection
                     from data.exporter import exportar_aprobaciones_excel
@@ -293,15 +308,20 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                     # 2. Agregar únicamente nuevos días cerrados sin tocar los existentes
                     sincronizar_aprobaciones_desde_asistencia(DB_PATH)
                     
-                    mes_str = datetime.date.today().strftime('%Y-%m')
-                    aprob_path = os.path.join(CARPETA_DATA_PROCESADA, f"Aprobaciones_GZG_{mes_str}.xlsx")
                     conn_ap = get_connection(DB_PATH)
-                    df_aprob_final = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn_ap)
+                    df_aprob_all = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn_ap)
                     conn_ap.close()
                     
-                    if exportar_aprobaciones_excel(df_aprob_final, aprob_path):
-                        subir_archivo_a_gdrive(aprob_path)
-                        _log(f"Aprobaciones del mes ({aprob_path}) generadas y subidas a Google Drive con éxito.")
+                    if not df_aprob_all.empty and 'fecha' in df_aprob_all.columns:
+                        meses_presentes = sorted(df_aprob_all['fecha'].astype(str).str[:7].dropna().unique())
+                        for m_str in meses_presentes:
+                            if len(m_str) == 7 and m_str.startswith("20"):
+                                df_aprob_mes = df_aprob_all[df_aprob_all['fecha'].astype(str).str.startswith(m_str)]
+                                if not df_aprob_mes.empty:
+                                    aprob_path_mes = os.path.join(CARPETA_DATA_PROCESADA, f"Aprobaciones_GZG_{m_str}.xlsx")
+                                    if exportar_aprobaciones_excel(df_aprob_mes, aprob_path_mes):
+                                        subir_archivo_a_gdrive(aprob_path_mes)
+                                        _log(f"Aprobaciones del mes {m_str} ({aprob_path_mes}) generadas y subidas a Google Drive con éxito.")
                 except Exception as e_aprob:
                     _log(f"Aviso actualizando aprobaciones en schedule: {e_aprob}")
 
