@@ -1372,7 +1372,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     comentario_n1 = COALESCE(?, comentario_n1),
                     comentario_n2 = COALESCE(?, comentario_n2),
                     comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END,
-                    observacion_trabajador = ?
+                    observacion_trabajador = CASE 
+                        WHEN observacion_trabajador IS NOT NULL AND observacion_trabajador != '' THEN observacion_trabajador
+                        ELSE ?
+                    END
                 WHERE dni = ? AND fecha = ?
             """, (
                 est_global, est_global, est_global,
@@ -1731,13 +1734,23 @@ def guardar_sustento_trabajador(
             }
             u_autor = mapa_dni_usuario.get(dni_prev, "Personal")
 
-        # Construir comentario consolidado con el sustento del trabajador
+        # Construir comentario consolidado PRESERVANDO las aprobaciones previas de N1/N2
         comentarios_parts = []
         if observacion_trabajador.strip():
             comentarios_parts.append(f"{u_autor}: {observacion_trabajador.strip()}")
-        if c_n1_prev and c_n1_prev.lower() not in ('none', 'nan', ''):
+        
+        # Preservar líneas N1/N2 existentes del comentario_supervisor (aprobaciones ya realizadas)
+        if c_sup_prev and c_sup_prev.lower() not in ('none', 'nan', ''):
+            for line in c_sup_prev.split('\n'):
+                l_stripped = line.strip()
+                if l_stripped.upper().startswith('N1') or l_stripped.upper().startswith('N2'):
+                    comentarios_parts.append(l_stripped)
+        
+        # Agregar comentarios N1/N2 de campos individuales si no estaban ya en comentario_supervisor
+        existing_lines = "\n".join(comentarios_parts).upper()
+        if c_n1_prev and c_n1_prev.lower() not in ('none', 'nan', '') and f"N1:" not in existing_lines and f"N1 (" not in existing_lines:
             comentarios_parts.append(f"N1: {c_n1_prev}")
-        if c_n2_prev and c_n2_prev.lower() not in ('none', 'nan', ''):
+        if c_n2_prev and c_n2_prev.lower() not in ('none', 'nan', '') and f"N2:" not in existing_lines and f"N2 (" not in existing_lines:
             comentarios_parts.append(f"N2: {c_n2_prev}")
 
         nuevo_c_sup = "\n".join(comentarios_parts) if comentarios_parts else None
@@ -1745,11 +1758,14 @@ def guardar_sustento_trabajador(
         cursor.execute("""
             UPDATE aprobaciones
             SET observacion_trabajador = ?,
-                comentario_supervisor = ?,
+                comentario_supervisor = CASE 
+                    WHEN ? IS NOT NULL THEN ?
+                    ELSE comentario_supervisor
+                END,
                 adjuntos = COALESCE(?, adjuntos),
                 updated_at = ?
             WHERE id = ?
-        """, (observacion_trabajador.strip() if observacion_trabajador.strip() else None, nuevo_c_sup, final_adjuntos, hora_peru, id_solicitud))
+        """, (observacion_trabajador.strip() if observacion_trabajador.strip() else None, nuevo_c_sup, nuevo_c_sup, final_adjuntos, hora_peru, id_solicitud))
         conn.commit()
         conn.close()
         try:
