@@ -96,7 +96,7 @@ def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
     root_dir = os.path.dirname(os.path.abspath(__file__))
     for logo_name in ["gzg_logo_transparent.png", "gzg_logo.png", "gzg_logo_clean.png"]:
-        for folder in ["static", "assets"]:
+        for folder in ["static", "assets", os.path.join("docs", "assets")]:
             logo_path = os.path.join(root_dir, folder, logo_name)
             if os.path.exists(logo_path):
                 with open(logo_path, "rb") as f:
@@ -108,7 +108,7 @@ def get_hero_base64():
     """Obtiene la imagen de portada minera para el login."""
     root_dir = os.path.dirname(os.path.abspath(__file__))
     for hero_name in ["login_mining_hero.jpg", "login_hero.jpg"]:
-        for folder in ["static", "assets"]:
+        for folder in ["static", "assets", os.path.join("docs", "assets")]:
             hero_path = os.path.join(root_dir, folder, hero_name)
             if os.path.exists(hero_path):
                 with open(hero_path, "rb") as f:
