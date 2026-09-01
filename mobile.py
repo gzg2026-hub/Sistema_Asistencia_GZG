@@ -21,6 +21,7 @@ from data.database import (
     init_db, obtener_solicitudes_aprobacion, actualizar_estado_aprobacion,
     sincronizar_aprobaciones_desde_asistencia, sincronizar_aprobaciones_con_gdrive,
     regenerar_aprobaciones_excel, guardar_sustento_trabajador,
+    resetear_sustento_solicitud,
     cambiar_password_usuario, obtener_usuario_by_username,
     crear_token_sesion, validar_token_sesion, eliminar_token_sesion
 )
@@ -1690,6 +1691,16 @@ def render_tab_pendientes():
                         st.toast(f"✅ Aprobado: {worker_name}", icon="🎉")
                         st.rerun()
 
+                # Control exclusivo de Administrador: Habilitar reenvío de sustento al trabajador
+                if is_admin_user and tiene_sustento:
+                    st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
+                    if st.button("🔄 Resetear Sustento (Habilitar al trabajador)", key=f"btn_reset_sust_{sol_id}", use_container_width=True):
+                        if resetear_sustento_solicitud(sol_id):
+                            st.toast(f"🔄 Sustento reseteado para {worker_name}", icon="✅")
+                            st.rerun()
+                        else:
+                            st.error("Error al resetear sustento.")
+
 if tab_pendientes is not None:
     with tab_pendientes:
         render_tab_pendientes()
@@ -1965,24 +1976,19 @@ with tab_mis_horas:
                                     with c_my2:
                                         st.markdown(render_zoomable_photo_html(adj_list_my[i+1], f"zoom_my_{sol_id}_{i+1}", f"Foto {i+2}", thumb_height=130), unsafe_allow_html=True)
 
-                    # Formulario para sustentar / actualizar sustento
+                    # Formulario para sustentar (estrictamente bloqueado si ya envió)
                     st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
-                    
-                    # El trabajador puede editar o agregar fotos si la solicitud aún está PENDIENTE
-                    puede_editar_my = (estado_global == 'PENDIENTE' and estado_n1 == 'PENDIENTE')
-                    
                     my_obs_input = st.text_area(
                         "✍️ Motivo / Detalle del trabajo realizado",
                         value=obs_actual,
-                        placeholder="Escribe el trabajo o labor realizada...",
-                        disabled=not puede_editar_my,
+                        placeholder="Escribe el trabajo o labor realizada..." if not tiene_sustento_my else "",
+                        disabled=tiene_sustento_my,
                         key=f"my_txt_{sol_id}"
                     )
                     
-                    if puede_editar_my:
-                        label_uploader = "📷 Adjuntar Fotos Adicionales o Nuevas" if adj_list_my else "📷 Adjuntar Fotos (permite múltiples)"
+                    if not tiene_sustento_my:
                         my_uploaded_files = st.file_uploader(
-                            label_uploader,
+                            "📷 Adjuntar Fotos (permite múltiples)",
                             type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
                             accept_multiple_files=True,
                             key=f"my_files_{sol_id}"
@@ -1997,20 +2003,8 @@ with tab_mis_horas:
                     else:
                         my_uploaded_files = None
                     
-                    if not puede_editar_my:
-                        btn_send_label = "🔒 SOLICITUD YA EVALUADA"
-                        btn_disabled = True
-                        btn_type = "secondary"
-                    elif tiene_sustento_my:
-                        btn_send_label = "🔄 ACTUALIZAR SUSTENTO / FOTOS"
-                        btn_disabled = False
-                        btn_type = "primary"
-                    else:
-                        btn_send_label = "📤 ENVIAR SUSTENTO"
-                        btn_disabled = False
-                        btn_type = "primary"
-
-                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type=btn_type, disabled=btn_disabled, use_container_width=True):
+                    btn_send_label = "🔒 SUSTENTO YA ENVIADO" if tiene_sustento_my else "📤 ENVIAR"
+                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type="secondary" if tiene_sustento_my else "primary", disabled=tiene_sustento_my, use_container_width=True):
                         if not my_obs_input.strip() and not my_uploaded_files and not adj_list_my:
                             st.warning("⚠️ Por favor ingresa el motivo o adjunta al menos una foto antes de enviar.")
                         else:
@@ -2031,7 +2025,7 @@ with tab_mis_horas:
                                     my_adj_path = "|||".join(data_uris)
 
                             if guardar_sustento_trabajador(sol_id, my_obs_input, my_adj_path):
-                                st.toast("✅ Sustento actualizado exitosamente", icon="🎉")
+                                st.toast("✅ Sustento enviado exitosamente", icon="🎉")
                                 st.rerun()
                             else:
                                 st.error("Error al guardar el sustento. Intente nuevamente.")

@@ -1867,3 +1867,76 @@ def guardar_sustento_trabajador(
         print(f"Error al guardar sustento del trabajador: {e}")
         return False
 
+
+def resetear_sustento_solicitud(id_solicitud: int, db_path: str = DB_PATH) -> bool:
+    """
+    Función exclusiva de Administrador: Limpia el sustento y fotos enviadas por el trabajador
+    en una solicitud pendiente, permitiéndole enviar nuevamente desde cero.
+    Regenera y sube el Excel a Google Drive de forma sincrónica.
+    """
+    conn = get_connection(db_path)
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT comentario_supervisor FROM aprobaciones WHERE id = ?", (id_solicitud,))
+        row = cursor.fetchone()
+        nuevo_c_sup = None
+        if row and row[0]:
+            lines_keep = [l.strip() for l in str(row[0]).split('\n') if l.strip().upper().startswith('N1') or l.strip().upper().startswith('N2')]
+            nuevo_c_sup = "\n".join(lines_keep) if lines_keep else None
+
+        hora_peru = obtener_hora_peru_str()
+        cursor.execute("""
+            UPDATE aprobaciones
+            SET observacion_trabajador = NULL,
+                adjuntos = NULL,
+                comentario_supervisor = ?,
+                updated_at = ?
+            WHERE id = ?
+        """, (nuevo_c_sup, hora_peru, id_solicitud))
+        conn.commit()
+        conn.close()
+
+        try:
+            obtener_solicitudes_aprobacion.clear()
+        except Exception:
+            pass
+
+        try:
+            import pandas as pd
+            from data.exporter import exportar_aprobaciones_excel
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            conn2 = get_connection(db_path)
+            df_a = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn2)
+            conn2.close()
+            mes_str = obtener_hora_peru_str()[:7]
+            if not df_a.empty and 'fecha' in df_a.columns:
+                fechas_v = df_a['fecha'].dropna().astype(str).str.strip()
+                fechas_v = fechas_v[fechas_v.str.len() >= 7]
+                if not fechas_v.empty:
+                    mes_str = fechas_v.iloc[0][:7]
+            out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            ok_local = exportar_aprobaciones_excel(df_a, out_path)
+            if ok_local and os.path.exists(out_path):
+                sa_info = None
+                try:
+                    import streamlit as st_mod
+                    if hasattr(st_mod, "secrets") and "gcp_service_account" in st_mod.secrets:
+                        sa_info = dict(st_mod.secrets["gcp_service_account"])
+                except Exception:
+                    pass
+                try:
+                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                    subir_archivo_a_gdrive(out_path, sa_dict=sa_info)
+                except Exception as e_drive:
+                    print(f"[Aviso] Subida Drive reset sustento: {e_drive}")
+        except Exception as e_excel:
+            print(f"[Aviso] Excel de aprobaciones no regenerado en reset: {e_excel}")
+
+        return True
+    except Exception as e:
+        conn.close()
+        print(f"Error al resetear sustento de solicitud: {e}")
+        return False
+
+
