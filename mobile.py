@@ -144,6 +144,41 @@ def parse_adjuntos(val) -> list:
             pass
     return [v_str]
 
+def render_zoomable_photo_html(img_src: str, modal_id: str, caption: str = "Foto de Sustento", thumb_height: int = 150) -> str:
+    """
+    Renderiza una miniatura de foto de sustento con soporte de Zoom / Pantalla Completa nativo (Lightbox CSS).
+    Al hacer clic o tocar la foto en el celular, se abre instantáneamente en tamaño completo con fondo oscuro.
+    0ms de latencia, sin recargas de página ni saltos de scroll.
+    """
+    safe_id = "".join([c if c.isalnum() or c in ('_', '-') else '_' for c in str(modal_id)])
+    return f"""
+    <div id="anchor_{safe_id}" style="position: relative; display: block; width: 100%; margin-bottom: 6px;">
+        <a href="#{safe_id}" style="display: block; text-decoration: none; cursor: zoom-in; position: relative; border-radius: 8px; overflow: hidden; border: 1.5px solid #3A3F4D; background: #1E222B; transition: transform 0.15s ease, border-color 0.15s ease;">
+            <img src="{img_src}" style="width: 100%; height: {thumb_height}px; object-fit: cover; display: block;" loading="lazy" />
+            <div style="position: absolute; bottom: 5px; right: 5px; background: rgba(18, 20, 24, 0.88); color: #F58220; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; display: flex; align-items: center; gap: 4px; border: 1px solid rgba(245, 130, 32, 0.45); pointer-events: none; backdrop-filter: blur(4px);">
+                🔍 <span>AMPLIAR</span>
+            </div>
+        </a>
+        <div id="{safe_id}" class="gzg-lightbox">
+            <a href="#anchor_{safe_id}" class="gzg-lightbox-backdrop" title="Toca para cerrar"></a>
+            <div class="gzg-lightbox-content">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; width: 100%;">
+                    <div style="font-size: 13px; font-weight: 700; color: #F58220; display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px;">
+                        📷 <span>{caption}</span>
+                    </div>
+                    <a href="#anchor_{safe_id}" class="gzg-lightbox-close" title="Cerrar">✖</a>
+                </div>
+                <div style="width: 100%; max-height: 74vh; overflow: auto; -webkit-overflow-scrolling: touch; display: flex; justify-content: center; align-items: center; background: #121418; border-radius: 8px; padding: 4px;">
+                    <img src="{img_src}" style="max-width: 100%; max-height: 72vh; object-fit: contain; border-radius: 6px;" />
+                </div>
+                <div style="font-size: 11px; color: #9A9EA7; margin-top: 8px; text-align: center; width: 100%;">
+                    💡 Toca la <b>✖</b> o el fondo para cerrar
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+
 logo_b64 = get_logo_base64()
 hero_b64 = get_hero_base64()
 icon192_b64 = get_file_b64("static/icon-192.png") or get_file_b64("assets/icon-192.png") or logo_b64
@@ -739,6 +774,72 @@ st.markdown("""
         gap: 4px !important;
         margin-top: 0px !important;
         margin-bottom: 10px !important;
+    }
+
+    /* =====================================================================
+       ZOOM / LIGHTBOX FULLSCREEN PARA FOTOS DE SUSTENTO (0ms latencia)
+       ===================================================================== */
+    .gzg-lightbox {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 99999999 !important;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        box-sizing: border-box;
+    }
+    .gzg-lightbox:target {
+        display: flex !important;
+    }
+    .gzg-lightbox-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(5, 7, 10, 0.90);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 1;
+        cursor: default;
+    }
+    .gzg-lightbox-content {
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        max-width: 480px;
+        max-height: 90vh;
+        background: #1A1D24;
+        border: 1px solid rgba(245, 130, 32, 0.35);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.9);
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+    .gzg-lightbox-close {
+        color: #FFFFFF !important;
+        text-decoration: none !important;
+        font-size: 15px;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.12);
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease;
+    }
+    .gzg-lightbox-close:hover,
+    .gzg-lightbox-close:active {
+        background: #E74C3C !important;
+        color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1439,7 +1540,7 @@ def render_tab_pendientes():
                     </div>
                     """, unsafe_allow_html=True)
 
-                # Mostrar fotos previas si existen
+                # Mostrar fotos previas si existen con soporte de Zoom interactivo
                 adj_list = parse_adjuntos(row.get('adjuntos'))
                 if adj_list:
                     noms = str(row.get('nombres') or '').strip().split()
@@ -1447,18 +1548,18 @@ def render_tab_pendientes():
                     p_nom = noms[0].title() if noms else ''
                     p_ap = apells[0].title() if apells else ''
                     nombre_corto = f"{p_nom} {p_ap}".strip() if (p_nom or p_ap) else worker_name
-                    caption_foto = f"📷 Foto adjuntada por {nombre_corto}" if nombre_corto else "📷 Foto de sustento"
+                    caption_foto = f"Foto adjuntada por {nombre_corto}" if nombre_corto else "Foto de sustento"
                     if len(adj_list) == 1:
-                        st.image(adj_list[0], caption=caption_foto, use_container_width=True)
+                        st.markdown(render_zoomable_photo_html(adj_list[0], f"zoom_pend_{sol_id}_0", caption_foto, thumb_height=200), unsafe_allow_html=True)
                     else:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos adjuntas por {nombre_corto} ({len(adj_list)} fotos):</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 6px 0;'>📷 Fotos adjuntas por {nombre_corto} ({len(adj_list)} fotos - Toca para ampliar):</div>", unsafe_allow_html=True)
                         for i in range(0, len(adj_list), 2):
                             c_img1, c_img2 = st.columns(2)
                             with c_img1:
-                                st.image(adj_list[i], caption=f"Foto {i+1}", use_container_width=True)
+                                st.markdown(render_zoomable_photo_html(adj_list[i], f"zoom_pend_{sol_id}_{i}", f"Foto {i+1} - {nombre_corto}", thumb_height=130), unsafe_allow_html=True)
                             if i + 1 < len(adj_list):
                                 with c_img2:
-                                    st.image(adj_list[i+1], caption=f"Foto {i+2}", use_container_width=True)
+                                    st.markdown(render_zoomable_photo_html(adj_list[i+1], f"zoom_pend_{sol_id}_{i+1}", f"Foto {i+2} - {nombre_corto}", thumb_height=130), unsafe_allow_html=True)
 
                 # Regla de Bloqueo Estricto para Reporte Directo a Superintendencia (msanchez)
                 app_n1_raw = str(row.get('aprobador_n1') or '').strip().lower()
@@ -1674,12 +1775,18 @@ with tab_historial:
             if cmts:
                 c_info_str = f"""<div style="font-size: 11px; color: #D1D5DB; background: rgba(255,255,255,0.04); padding: 5px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.4;">{'<br>'.join(cmts)}</div>"""
             
-            # Foto adjunta si existe
+            # Foto adjunta si existe (con Zoom interactivo)
             adj_html = ""
             adj_list_hist = parse_adjuntos(row.get('adjuntos'))
             if adj_list_hist:
-                imgs_tags = "".join([f'<img src="{x}" style="max-width: 48%; max-height: 140px; border-radius: 6px; object-fit: cover; border: 1px solid #3A3F4D; margin: 2px;" />' for x in adj_list_hist])
-                adj_html = f"""<div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">{imgs_tags}</div>"""
+                imgs_blocks = []
+                for idx_f, x_foto in enumerate(adj_list_hist):
+                    imgs_blocks.append(f"""
+                    <div style="flex: 1 1 45%; max-width: 48%; min-width: 120px;">
+                        {render_zoomable_photo_html(x_foto, f"zoom_hist_{row.get('id', idx)}_{idx_f}", f"Foto {idx_f+1} - {worker_name}", thumb_height=105)}
+                    </div>
+                    """)
+                adj_html = f"""<div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; width: 100%;">{ ''.join(imgs_blocks) }</div>"""
 
             cards_list.append(f"""<div class="approval-card">
 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; width: 100%;">
@@ -1829,17 +1936,20 @@ with tab_mis_horas:
                         </div>
                         """, unsafe_allow_html=True)
                     
-                    # Mostrar fotos ya adjuntadas si existen
+                    # Mostrar fotos ya adjuntadas si existen con soporte de Zoom interactivo
                     adj_list_my = parse_adjuntos(row.get('adjuntos'))
                     if adj_list_my:
-                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 4px 0;'>📷 Fotos Adjuntadas ({len(adj_list_my)} fotos):</div>", unsafe_allow_html=True)
-                        for i in range(0, len(adj_list_my), 2):
-                            c_my1, c_my2 = st.columns(2)
-                            with c_my1:
-                                st.image(adj_list_my[i], caption=f"Foto {i+1}", use_container_width=True)
-                            if i + 1 < len(adj_list_my):
-                                with c_my2:
-                                    st.image(adj_list_my[i+1], caption=f"Foto {i+2}", use_container_width=True)
+                        st.markdown(f"<div style='font-size: 12px; font-weight: 700; color: #F58220; margin: 6px 0 6px 0;'>📷 Fotos Adjuntadas ({len(adj_list_my)} fotos - Toca para ampliar):</div>", unsafe_allow_html=True)
+                        if len(adj_list_my) == 1:
+                            st.markdown(render_zoomable_photo_html(adj_list_my[0], f"zoom_my_{sol_id}_0", "Foto de Sustento", thumb_height=200), unsafe_allow_html=True)
+                        else:
+                            for i in range(0, len(adj_list_my), 2):
+                                c_my1, c_my2 = st.columns(2)
+                                with c_my1:
+                                    st.markdown(render_zoomable_photo_html(adj_list_my[i], f"zoom_my_{sol_id}_{i}", f"Foto {i+1}", thumb_height=130), unsafe_allow_html=True)
+                                if i + 1 < len(adj_list_my):
+                                    with c_my2:
+                                        st.markdown(render_zoomable_photo_html(adj_list_my[i+1], f"zoom_my_{sol_id}_{i+1}", f"Foto {i+2}", thumb_height=130), unsafe_allow_html=True)
 
                     # Formulario para sustentar / actualizar sustento
                     st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
