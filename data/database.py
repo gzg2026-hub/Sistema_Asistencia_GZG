@@ -1198,7 +1198,7 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
     try:
         import datetime, openpyxl
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        mes_str = datetime.date.today().strftime('%Y-%m')
+        mes_str = obtener_hora_peru_str()[:7]
         nombre_excel = f"Aprobaciones_GZG_{mes_str}.xlsx"
         local_path = os.path.join(root_dir, "downloads", "data_procesada", nombre_excel)
         
@@ -1437,7 +1437,16 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
             df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
             conn.close()
 
-            mes_str = datetime.date.today().strftime('%Y-%m')
+            mes_str = None
+            if not df_aprob.empty and 'fecha' in df_aprob.columns:
+                fechas_validas = df_aprob['fecha'].dropna().astype(str).str.strip()
+                fechas_validas = fechas_validas[fechas_validas.str.len() >= 7]
+                if not fechas_validas.empty:
+                    mes_str = fechas_validas.iloc[0][:7]
+            
+            if not mes_str or len(mes_str) != 7:
+                mes_str = obtener_hora_peru_str()[:7]
+
             out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
