@@ -1313,7 +1313,8 @@ def render_tab_pendientes():
             adj_list = parse_adjuntos(row.get('adjuntos'))
             tiene_sustento = bool(obs_trab or adj_list)
 
-            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=False):
+            is_app_open = bool(st.session_state.get(f"m_file_{sol_id}") or st.session_state.get(f"m_com_{sol_id}"))
+            with st.expander(f"👤 **{worker_name}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}", expanded=is_app_open):
                 st.markdown(f"""
                 <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                     <img src="{avatar_url}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
@@ -1447,10 +1448,17 @@ def render_tab_pendientes():
                 
                 uploaded_files = st.file_uploader(
                     "📷 Adjuntar Fotos (permite múltiples)",
-                    type=["png", "jpg", "jpeg"],
+                    type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
                     accept_multiple_files=True,
                     key=f"m_file_{sol_id}"
                 )
+
+                if uploaded_files:
+                    st.markdown(f"<div style='font-size: 11.5px; font-weight: 700; color: #2ECC71; margin: 4px 0 6px 0;'>📸 {len(uploaded_files)} foto(s) seleccionada(s):</div>", unsafe_allow_html=True)
+                    c_prev = st.columns(min(len(uploaded_files), 3))
+                    for p_idx, p_file in enumerate(uploaded_files[:3]):
+                        with c_prev[p_idx]:
+                            st.image(p_file, caption=f"Foto {p_idx+1}", use_container_width=True)
                 
                 # 2 Botones Gemelos Simétricos 50% / 50% en Fila Horizontal
                 col_act1, col_act2 = st.columns(2)
@@ -1735,7 +1743,8 @@ with tab_mis_horas:
                 cargo_me = row.get('cargo', 'Operativo')
                 avatar_url_me = get_worker_avatar_url(row.get('dni'), worker_name_me)
 
-                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  |  {tag_estado_my}", expanded=False):
+                is_my_open = bool(st.session_state.get(f"my_files_{sol_id}") or st.session_state.get(f"my_txt_{sol_id}"))
+                with st.expander(f"👤 **{worker_name_me}** ({fecha_sol})\n⏰ {he_hhmm}  |  ⚠️ {exceso_hhmm}  |  {tag_estado_my}", expanded=is_my_open):
                     st.markdown(f"""
                     <div style="display: flex; align-items: center; gap: 12px; margin: 6px 0 10px 0;">
                         <img src="{avatar_url_me}" style="width: 42px; height: 42px; border-radius: 50%; border: 2px solid #F58220; object-fit: cover; flex-shrink: 0;" />
@@ -1785,10 +1794,17 @@ with tab_mis_horas:
                     
                     my_uploaded_files = st.file_uploader(
                         "📷 Adjuntar Fotos (permite múltiples)",
-                        type=["png", "jpg", "jpeg"],
+                        type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
                         accept_multiple_files=True,
                         key=f"my_files_{sol_id}"
                     )
+
+                    if my_uploaded_files:
+                        st.markdown(f"<div style='font-size: 11.5px; font-weight: 700; color: #2ECC71; margin: 4px 0 6px 0;'>📸 {len(my_uploaded_files)} foto(s) lista(s) para enviar:</div>", unsafe_allow_html=True)
+                        c_prev_my = st.columns(min(len(my_uploaded_files), 3))
+                        for p_idx, p_f in enumerate(my_uploaded_files[:3]):
+                            with c_prev_my[p_idx]:
+                                st.image(p_f, caption=f"Foto {p_idx+1}", use_container_width=True)
                     
                     if st.button("📤 ENVIAR", key=f"btn_send_my_{sol_id}", type="primary", use_container_width=True):
                         if not my_obs_input.strip() and not my_uploaded_files and not adj_list_my:
