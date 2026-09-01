@@ -1335,19 +1335,22 @@ if st.session_state.get("show_change_pw_box", False):
 #     st.error(f"⚠️ Error cargando sistema de notificaciones: {e_push}")
 
 
-# Rehidratar estados de aprobación desde Google Drive al inicio de sesión para persistencia total
-if not st.session_state.get("gdrive_rehydrated"):
+# Rehidratar estados de aprobación desde Google Drive al inicio de sesión y periódicamente
+last_sync_ts = st.session_state.get("last_gdrive_sync_ts", 0)
+now_ts = time.time()
+if not st.session_state.get("gdrive_rehydrated") or (now_ts - last_sync_ts) > 45:
     exito_rehid = False
     for intento in range(1, 4):
         try:
             sincronizar_aprobaciones_con_gdrive()
             exito_rehid = True
             st.session_state["gdrive_rehydrated"] = True
+            st.session_state["last_gdrive_sync_ts"] = now_ts
             break
         except Exception as e_rh:
             print(f"[Aviso] Reintento {intento}/3 rehidratando desde Drive: {e_rh}")
             time.sleep(0.5)
-    if not exito_rehid:
+    if not exito_rehid and not st.session_state.get("gdrive_rehydrated"):
         print("[Alerta] No se pudo rehidratar aprobaciones desde Drive tras 3 intentos. Usando datos locales de SQLite.")
         st.warning("⚠️ No se pudo sincronizar con Google Drive. Los datos mostrados podrían no estar actualizados. Contacta al administrador si es urgente.")
 

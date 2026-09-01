@@ -1198,10 +1198,18 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
     try:
         import datetime, openpyxl
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        mes_str = obtener_hora_peru_str()[:7]
-        nombre_excel = f"Aprobaciones_GZG_{mes_str}.xlsx"
-        local_path = os.path.join(root_dir, "downloads", "data_procesada", nombre_excel)
         
+        # Sincronizar mes actual y mes previo (vital para días de cierre como fin de agosto e inicio de setiembre)
+        try:
+            from zoneinfo import ZoneInfo
+            ahora = datetime.datetime.now(ZoneInfo("America/Lima"))
+        except Exception:
+            ahora = datetime.datetime.now()
+        mes_actual = ahora.strftime("%Y-%m")
+        dt_prev = (ahora.replace(day=1) - datetime.timedelta(days=1))
+        mes_previo = dt_prev.strftime("%Y-%m")
+        meses_a_sincronizar = [mes_actual, mes_previo]
+
         sa_dict = None
         try:
             import streamlit as st
@@ -1210,252 +1218,272 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
         except Exception:
             pass
 
-        # 1. Intentar descargar la versión más reciente desde Google Drive
-        try:
-            from scripts.gdrive_uploader import descargar_archivo_de_gdrive
-            descargar_archivo_de_gdrive(nombre_excel, local_path, sa_dict=sa_dict)
-        except Exception as e_dl:
-            print(f"[Aviso] Descarga Drive en sincronizar_aprobaciones: {e_dl}")
-            
-        if not os.path.exists(local_path):
-            return
-            
-        # 2. Leer registros del Excel oficial
-        wb = openpyxl.load_workbook(local_path, data_only=True)
-        ws = wb.active
-        if ws.max_row < 5:
-            return
-            
         conn = get_connection(db_path)
         cursor = conn.cursor()
-        
-        for r in range(5, ws.max_row + 1):
-            dni_raw = str(ws.cell(row=r, column=1).value or '').strip()
-            fecha_raw = str(ws.cell(row=r, column=6).value or '').strip()
-            if not dni_raw or not fecha_raw:
-                continue
-            dni = dni_raw.lstrip('0').zfill(8)
-            fecha_parts = fecha_raw.split('/')
-            if len(fecha_parts) == 3:
-                fecha = f"{fecha_parts[2]}-{fecha_parts[1]}-{fecha_parts[0]}"
-            else:
-                fecha = fecha_raw
-                
-            apellidos = str(ws.cell(row=r, column=2).value or '').strip()
-            nombres = str(ws.cell(row=r, column=3).value or '').strip()
-            cargo = str(ws.cell(row=r, column=4).value or '').strip()
-            area = str(ws.cell(row=r, column=5).value or '').strip()
-            entrada = str(ws.cell(row=r, column=8).value or '').strip()
-            salida = str(ws.cell(row=r, column=9).value or '').strip()
-            jornada_hhmm = str(ws.cell(row=r, column=10).value or '00:00').strip()
-            he_hhmm = str(ws.cell(row=r, column=11).value or '00:00').strip()
-            exceso_hhmm = str(ws.cell(row=r, column=12).value or '00:00').strip()
-            est_global = str(ws.cell(row=r, column=13).value or 'PENDIENTE').strip().upper()
-            ap_n1 = str(ws.cell(row=r, column=14).value or '').strip()
-            est_n1 = str(ws.cell(row=r, column=15).value or 'PENDIENTE').strip().upper()
-            ap_n2 = str(ws.cell(row=r, column=16).value or '').strip()
-            est_n2 = str(ws.cell(row=r, column=17).value or '-').strip().upper()
-            f_aprob = str(ws.cell(row=r, column=18).value or '').strip()
-            cmt = str(ws.cell(row=r, column=19).value or '').strip()
-            
-            # Detectar si fue aprobado por admin según el comentario
-            ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
-            ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
 
-            # Extraer comentarios individuales de N1, N2 y sustento personal del trabajador (multi-línea)
-            c_n1_extracted = None
-            c_n2_extracted = None
-            obs_trab_extracted = None
-            if cmt:
-                lines_trab = []
-                for line in cmt.split('\n'):
-                    l_clean = line.strip()
-                    if not l_clean:
-                        continue
-                    if l_clean.upper().startswith('N1'):
-                        c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
-                    elif l_clean.upper().startswith('N2'):
-                        c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
-                    else:
-                        if not lines_trab and ':' in l_clean:
-                            prefix, rest = l_clean.split(':', 1)
-                            if ' ' not in prefix.strip() and len(prefix.strip()) <= 20:
-                                lines_trab.append(rest.strip())
+        for m_str in meses_a_sincronizar:
+            nombre_excel = f"Aprobaciones_GZG_{m_str}.xlsx"
+            local_path = os.path.join(root_dir, "downloads", "data_procesada", nombre_excel)
+
+            # 1. Intentar descargar la versión más reciente desde Google Drive
+            try:
+                from scripts.gdrive_uploader import descargar_archivo_de_gdrive
+                descargar_archivo_de_gdrive(nombre_excel, local_path, sa_dict=sa_dict)
+            except Exception as e_dl:
+                print(f"[Aviso] Descarga Drive {nombre_excel}: {e_dl}")
+
+            if not os.path.exists(local_path):
+                continue
+
+            # 2. Leer registros del Excel oficial
+            wb = openpyxl.load_workbook(local_path, data_only=True)
+            ws = wb.active
+            if ws.max_row < 5:
+                continue
+
+            for r in range(5, ws.max_row + 1):
+                dni_raw = str(ws.cell(row=r, column=1).value or '').strip()
+                fecha_raw = str(ws.cell(row=r, column=6).value or '').strip()
+                if not dni_raw or not fecha_raw:
+                    continue
+                dni = dni_raw.lstrip('0').zfill(8)
+                fecha_parts = fecha_raw.split('/')
+                if len(fecha_parts) == 3:
+                    fecha = f"{fecha_parts[2]}-{fecha_parts[1]}-{fecha_parts[0]}"
+                else:
+                    fecha = fecha_raw
+
+                apellidos = str(ws.cell(row=r, column=2).value or '').strip()
+                nombres = str(ws.cell(row=r, column=3).value or '').strip()
+                cargo = str(ws.cell(row=r, column=4).value or '').strip()
+                area = str(ws.cell(row=r, column=5).value or '').strip()
+                entrada = str(ws.cell(row=r, column=8).value or '').strip()
+                salida = str(ws.cell(row=r, column=9).value or '').strip()
+                jornada_hhmm = str(ws.cell(row=r, column=10).value or '00:00').strip()
+                he_hhmm = str(ws.cell(row=r, column=11).value or '00:00').strip()
+                exceso_hhmm = str(ws.cell(row=r, column=12).value or '00:00').strip()
+                est_global = str(ws.cell(row=r, column=13).value or 'PENDIENTE').strip().upper()
+                ap_n1 = str(ws.cell(row=r, column=14).value or '').strip()
+                est_n1 = str(ws.cell(row=r, column=15).value or 'PENDIENTE').strip().upper()
+                ap_n2 = str(ws.cell(row=r, column=16).value or '').strip()
+                est_n2 = str(ws.cell(row=r, column=17).value or '-').strip().upper()
+                f_aprob = str(ws.cell(row=r, column=18).value or '').strip()
+                cmt = str(ws.cell(row=r, column=19).value or '').strip()
+
+                # Detectar si fue aprobado por admin según el comentario
+                ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
+                ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
+
+                # Extraer comentarios individuales de N1, N2 y sustento personal del trabajador (multi-línea)
+                c_n1_extracted = None
+                c_n2_extracted = None
+                obs_trab_extracted = None
+                if cmt and cmt.lower() not in ('none', 'nan', 'null', ''):
+                    lines_trab = []
+                    for line in cmt.split('\n'):
+                        l_clean = line.strip()
+                        if not l_clean:
+                            continue
+                        if l_clean.upper().startswith('N1'):
+                            c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+                        elif l_clean.upper().startswith('N2'):
+                            c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+                        else:
+                            if not lines_trab and ':' in l_clean:
+                                prefix, rest = l_clean.split(':', 1)
+                                if ' ' not in prefix.strip() and len(prefix.strip()) <= 20:
+                                    lines_trab.append(rest.strip())
+                                else:
+                                    lines_trab.append(l_clean)
                             else:
                                 lines_trab.append(l_clean)
-                        else:
-                            lines_trab.append(l_clean)
-                if lines_trab:
-                    obs_trab_extracted = "\n".join(lines_trab).strip()
+                    if lines_trab:
+                        obs_trab_extracted = "\n".join(lines_trab).strip()
 
-            he_min = 0
-            if he_hhmm and he_hhmm != '00:00':
-                try:
-                    p_he = he_hhmm.split(':')
-                    if len(p_he) >= 2: he_min = int(p_he[0]) * 60 + int(p_he[1])
-                except Exception:
-                    pass
+                final_cmt = cmt if (cmt and cmt.lower() not in ('none', 'nan', 'null', '')) else None
+                final_obs = obs_trab_extracted if (final_cmt and obs_trab_extracted) else None
 
-            exceso_min = 0
-            if exceso_hhmm and exceso_hhmm != '00:00':
-                try:
-                    p_ex = exceso_hhmm.split(':')
-                    if len(p_ex) >= 2: exceso_min = int(p_ex[0]) * 60 + int(p_ex[1])
-                except Exception:
-                    pass
-
-            # 1. Insertar fila si no existe aún en SQLite (para no depender exclusivamente de git redeploy)
-            cursor.execute("""
-                INSERT OR IGNORE INTO aprobaciones (
-                    dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
-                    jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
-                    horas_extras_min, exceso_jornada_min,
-                    estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
-                    fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
-                    aprobado_por_n1, aprobado_por_n2
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
-                jornada_hhmm, he_hhmm, exceso_hhmm,
-                he_min, exceso_min,
-                est_global, ap_n1, est_n1, ap_n2, est_n2,
-                f_aprob, cmt, c_n1_extracted, c_n2_extracted,
-                ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None,
-                ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
-            ))
-
-            # Calcular variables finales en Python
-            final_app_n1 = ap_n1 if (ap_n1 and ap_n1.upper() != 'NONE') else None
-            final_app_n2 = ap_n2 if (ap_n2 and ap_n2.upper() != 'NONE') else None
-            final_aprobado_por_n1 = ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None
-            final_aprobado_por_n2 = ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
-            final_aprobado_por = ap_n1_final if (est_global in ('APROBADO', 'RECHAZADO') and ap_n1_final) else None
-            final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
-
-            # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
-            # BLINDAJE ESTRICTO: SQLite resuelto ('APROBADO' o 'RECHAZADO') gana SIEMPRE (inmutable).
-            cursor.execute("""
-                UPDATE aprobaciones
-                SET estado = CASE 
-                        WHEN estado IN ('APROBADO', 'RECHAZADO') THEN estado
-                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
-                        ELSE ?
-                    END,
-                    estado_n1 = CASE 
-                        WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN estado_n1
-                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
-                        ELSE ?
-                    END,
-                    estado_n2 = CASE 
-                        WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN estado_n2
-                        WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
-                        ELSE ?
-                    END,
-                    horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
-                    exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
-                    horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
-                    exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
-                    aprobador_n1 = CASE 
-                        WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n1 
-                        ELSE COALESCE(?, aprobador_n1) 
-                    END,
-                    aprobador_n2 = CASE 
-                        WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n2 
-                        ELSE COALESCE(?, aprobador_n2) 
-                    END,
-                    aprobado_por_n1 = CASE 
-                        WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n1 
-                        ELSE COALESCE(?, aprobado_por_n1) 
-                    END,
-                    aprobado_por_n2 = CASE 
-                        WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n2 
-                        ELSE COALESCE(?, aprobado_por_n2) 
-                    END,
-                    aprobado_por = CASE 
-                        WHEN estado IN ('APROBADO', 'RECHAZADO') THEN aprobado_por 
-                        ELSE COALESCE(?, aprobado_por) 
-                    END,
-                    fecha_aprobacion = CASE 
-                        WHEN estado IN ('APROBADO', 'RECHAZADO') THEN fecha_aprobacion 
-                        ELSE COALESCE(?, fecha_aprobacion) 
-                    END,
-                    comentario_n1 = COALESCE(?, comentario_n1),
-                    comentario_n2 = COALESCE(?, comentario_n2),
-                    comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END,
-                    observacion_trabajador = CASE 
-                        WHEN observacion_trabajador IS NOT NULL AND observacion_trabajador != '' THEN observacion_trabajador
-                        ELSE ?
-                    END
-                WHERE dni = ? AND fecha = ?
-            """, (
-                est_global, est_global, est_global,
-                est_n1, est_n1, est_n1,
-                est_n2, est_n2, est_n2,
-                he_min,
-                exceso_min,
-                he_hhmm,
-                exceso_hhmm,
-                final_app_n1,
-                final_app_n2,
-                final_aprobado_por_n1,
-                final_aprobado_por_n2,
-                final_aprobado_por,
-                final_fecha_aprob,
-                c_n1_extracted,
-                c_n2_extracted,
-                cmt, cmt,
-                obs_trab_extracted,
-                dni,
-                fecha
-            ))
-        conn.commit()
-
-        # 3. Leer fotos de evidencia (adjuntos) si existen en la hoja secundaria de Drive
-        if "Adjuntos Sustento" in wb.sheetnames:
-            try:
-                ws_adj = wb["Adjuntos Sustento"]
-                dict_adj = {}
-                for r in range(2, ws_adj.max_row + 1):
-                    d_val = str(ws_adj.cell(row=r, column=1).value or '').strip()
-                    fe_val = str(ws_adj.cell(row=r, column=2).value or '').strip()
-                    if not d_val or not fe_val:
-                        continue
-                    d_clean = d_val.lstrip('0').zfill(8)
+                he_min = 0
+                if he_hhmm and he_hhmm != '00:00':
                     try:
-                        f_idx = int(ws_adj.cell(row=r, column=3).value or 0)
-                        c_idx = int(ws_adj.cell(row=r, column=4).value or 0)
+                        p_he = he_hhmm.split(':')
+                        if len(p_he) >= 2: he_min = int(p_he[0]) * 60 + int(p_he[1])
                     except Exception:
-                        f_idx, c_idx = 0, 0
-                    c_data = str(ws_adj.cell(row=r, column=5).value or '')
-                    key = (d_clean, fe_val, f_idx)
-                    if key not in dict_adj:
-                        dict_adj[key] = []
-                    dict_adj[key].append((c_idx, c_data))
-                
-                # Reensamblar fotos por (dni, fecha)
-                adj_by_dni_fecha = {}
-                for (d_clean, fe_val, f_idx), chunks in dict_adj.items():
-                    chunks.sort(key=lambda x: x[0])
-                    full_uri = "".join([c[1] for c in chunks])
-                    pair_key = (d_clean, fe_val)
-                    if pair_key not in adj_by_dni_fecha:
-                        adj_by_dni_fecha[pair_key] = []
-                    adj_by_dni_fecha[pair_key].append((f_idx, full_uri))
-                
-                for (d_clean, fe_val), photos in adj_by_dni_fecha.items():
-                    photos.sort(key=lambda x: x[0])
-                    final_adj_str = "|||".join([p[1] for p in photos if p[1]])
-                    if final_adj_str:
-                        cursor.execute("""
-                            UPDATE aprobaciones
-                            SET adjuntos = ?
-                            WHERE dni = ? AND fecha = ?
-                        """, (final_adj_str, d_clean, fe_val))
-                conn.commit()
-            except Exception as e_r_adj:
-                print(f"[Aviso] Error leyendo hoja de adjuntos: {e_r_adj}")
+                        pass
+
+                exceso_min = 0
+                if exceso_hhmm and exceso_hhmm != '00:00':
+                    try:
+                        p_ex = exceso_hhmm.split(':')
+                        if len(p_ex) >= 2: exceso_min = int(p_ex[0]) * 60 + int(p_ex[1])
+                    except Exception:
+                        pass
+
+                # 1. Insertar fila si no existe aún en SQLite (para no depender exclusivamente de git redeploy)
+                cursor.execute("""
+                    INSERT OR IGNORE INTO aprobaciones (
+                        dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
+                        jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
+                        horas_extras_min, exceso_jornada_min,
+                        estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
+                        fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
+                        aprobado_por_n1, aprobado_por_n2
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
+                    jornada_hhmm, he_hhmm, exceso_hhmm,
+                    he_min, exceso_min,
+                    est_global, ap_n1, est_n1, ap_n2, est_n2,
+                    f_aprob, final_cmt, c_n1_extracted, c_n2_extracted,
+                    ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None,
+                    ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
+                ))
+
+                # Calcular variables finales en Python
+                final_app_n1 = ap_n1 if (ap_n1 and ap_n1.upper() != 'NONE') else None
+                final_app_n2 = ap_n2 if (ap_n2 and ap_n2.upper() != 'NONE') else None
+                final_aprobado_por_n1 = ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None
+                final_aprobado_por_n2 = ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
+                final_aprobado_por = ap_n1_final if (est_global in ('APROBADO', 'RECHAZADO') and ap_n1_final) else None
+                final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
+
+                # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
+                # BLINDAJE ESTRICTO: SQLite resuelto ('APROBADO' o 'RECHAZADO') gana SIEMPRE (inmutable).
+                cursor.execute("""
+                    UPDATE aprobaciones
+                    SET estado = CASE 
+                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN estado
+                            WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                            ELSE ?
+                        END,
+                        estado_n1 = CASE 
+                            WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN estado_n1
+                            WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                            ELSE ?
+                        END,
+                        estado_n2 = CASE 
+                            WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN estado_n2
+                            WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                            ELSE ?
+                        END,
+                        horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
+                        exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
+                        horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
+                        exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
+                        aprobador_n1 = CASE 
+                            WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n1 
+                            ELSE COALESCE(?, aprobador_n1) 
+                        END,
+                        aprobador_n2 = CASE 
+                            WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n2 
+                            ELSE COALESCE(?, aprobador_n2) 
+                        END,
+                        aprobado_por_n1 = CASE 
+                            WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n1 
+                            ELSE COALESCE(?, aprobado_por_n1) 
+                        END,
+                        aprobado_por_n2 = CASE 
+                            WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n2 
+                            ELSE COALESCE(?, aprobado_por_n2) 
+                        END,
+                        aprobado_por = CASE 
+                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN aprobado_por 
+                            ELSE COALESCE(?, aprobado_por) 
+                        END,
+                        fecha_aprobacion = CASE 
+                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN fecha_aprobacion 
+                            ELSE COALESCE(?, fecha_aprobacion) 
+                        END,
+                        comentario_n1 = COALESCE(?, comentario_n1),
+                        comentario_n2 = COALESCE(?, comentario_n2),
+                        comentario_supervisor = CASE 
+                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN comentario_supervisor
+                            ELSE ?
+                        END,
+                        observacion_trabajador = CASE 
+                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN observacion_trabajador
+                            ELSE ?
+                        END,
+                        adjuntos = CASE
+                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN adjuntos
+                            WHEN ? IS NULL THEN NULL
+                            ELSE adjuntos
+                        END
+                    WHERE dni = ? AND fecha = ?
+                """, (
+                    est_global, est_global, est_global,
+                    est_n1, est_n1, est_n1,
+                    est_n2, est_n2, est_n2,
+                    he_min,
+                    exceso_min,
+                    he_hhmm,
+                    exceso_hhmm,
+                    final_app_n1,
+                    final_app_n2,
+                    final_aprobado_por_n1,
+                    final_aprobado_por_n2,
+                    final_aprobado_por,
+                    final_fecha_aprob,
+                    c_n1_extracted,
+                    c_n2_extracted,
+                    final_cmt,
+                    final_obs,
+                    final_cmt,
+                    dni,
+                    fecha
+                ))
+            conn.commit()
+
+            # 3. Leer fotos de evidencia (adjuntos) si existen en la hoja secundaria de Drive
+            if "Adjuntos Sustento" in wb.sheetnames:
+                try:
+                    ws_adj = wb["Adjuntos Sustento"]
+                    dict_adj = {}
+                    for r in range(2, ws_adj.max_row + 1):
+                        d_val = str(ws_adj.cell(row=r, column=1).value or '').strip()
+                        fe_val = str(ws_adj.cell(row=r, column=2).value or '').strip()
+                        if not d_val or not fe_val:
+                            continue
+                        d_clean = d_val.lstrip('0').zfill(8)
+                        try:
+                            f_idx = int(ws_adj.cell(row=r, column=3).value or 0)
+                            c_idx = int(ws_adj.cell(row=r, column=4).value or 0)
+                        except Exception:
+                            f_idx, c_idx = 0, 0
+                        c_data = str(ws_adj.cell(row=r, column=5).value or '')
+                        key = (d_clean, fe_val, f_idx)
+                        if key not in dict_adj:
+                            dict_adj[key] = []
+                        dict_adj[key].append((c_idx, c_data))
+
+                    # Reensamblar fotos por (dni, fecha)
+                    adj_by_dni_fecha = {}
+                    for (d_clean, fe_val, f_idx), chunks in dict_adj.items():
+                        chunks.sort(key=lambda x: x[0])
+                        full_uri = "".join([c[1] for c in chunks])
+                        pair_key = (d_clean, fe_val)
+                        if pair_key not in adj_by_dni_fecha:
+                            adj_by_dni_fecha[pair_key] = []
+                        adj_by_dni_fecha[pair_key].append((f_idx, full_uri))
+
+                    for (d_clean, fe_val), photos in adj_by_dni_fecha.items():
+                        photos.sort(key=lambda x: x[0])
+                        final_adj_str = "|||".join([p[1] for p in photos if p[1]])
+                        if final_adj_str:
+                            cursor.execute("""
+                                UPDATE aprobaciones
+                                SET adjuntos = ?
+                                WHERE dni = ? AND fecha = ?
+                            """, (final_adj_str, d_clean, fe_val))
+                    conn.commit()
+                except Exception as e_r_adj:
+                    print(f"[Aviso] Error leyendo hoja de adjuntos: {e_r_adj}")
 
         conn.close()
+        try:
+            obtener_solicitudes_aprobacion.clear()
+        except Exception:
+            pass
     except Exception as e:
         print(f"Aviso sincronizacion rehidratacion: {e}")
 
