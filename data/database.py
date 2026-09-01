@@ -1262,21 +1262,31 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
             ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
 
-            # Extraer comentarios individuales de N1, N2 y sustento personal del trabajador
+            # Extraer comentarios individuales de N1, N2 y sustento personal del trabajador (multi-línea)
             c_n1_extracted = None
             c_n2_extracted = None
             obs_trab_extracted = None
             if cmt:
+                lines_trab = []
                 for line in cmt.split('\n'):
                     l_clean = line.strip()
+                    if not l_clean:
+                        continue
                     if l_clean.upper().startswith('N1'):
                         c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
                     elif l_clean.upper().startswith('N2'):
                         c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
-                    elif ':' in l_clean:
-                        obs_trab_extracted = l_clean.split(':', 1)[1].strip()
-                    elif l_clean:
-                        obs_trab_extracted = l_clean
+                    else:
+                        if not lines_trab and ':' in l_clean:
+                            prefix, rest = l_clean.split(':', 1)
+                            if ' ' not in prefix.strip() and len(prefix.strip()) <= 20:
+                                lines_trab.append(rest.strip())
+                            else:
+                                lines_trab.append(l_clean)
+                        else:
+                            lines_trab.append(l_clean)
+                if lines_trab:
+                    obs_trab_extracted = "\n".join(lines_trab).strip()
 
             he_min = 0
             if he_hhmm and he_hhmm != '00:00':
@@ -1399,6 +1409,52 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 fecha
             ))
         conn.commit()
+
+        # 3. Leer fotos de evidencia (adjuntos) si existen en la hoja secundaria de Drive
+        if "Adjuntos Sustento" in wb.sheetnames:
+            try:
+                ws_adj = wb["Adjuntos Sustento"]
+                dict_adj = {}
+                for r in range(2, ws_adj.max_row + 1):
+                    d_val = str(ws_adj.cell(row=r, column=1).value or '').strip()
+                    fe_val = str(ws_adj.cell(row=r, column=2).value or '').strip()
+                    if not d_val or not fe_val:
+                        continue
+                    d_clean = d_val.lstrip('0').zfill(8)
+                    try:
+                        f_idx = int(ws_adj.cell(row=r, column=3).value or 0)
+                        c_idx = int(ws_adj.cell(row=r, column=4).value or 0)
+                    except Exception:
+                        f_idx, c_idx = 0, 0
+                    c_data = str(ws_adj.cell(row=r, column=5).value or '')
+                    key = (d_clean, fe_val, f_idx)
+                    if key not in dict_adj:
+                        dict_adj[key] = []
+                    dict_adj[key].append((c_idx, c_data))
+                
+                # Reensamblar fotos por (dni, fecha)
+                adj_by_dni_fecha = {}
+                for (d_clean, fe_val, f_idx), chunks in dict_adj.items():
+                    chunks.sort(key=lambda x: x[0])
+                    full_uri = "".join([c[1] for c in chunks])
+                    pair_key = (d_clean, fe_val)
+                    if pair_key not in adj_by_dni_fecha:
+                        adj_by_dni_fecha[pair_key] = []
+                    adj_by_dni_fecha[pair_key].append((f_idx, full_uri))
+                
+                for (d_clean, fe_val), photos in adj_by_dni_fecha.items():
+                    photos.sort(key=lambda x: x[0])
+                    final_adj_str = "|||".join([p[1] for p in photos if p[1]])
+                    if final_adj_str:
+                        cursor.execute("""
+                            UPDATE aprobaciones
+                            SET adjuntos = ?
+                            WHERE dni = ? AND fecha = ?
+                        """, (final_adj_str, d_clean, fe_val))
+                conn.commit()
+            except Exception as e_r_adj:
+                print(f"[Aviso] Error leyendo hoja de adjuntos: {e_r_adj}")
+
         conn.close()
     except Exception as e:
         print(f"Aviso sincronizacion rehidratacion: {e}")

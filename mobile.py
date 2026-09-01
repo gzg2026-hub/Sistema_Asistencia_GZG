@@ -144,6 +144,32 @@ def parse_adjuntos(val) -> list:
             pass
     return [v_str]
 
+def extraer_sustento_trabajador_de_comentario(c_sup: str) -> str:
+    """
+    Extrae todas las líneas correspondientes al sustento del trabajador desde comentario_supervisor,
+    preservando párrafos o múltiples líneas y excluyendo validaciones de N1 / N2.
+    """
+    if not c_sup or str(c_sup).strip().lower() in ('none', 'nan', 'null', ''):
+        return ""
+    lines_trab = []
+    for line in str(c_sup).split('\n'):
+        l_c = line.strip()
+        if not l_c:
+            continue
+        # Ignorar líneas que correspondan a aprobaciones de Nivel 1 o Nivel 2
+        if l_c.upper().startswith('N1') or l_c.upper().startswith('N2'):
+            continue
+        # Si la primera línea tiene el prefijo del usuario (ej. 'respinoza: ...'), extraer el texto
+        if not lines_trab and ':' in l_c:
+            prefix, rest = l_c.split(':', 1)
+            if ' ' not in prefix.strip() and len(prefix.strip()) <= 20:
+                lines_trab.append(rest.strip())
+            else:
+                lines_trab.append(l_c)
+        else:
+            lines_trab.append(l_c)
+    return "\n".join(lines_trab).strip()
+
 def render_zoomable_photo_html(img_src: str, modal_id: str, caption: str = "Foto de Sustento", thumb_height: int = 150) -> str:
     """
     Renderiza una miniatura de foto de sustento con soporte de Zoom / Pantalla Completa nativo (Lightbox CSS).
@@ -1453,18 +1479,12 @@ def render_tab_pendientes():
 
             avatar_url = get_worker_avatar_url(row.get('dni'), worker_name)
             
-            # Verificar sustento y definir estado para la cabecera contraída
+            # Verificar sustento y definir estado para la cabecera contraída (multi-línea completo)
             obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
             if obs_trab.lower() in ('none', 'nan', 'null', ''):
                 obs_trab = ""
             if not obs_trab:
-                c_sup_row = str(row.get('comentario_supervisor', '') or '').strip()
-                if c_sup_row and c_sup_row.lower() not in ('none', 'nan', 'null', ''):
-                    for line in c_sup_row.split('\n'):
-                        l_c = line.strip()
-                        if not l_c.upper().startswith('N1') and not l_c.upper().startswith('N2'):
-                            obs_trab = l_c.split(':', 1)[1].strip() if ':' in l_c else l_c
-                            break
+                obs_trab = extraer_sustento_trabajador_de_comentario(row.get('comentario_supervisor'))
             adj_list = parse_adjuntos(row.get('adjuntos'))
             tiene_sustento = bool(obs_trab or adj_list)
 
@@ -1883,15 +1903,9 @@ with tab_mis_horas:
                 estado_n1 = str(row.get('estado_n1', 'PENDIENTE')).upper()
                 estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
                 obs_actual = str(row.get('observacion_trabajador', '') or '').strip()
-                if obs_actual.lower() in ('none', 'nan'): obs_actual = ""
+                if obs_actual.lower() in ('none', 'nan', 'null', ''): obs_actual = ""
                 if not obs_actual:
-                    c_sup_row = str(row.get('comentario_supervisor', '') or '').strip()
-                    if c_sup_row and c_sup_row.lower() not in ('none', 'nan'):
-                        for line in c_sup_row.split('\n'):
-                            l_c = line.strip()
-                            if not l_c.upper().startswith('N1') and not l_c.upper().startswith('N2'):
-                                obs_actual = l_c.split(':', 1)[1].strip() if ':' in l_c else l_c
-                                break
+                    obs_actual = extraer_sustento_trabajador_de_comentario(row.get('comentario_supervisor'))
                 adj_list_my = parse_adjuntos(row.get('adjuntos'))
                 tiene_sustento_my = bool(obs_actual or adj_list_my)
 
@@ -1953,17 +1967,22 @@ with tab_mis_horas:
 
                     # Formulario para sustentar / actualizar sustento
                     st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
+                    
+                    # El trabajador puede editar o agregar fotos si la solicitud aún está PENDIENTE
+                    puede_editar_my = (estado_global == 'PENDIENTE' and estado_n1 == 'PENDIENTE')
+                    
                     my_obs_input = st.text_area(
                         "✍️ Motivo / Detalle del trabajo realizado",
                         value=obs_actual,
-                        placeholder="Escribe el trabajo o labor realizada..." if not tiene_sustento_my else "",
-                        disabled=tiene_sustento_my,
+                        placeholder="Escribe el trabajo o labor realizada...",
+                        disabled=not puede_editar_my,
                         key=f"my_txt_{sol_id}"
                     )
                     
-                    if not tiene_sustento_my:
+                    if puede_editar_my:
+                        label_uploader = "📷 Adjuntar Fotos Adicionales o Nuevas" if adj_list_my else "📷 Adjuntar Fotos (permite múltiples)"
                         my_uploaded_files = st.file_uploader(
-                            "📷 Adjuntar Fotos (permite múltiples)",
+                            label_uploader,
                             type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
                             accept_multiple_files=True,
                             key=f"my_files_{sol_id}"
@@ -1978,8 +1997,20 @@ with tab_mis_horas:
                     else:
                         my_uploaded_files = None
                     
-                    btn_send_label = "🔒 SUSTENTO YA ENVIADO" if tiene_sustento_my else "📤 ENVIAR"
-                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type="secondary" if tiene_sustento_my else "primary", disabled=tiene_sustento_my, use_container_width=True):
+                    if not puede_editar_my:
+                        btn_send_label = "🔒 SOLICITUD YA EVALUADA"
+                        btn_disabled = True
+                        btn_type = "secondary"
+                    elif tiene_sustento_my:
+                        btn_send_label = "🔄 ACTUALIZAR SUSTENTO / FOTOS"
+                        btn_disabled = False
+                        btn_type = "primary"
+                    else:
+                        btn_send_label = "📤 ENVIAR SUSTENTO"
+                        btn_disabled = False
+                        btn_type = "primary"
+
+                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type=btn_type, disabled=btn_disabled, use_container_width=True):
                         if not my_obs_input.strip() and not my_uploaded_files and not adj_list_my:
                             st.warning("⚠️ Por favor ingresa el motivo o adjunta al menos una foto antes de enviar.")
                         else:
@@ -2000,7 +2031,7 @@ with tab_mis_horas:
                                     my_adj_path = "|||".join(data_uris)
 
                             if guardar_sustento_trabajador(sol_id, my_obs_input, my_adj_path):
-                                st.toast("✅ Sustento enviado exitosamente", icon="🎉")
+                                st.toast("✅ Sustento actualizado exitosamente", icon="🎉")
                                 st.rerun()
                             else:
                                 st.error("Error al guardar el sustento. Intente nuevamente.")

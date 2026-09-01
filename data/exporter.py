@@ -750,6 +750,38 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
             ws.column_dimensions[get_column_letter(c_idx)].width = w
 
         ws.auto_filter.ref = ws.dimensions
+
+        # Persistencia de fotos de evidencia en la hoja secundaria 'Adjuntos Sustento'
+        # para que nunca se pierdan ante reinicios de Streamlit Cloud o sincronización entre dispositivos.
+        if df_aprobaciones is not None and not df_aprobaciones.empty and 'adjuntos' in df_aprobaciones.columns:
+            try:
+                ws_adj = wb.create_sheet(title="Adjuntos Sustento")
+                ws_adj.append(["DNI", "Fecha", "Foto_Idx", "Chunk_Idx", "Chunk_Data"])
+                chunk_sz = 30000
+                for _, r_adj in df_aprobaciones.iterrows():
+                    raw_adj = r_adj.get('adjuntos')
+                    if not raw_adj or pd.isna(raw_adj):
+                        continue
+                    s_adj = str(raw_adj).strip()
+                    if s_adj.lower() in ('none', 'nan', ''):
+                        continue
+                    adj_items = [x.strip() for x in s_adj.split("|||") if x.strip()] if "|||" in s_adj else [s_adj]
+                    
+                    dni_adj = str(r_adj.get('dni', '') or '').strip()
+                    if dni_adj.endswith('.0'): dni_adj = dni_adj[:-2]
+                    dni_adj = dni_adj.lstrip('0').zfill(8)
+                    f_adj = str(r_adj.get('fecha', '') or '').strip()
+                    
+                    for f_idx, item_uri in enumerate(adj_items):
+                        if not item_uri:
+                            continue
+                        n_chunks = (len(item_uri) + chunk_sz - 1) // chunk_sz
+                        for c_idx in range(n_chunks):
+                            c_data = item_uri[c_idx*chunk_sz : (c_idx+1)*chunk_sz]
+                            ws_adj.append([dni_adj, f_adj, f_idx, c_idx, c_data])
+            except Exception as e_adj:
+                print(f"[Aviso] No se pudo escribir hoja de adjuntos: {e_adj}")
+
         os.makedirs(os.path.dirname(os.path.abspath(target_path)), exist_ok=True)
         try:
             wb.save(target_path)
