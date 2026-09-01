@@ -1772,8 +1772,37 @@ def guardar_sustento_trabajador(
             obtener_solicitudes_aprobacion.clear()
         except Exception:
             pass
+        # Regenerar y subir Excel de forma SINCRÓNICA para garantizar que
+        # el sustento llegue a Drive antes de retornar (no en hilo daemon)
         try:
-            regenerar_aprobaciones_excel(db_path)
+            import pandas as pd
+            from data.exporter import exportar_aprobaciones_excel
+            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            conn2 = get_connection(db_path)
+            df_a = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn2)
+            conn2.close()
+            mes_str = obtener_hora_peru_str()[:7]
+            if not df_a.empty and 'fecha' in df_a.columns:
+                fechas_v = df_a['fecha'].dropna().astype(str).str.strip()
+                fechas_v = fechas_v[fechas_v.str.len() >= 7]
+                if not fechas_v.empty:
+                    mes_str = fechas_v.iloc[0][:7]
+            out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
+            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            ok_local = exportar_aprobaciones_excel(df_a, out_path)
+            if ok_local and os.path.exists(out_path):
+                sa_info = None
+                try:
+                    import streamlit as st_mod
+                    if hasattr(st_mod, "secrets") and "gcp_service_account" in st_mod.secrets:
+                        sa_info = dict(st_mod.secrets["gcp_service_account"])
+                except Exception:
+                    pass
+                try:
+                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                    subir_archivo_a_gdrive(out_path, sa_dict=sa_info)
+                except Exception as e_drive:
+                    print(f"[Aviso] Subida Drive sustento: {e_drive}")
         except Exception as e_excel:
             print(f"[Aviso] Excel de aprobaciones no regenerado: {e_excel}")
         return True
