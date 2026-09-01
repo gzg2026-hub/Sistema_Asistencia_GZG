@@ -1704,13 +1704,52 @@ def guardar_sustento_trabajador(
             else:
                 final_adjuntos = adjuntos_path
 
+        # Obtener DNI y username para formatear comentario_supervisor
+        cursor.execute("SELECT dni, comentario_supervisor, comentario_n1, comentario_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+        row_prev = cursor.fetchone()
+        
+        c_sup_prev = ""
+        c_n1_prev = ""
+        c_n2_prev = ""
+        u_autor = "Personal"
+        
+        if row_prev:
+            dni_prev = str(row_prev[0] or '').strip().lstrip('0').zfill(8)
+            c_sup_prev = str(row_prev[1] or '').strip()
+            c_n1_prev = str(row_prev[2] or '').strip()
+            c_n2_prev = str(row_prev[3] or '').strip()
+            
+            mapa_dni_usuario = {
+                '47783594': 'jagreda',
+                '47034929': 'jalva',
+                '72559194': 'jdelariva',
+                '46671923': 'jhuayama',
+                '26696602': 'msanchez',
+                '75227437': 'lpretel',
+                '44955960': 'respinoza',
+                '70782038': 'jsanchez',
+            }
+            u_autor = mapa_dni_usuario.get(dni_prev, "Personal")
+
+        # Construir comentario consolidado con el sustento del trabajador
+        comentarios_parts = []
+        if observacion_trabajador.strip():
+            comentarios_parts.append(f"{u_autor}: {observacion_trabajador.strip()}")
+        if c_n1_prev and c_n1_prev.lower() not in ('none', 'nan', ''):
+            comentarios_parts.append(f"N1: {c_n1_prev}")
+        if c_n2_prev and c_n2_prev.lower() not in ('none', 'nan', ''):
+            comentarios_parts.append(f"N2: {c_n2_prev}")
+
+        nuevo_c_sup = "\n".join(comentarios_parts) if comentarios_parts else None
+
         cursor.execute("""
             UPDATE aprobaciones
             SET observacion_trabajador = ?,
+                comentario_supervisor = ?,
                 adjuntos = COALESCE(?, adjuntos),
                 updated_at = ?
             WHERE id = ?
-        """, (observacion_trabajador.strip(), final_adjuntos, hora_peru, id_solicitud))
+        """, (observacion_trabajador.strip() if observacion_trabajador.strip() else None, nuevo_c_sup, final_adjuntos, hora_peru, id_solicitud))
         conn.commit()
         conn.close()
         try:

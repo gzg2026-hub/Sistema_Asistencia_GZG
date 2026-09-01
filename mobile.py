@@ -972,12 +972,22 @@ if st.session_state.get("pw_change_success", False):
         st.session_state["pw_change_success"] = False
         st.rerun()
 
-# 2 Botones Nativos Gemelos Simétricos (50% Cambiar clave a la izquierda / 50% Salir a la derecha)
-col_b1, col_b2 = st.columns(2)
+# 3 Botones Nativos en Cabecera (Sincronizar / Clave / Salir)
+col_b1, col_b2, col_b3 = st.columns([1, 1, 1])
 with col_b1:
-    st.button("🔑 Cambiar clave", key="btn_toggle_change_pw", on_click=callback_toggle_pw, use_container_width=True)
+    if st.button("🔄 Sincronizar", key="btn_sync_gdrive", use_container_width=True):
+        with st.spinner("Sincronizando con Google Drive..."):
+            try:
+                sincronizar_aprobaciones_con_gdrive()
+                st.toast("✅ Datos actualizados con Google Drive", icon="🔄")
+            except Exception as e_s:
+                st.toast(f"Aviso sync: {e_s}", icon="⚠️")
+        st.rerun()
 
 with col_b2:
+    st.button("🔑 Clave", key="btn_toggle_change_pw", on_click=callback_toggle_pw, use_container_width=True)
+
+with col_b3:
     st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
@@ -1351,7 +1361,16 @@ def render_tab_pendientes():
             
             # Verificar sustento y definir estado para la cabecera contraída
             obs_trab = str(row.get('observacion_trabajador', '') or '').strip()
-            if obs_trab.lower() in ('none', 'nan'): obs_trab = ""
+            if obs_trab.lower() in ('none', 'nan', 'null', ''):
+                obs_trab = ""
+            if not obs_trab:
+                c_sup_row = str(row.get('comentario_supervisor', '') or '').strip()
+                if c_sup_row and c_sup_row.lower() not in ('none', 'nan', 'null', ''):
+                    for line in c_sup_row.split('\n'):
+                        l_c = line.strip()
+                        if not l_c.upper().startswith('N1') and not l_c.upper().startswith('N2'):
+                            obs_trab = l_c.split(':', 1)[1].strip() if ':' in l_c else l_c
+                            break
             adj_list = parse_adjuntos(row.get('adjuntos'))
             tiene_sustento = bool(obs_trab or adj_list)
 
