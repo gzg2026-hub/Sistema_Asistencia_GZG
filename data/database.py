@@ -1372,7 +1372,7 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     comentario_n1 = COALESCE(?, comentario_n1),
                     comentario_n2 = COALESCE(?, comentario_n2),
                     comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END,
-                    observacion_trabajador = CASE WHEN observacion_trabajador IS NULL OR observacion_trabajador = '' THEN ? ELSE observacion_trabajador END
+                    observacion_trabajador = ?
                 WHERE dni = ? AND fecha = ?
             """, (
                 est_global, est_global, est_global,
