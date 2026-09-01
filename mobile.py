@@ -84,10 +84,11 @@ def get_logo_base64():
     """Obtiene el logo oficial transparente de GZG en Base64."""
     root_dir = os.path.dirname(os.path.abspath(__file__))
     for logo_name in ["gzg_logo_transparent.png", "gzg_logo.png", "gzg_logo_clean.png"]:
-        logo_path = os.path.join(root_dir, "assets", logo_name)
-        if os.path.exists(logo_path):
-            with open(logo_path, "rb") as f:
-                return base64.b64encode(f.read()).decode()
+        for folder in ["static", "assets"]:
+            logo_path = os.path.join(root_dir, folder, logo_name)
+            if os.path.exists(logo_path):
+                with open(logo_path, "rb") as f:
+                    return base64.b64encode(f.read()).decode()
     return ""
 
 @st.cache_data(show_spinner=False)
@@ -95,10 +96,11 @@ def get_hero_base64():
     """Obtiene la imagen de portada minera para el login."""
     root_dir = os.path.dirname(os.path.abspath(__file__))
     for hero_name in ["login_mining_hero.jpg", "login_hero.jpg"]:
-        hero_path = os.path.join(root_dir, "assets", hero_name)
-        if os.path.exists(hero_path):
-            with open(hero_path, "rb") as f:
-                return base64.b64encode(f.read()).decode()
+        for folder in ["static", "assets"]:
+            hero_path = os.path.join(root_dir, folder, hero_name)
+            if os.path.exists(hero_path):
+                with open(hero_path, "rb") as f:
+                    return base64.b64encode(f.read()).decode()
     return ""
 
 @st.cache_data(show_spinner=False)
@@ -107,7 +109,7 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
         dni_clean = str(dni).strip().lstrip('0').zfill(8)
         root_dir = os.path.dirname(os.path.abspath(__file__))
         for ext in ['.jpg', '.jpeg', '.png']:
-            for folder in [os.path.join(root_dir, 'assets', 'fotos'), os.path.join(root_dir, 'assets', 'fotos_trabajadores')]:
+            for folder in [os.path.join(root_dir, 'static', 'fotos'), os.path.join(root_dir, 'assets', 'fotos'), os.path.join(root_dir, 'static', 'fotos_trabajadores'), os.path.join(root_dir, 'assets', 'fotos_trabajadores')]:
                 p = os.path.join(folder, f"{dni_clean}{ext}")
                 if os.path.exists(p):
                     try:
@@ -144,8 +146,8 @@ def parse_adjuntos(val) -> list:
 
 logo_b64 = get_logo_base64()
 hero_b64 = get_hero_base64()
-icon192_b64 = get_file_b64("assets/icon-192.png") or logo_b64
-icon512_b64 = get_file_b64("assets/icon-512.png") or logo_b64
+icon192_b64 = get_file_b64("static/icon-192.png") or get_file_b64("assets/icon-192.png") or logo_b64
+icon512_b64 = get_file_b64("static/icon-512.png") or get_file_b64("assets/icon-512.png") or logo_b64
 
 manifest_dict = {
     "name": "GZG MINERALES",
@@ -176,7 +178,8 @@ manifest_dict = {
 manifest_b64 = base64.b64encode(json.dumps(manifest_dict).encode()).decode()
 
 logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 45px; margin-right: 10px; vertical-align: middle;">' if logo_b64 else ''
-logo_icon = Image.open("assets/icon-192.png") if os.path.exists("assets/icon-192.png") else (Image.open("assets/gzg_logo.png") if os.path.exists("assets/gzg_logo.png") else "📱")
+logo_icon_path = next((p for p in ["static/icon-192.png", "static/gzg_logo_transparent.png", "static/gzg_logo.png", "assets/icon-192.png", "assets/gzg_logo.png"] if os.path.exists(p)), None)
+logo_icon = Image.open(logo_icon_path) if logo_icon_path else "📱"
 
 # Configuración de página 100% enfocada en Celular (Centrado sin Sidebar)
 st.set_page_config(
@@ -972,23 +975,13 @@ if st.session_state.get("pw_change_success", False):
         st.session_state["pw_change_success"] = False
         st.rerun()
 
-# 3 Botones Nativos en Cabecera (Sincronizar / Clave / Salir)
-col_b1, col_b2, col_b3 = st.columns([1, 1, 1])
+# 2 Botones Nativos en Cabecera (Clave / Salir)
+col_b1, col_b2 = st.columns([1, 1])
 with col_b1:
-    if st.button("🔄 Sincronizar", key="btn_sync_gdrive", use_container_width=True):
-        with st.spinner("Sincronizando con Google Drive..."):
-            try:
-                sincronizar_aprobaciones_con_gdrive()
-                st.toast("✅ Datos actualizados con Google Drive", icon="🔄")
-            except Exception as e_s:
-                st.toast(f"Aviso sync: {e_s}", icon="⚠️")
-        st.rerun()
-
-with col_b2:
     st.button("🔑 Clave", key="btn_toggle_change_pw", on_click=callback_toggle_pw, use_container_width=True)
 
-with col_b3:
-    st.button("🚪 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
+with col_b2:
+    st.button("🚩 Salir", key="btn_logout_mobile", on_click=callback_logout, use_container_width=True)
 
 # Formulario desplegable para cambiar contraseña al pulsar el botón Clave
 if st.session_state.get("show_change_pw_box", False):
