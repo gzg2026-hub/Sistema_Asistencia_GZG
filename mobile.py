@@ -26,9 +26,51 @@ from data.database import (
 )
 from core.auth import init_auth, is_authenticated, login_user, logout_user, get_current_user, hash_password, verify_password
 
-from PIL import Image
-
+from PIL import Image, ImageOps
+import io
 import json
+
+def optimizar_y_convertir_imagen(raw_bytes: bytes, max_dim: int = 1280, quality: int = 82) -> tuple:
+    """
+    Optimiza cualquier foto tomada con cámara de celular (JPG, PNG, WEBP, etc.),
+    reduciendo su peso de ~15MB a ~180KB con excelente nitidez visual y corrección de rotación EXIF.
+    Retorna (bytes_optimizados, mime_type, data_uri_base64).
+    """
+    try:
+        img = Image.open(io.BytesIO(raw_bytes))
+        try:
+            img = ImageOps.exif_transpose(img)
+        except Exception:
+            pass
+        
+        if img.mode in ('RGBA', 'P', 'LA'):
+            bg = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'RGBA':
+                bg.paste(img, mask=img.split()[3])
+            else:
+                bg.paste(img)
+            img = bg
+        elif img.mode != 'RGB':
+            img = img.convert('RGB')
+        
+        w, h = img.size
+        if max(w, h) > max_dim:
+            if w > h:
+                new_w = max_dim
+                new_h = int(h * (max_dim / w))
+            else:
+                new_h = max_dim
+                new_w = int(w * (max_dim / h))
+            img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        
+        out_buf = io.BytesIO()
+        img.save(out_buf, format='JPEG', quality=quality, optimize=True)
+        opt_bytes = out_buf.getvalue()
+        b64_str = base64.b64encode(opt_bytes).decode('utf-8')
+        return opt_bytes, "image/jpeg", f"data:image/jpeg;base64,{b64_str}"
+    except Exception:
+        b64_str = base64.b64encode(raw_bytes).decode('utf-8')
+        return raw_bytes, "image/jpeg", f"data:image/jpeg;base64,{b64_str}"
 
 @st.cache_data(show_spinner=False)
 def get_file_b64(path):
@@ -1480,12 +1522,10 @@ def render_tab_pendientes():
                             for f_idx, uf in enumerate(uploaded_files):
                                 fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
                                 fpath = os.path.join(adj_dir, fname)
-                                buf = uf.getvalue()
+                                opt_bytes, mime, data_uri = optimizar_y_convertir_imagen(uf.getvalue())
                                 with open(fpath, "wb") as f:
-                                    f.write(buf)
-                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                b64_img = base64.b64encode(buf).decode()
-                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                                    f.write(opt_bytes)
+                                data_uris.append(data_uri)
                             if data_uris:
                                 adjunto_rel_path = "|||".join(data_uris)
 
@@ -1506,12 +1546,10 @@ def render_tab_pendientes():
                             for f_idx, uf in enumerate(uploaded_files):
                                 fname = f"solic_{sol_id}_{f_idx}_{uf.name}"
                                 fpath = os.path.join(adj_dir, fname)
-                                buf = uf.getvalue()
+                                opt_bytes, mime, data_uri = optimizar_y_convertir_imagen(uf.getvalue())
                                 with open(fpath, "wb") as f:
-                                    f.write(buf)
-                                mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                b64_img = base64.b64encode(buf).decode()
-                                data_uris.append(f"data:{mime};base64,{b64_img}")
+                                    f.write(opt_bytes)
+                                data_uris.append(data_uri)
                             if data_uris:
                                 adjunto_rel_path = "|||".join(data_uris)
 
@@ -1819,12 +1857,10 @@ with tab_mis_horas:
                                 for f_idx, uf in enumerate(my_uploaded_files):
                                     fname = f"sustento_{sol_id}_{f_idx}_{uf.name}"
                                     fpath = os.path.join(adj_dir, fname)
-                                    buf = uf.getvalue()
+                                    opt_bytes, mime, data_uri = optimizar_y_convertir_imagen(uf.getvalue())
                                     with open(fpath, "wb") as f:
-                                        f.write(buf)
-                                    mime = "image/png" if uf.name.lower().endswith('.png') else "image/jpeg"
-                                    b64_img = base64.b64encode(buf).decode()
-                                    data_uris.append(f"data:{mime};base64,{b64_img}")
+                                        f.write(opt_bytes)
+                                    data_uris.append(data_uri)
                                 if data_uris:
                                     my_adj_path = "|||".join(data_uris)
 
