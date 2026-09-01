@@ -1262,9 +1262,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
             ap_n2_final = 'admin' if 'n2 (admin)' in cmt.lower() else ap_n2
 
-            # Extraer comentarios individuales de N1 y N2 si existen en el comentario consolidado
+            # Extraer comentarios individuales de N1, N2 y sustento personal del trabajador
             c_n1_extracted = None
             c_n2_extracted = None
+            obs_trab_extracted = None
             if cmt:
                 for line in cmt.split('\n'):
                     l_clean = line.strip()
@@ -1272,6 +1273,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                         c_n1_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
                     elif l_clean.upper().startswith('N2'):
                         c_n2_extracted = l_clean.split(':', 1)[1].strip() if ':' in l_clean else l_clean
+                    elif ':' in l_clean:
+                        obs_trab_extracted = l_clean.split(':', 1)[1].strip()
+                    elif l_clean:
+                        obs_trab_extracted = l_clean
 
             he_min = 0
             if he_hhmm and he_hhmm != '00:00':
@@ -1366,7 +1371,8 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     END,
                     comentario_n1 = COALESCE(?, comentario_n1),
                     comentario_n2 = COALESCE(?, comentario_n2),
-                    comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END
+                    comentario_supervisor = CASE WHEN ? != '' THEN ? ELSE comentario_supervisor END,
+                    observacion_trabajador = CASE WHEN observacion_trabajador IS NULL OR observacion_trabajador = '' THEN ? ELSE observacion_trabajador END
                 WHERE dni = ? AND fecha = ?
             """, (
                 est_global, est_global, est_global,
@@ -1385,6 +1391,7 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 c_n1_extracted,
                 c_n2_extracted,
                 cmt, cmt,
+                obs_trab_extracted,
                 dni,
                 fecha
             ))

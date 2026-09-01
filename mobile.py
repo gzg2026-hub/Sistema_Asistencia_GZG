@@ -1765,6 +1765,14 @@ with tab_mis_horas:
                 estado_n2 = str(row.get('estado_n2', 'PENDIENTE')).upper()
                 obs_actual = str(row.get('observacion_trabajador', '') or '').strip()
                 if obs_actual.lower() in ('none', 'nan'): obs_actual = ""
+                if not obs_actual:
+                    c_sup_row = str(row.get('comentario_supervisor', '') or '').strip()
+                    if c_sup_row and c_sup_row.lower() not in ('none', 'nan'):
+                        for line in c_sup_row.split('\n'):
+                            l_c = line.strip()
+                            if not l_c.upper().startswith('N1') and not l_c.upper().startswith('N2'):
+                                obs_actual = l_c.split(':', 1)[1].strip() if ':' in l_c else l_c
+                                break
                 adj_list_my = parse_adjuntos(row.get('adjuntos'))
                 tiene_sustento_my = bool(obs_actual or adj_list_my)
 
