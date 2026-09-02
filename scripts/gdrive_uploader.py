@@ -34,23 +34,23 @@ def resolver_folder_id(file_name: str, target_folder: str = "") -> str:
     """Resuelve el ID de carpeta en Drive según el nombre del archivo o mes objetivo."""
     if target_folder:
         tf = str(target_folder).strip().lower()
+        if tf in ("raiz", "root", "asistencia", "padre"):
+            return DRIVE_PARENT_FOLDER_ID
         if tf in DRIVE_MONTH_FOLDERS:
             return DRIVE_MONTH_FOLDERS[tf]
         return target_folder
 
     fn_lower = file_name.lower()
 
-    # 1. Por mes explícito en el nombre de archivo (ej. 2026-08 o 2026-09)
+    # 1. Transacciones_Acumuladas.xlsx va en la carpeta raíz ASISTENCIA (un nivel arriba antes de los meses)
+    if fn_lower == "transacciones_acumuladas.xlsx":
+        return DRIVE_PARENT_FOLDER_ID
+
+    # 2. Por mes explícito en el nombre de archivo (ej. 2026-08 o 2026-09)
     if "2026-08" in fn_lower or "_08_" in fn_lower:
         return DRIVE_MONTH_FOLDERS["08"]
     if "2026-09" in fn_lower or "_09_" in fn_lower:
         return DRIVE_MONTH_FOLDERS["09"]
-
-    # 2. Transacciones_Acumuladas.xlsx va al mes en curso (setiembre en sept, agosto en ago)
-    if fn_lower == "transacciones_acumuladas.xlsx":
-        hoy = datetime.date.today()
-        mes_str = f"{hoy.month:02d}"
-        return DRIVE_MONTH_FOLDERS.get(mes_str, DRIVE_MONTH_FOLDERS["09"])
 
     return DRIVE_MONTH_FOLDERS["09"]
 
@@ -63,13 +63,10 @@ def log_drive(msg: str):
 
 def subir_archivo_a_gdrive(local_file_path: str, target_folder: str = "", sa_dict: dict = None) -> bool:
     """
-    Sube o actualiza un archivo local en la carpeta compartida correspondiente de Google Drive (AGOSTO o SETIEMBRE).
-    EXCEPCIÓN AUTORIZADA POR EL USUARIO:
-      1. Transacciones_Acumuladas.xlsx
-      2. Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx (Reportes diarios cerrados)
-      3. Aprobaciones_GZG_YYYY-MM.xlsx (triggered inmediatamente tras cada acción de aprobación/rechazo)
-    PROHIBICIÓN ESTRICTA:
-      - Sistema_Asistencia_GZG_v1.0.xlsx (Permanentemente local en PC)
+    Sube o actualiza un archivo local en la carpeta compartida correspondiente de Google Drive.
+    - Transacciones_Acumuladas.xlsx -> Carpeta raíz ASISTENCIA
+    - Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx -> Subcarpeta del mes (AGOSTO, SETIEMBRE)
+    - Aprobaciones_GZG_YYYY-MM.xlsx -> Subcarpeta del mes (AGOSTO, SETIEMBRE)
     """
     if not os.path.exists(local_file_path):
         log_drive(f"Error: El archivo local no existe -> {local_file_path}")
@@ -87,7 +84,7 @@ def subir_archivo_a_gdrive(local_file_path: str, target_folder: str = "", sa_dic
         return False
 
     folder_id = resolver_folder_id(file_name, target_folder)
-    nombre_carpeta = "AGOSTO" if folder_id == DRIVE_MONTH_FOLDERS["08"] else ("SETIEMBRE" if folder_id == DRIVE_MONTH_FOLDERS["09"] else folder_id)
+    nombre_carpeta = "ASISTENCIA (Raíz)" if folder_id == DRIVE_PARENT_FOLDER_ID else ("AGOSTO" if folder_id == DRIVE_MONTH_FOLDERS["08"] else ("SETIEMBRE" if folder_id == DRIVE_MONTH_FOLDERS["09"] else folder_id))
 
     log_drive(f"Iniciando subida autorizada de {file_name} a Google Drive -> Carpeta: {nombre_carpeta} (ID: {folder_id})...")
     try:
@@ -204,9 +201,10 @@ def descargar_archivo_de_gdrive(file_name: str, local_dest_path: str, target_fol
         ).execute()
         files = results.get("files", [])
 
-        # 2. Si no se encuentra, buscar en las demás carpetas de meses conocidas
+        # 2. Si no se encuentra, buscar en la raíz ASISTENCIA y en las demás carpetas de meses conocidas
         if not files:
-            for alt_fid in set(DRIVE_MONTH_FOLDERS.values()):
+            todas_carpetas = [DRIVE_PARENT_FOLDER_ID] + list(DRIVE_MONTH_FOLDERS.values())
+            for alt_fid in set(todas_carpetas):
                 if alt_fid == folder_id:
                     continue
                 q_alt = f"'{alt_fid}' in parents and name = '{file_name}' and trashed = false"

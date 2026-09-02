@@ -7,15 +7,16 @@
 - **Consulta Previa Obligatoria Siempre (Cero Subidas Autónomas)**: Durante conversaciones, pruebas manuales o ejecuciones interactivas con el usuario, **NUNCA se sube, modifica ni se actualiza nada a Google Drive de forma directa**. El asistente debe presentar el análisis, detallar con precisión el archivo y la fecha que se propone afectar, y esperar ÚNICAMENTE la orden o confirmación explícita del usuario antes de ejecutar.
 - **Inmutabilidad Estricta de Días Históricos Cerrados (Cero Regeneraciones en Lote)**: Queda estrictamente prohibido regenerar, recalcular o sobreescribir reportes diarios de días cerrados previos en lote. Toda atención a una consulta o corrección interactiva se acota **exclusivamente a la fecha puntual involucrada (`YYYY-MM-DD`)**.
 - **Integridad Absoluta de la Tríada de Archivos Autorizados (Cero Omisiones Técnicas)**: Cualquier rutina oficial de sincronización o procesamiento debe mantener la integridad y consistencia de los **3 únicos archivos autorizados en Google Drive**, quedando prohibido el uso de scripts ad-hoc que omitan alguno de ellos:
-  - **Subida Automática 9:00 AM** (`scripts/schedule_downloader.py`) → Carpeta raíz `AGOSTO` en Drive:
-    1. `Transacciones_Acumuladas.xlsx` *(Maestro Acumulado de Marcaciones Crudas de HikCentral)*.
-    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` *(Reportes Diarios Procesados de Días Cerrados)*.
-  - **Subida Inmediata Triggered** (cada vez que un aprobador valida/rechaza en el app móvil) → Misma carpeta `AGOSTO` en Drive:
-    3. `Aprobaciones_GZG_YYYY-MM.xlsx` *(Registro mensual de HE y Excesos de Jornada con estados de aprobación N1/N2)*. La subida ocurre en un **hilo background** para no bloquear la UI del app. Sin horario fijo: se actualiza en Drive en el momento exacto en que se registra la acción (con previa rehidratación de seguridad).
+  - **Subida Automática 9:00 AM** (`scripts/schedule_downloader.py`):
+    1. `Transacciones_Acumuladas.xlsx` → Carpeta raíz `ASISTENCIA` en Drive *(Maestro Acumulado Único y Central de Marcaciones Crudas de HikCentral, a nivel raíz antes de las carpetas de meses)*.
+    2. `Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` → Subcarpeta del mes correspondiente (`AGOSTO`, `SETIEMBRE`, etc.) *(Reportes Diarios Procesados de Días Cerrados)*.
+  - **Subida Inmediata Triggered** (cada vez que un aprobador valida/rechaza en el app móvil):
+    3. `Aprobaciones_GZG_YYYY-MM.xlsx` → Subcarpeta del mes correspondiente (`AGOSTO`, `SETIEMBRE`, etc.) *(Registro mensual de HE y Excesos de Jornada con estados de aprobación N1/N2)*. La subida ocurre en un **hilo background** para no bloquear la UI del app. Sin horario fijo: se actualiza en Drive en el momento exacto en que se registra la acción (con previa rehidratación de seguridad).
   - **Definición Estricta de Día Cerrado (Regla de 9:00 AM)**: Un día calendárico (ej. día 22) se considera **Día Cerrado** ÚNICAMENTE a partir de la ejecución automática de las 9:00 AM del día posterior (ej. día 23 a las 9:00 AM). Antes de las 9:00 AM del día posterior, el día se considera EN CURSO. Queda estrictamente PROHIBIDO emitir el reporte diario individual antes de las 9:00 AM del día siguiente.
 - **Ubicaciones Exclusivas Locales de Reportes**:
-  - Reportes diarios: `downloads/data_procesada/diario/Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx`
+  - Reportes diarios: `downloads/data_procesada/diario/<mes>/Reporte_Asistencia_GZG_YYYY-MM-DD.xlsx` (organizados por mes: `agosto`, `setiembre`, etc.).
   - Excel de Aprobaciones: `downloads/data_procesada/Aprobaciones_GZG_YYYY-MM.xlsx`
+  - Transacciones Acumuladas local: `downloads/data_cruda/Transacciones_Acumuladas.xlsx`
   - Queda estrictamente PROHIBIDO generar o dejar reportes sueltos en la raíz del proyecto o subcarpetas no autorizadas.
 - **PROHIBIDO TOTALMENTE EN DRIVE**:
   - NO crear subcarpetas como `Data_Cruda` o `Data_Procesada` en Google Drive.
