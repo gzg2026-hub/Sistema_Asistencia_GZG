@@ -48,6 +48,10 @@ sys.path.insert(0, ROOT_DIR)
 # probable señal de que el biométrico no terminó de sincronizar con HikCentral hoy.
 UMBRAL_ALERTA_ANTIGUEDAD_MIN = 120
 
+# Regla Oficial Inviolable: inicio oficial de operaciones biométricas en mina
+FECHA_INICIO_OFICIAL = "2026-08-17"
+
+
 # ── Carpetas de descargas y procesamiento ──────────────────────────────────────
 CARPETA_DATA_CRUDA = os.path.join(ROOT_DIR, "downloads", "data_cruda")
 CARPETA_DATA_PROCESADA = os.path.join(ROOT_DIR, "downloads", "data_procesada")
@@ -106,6 +110,11 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
     errores, False si ocurrió una excepción durante el procesamiento principal.
     """
     _log("=" * 60)
+    # Forzar cumplimiento estricto del piso oficial de inicio de biométricos (2026-08-17)
+    if fecha_inicio < FECHA_INICIO_OFICIAL:
+        _log(f"Aviso: fecha_inicio {fecha_inicio} ajustada al piso oficial inviolable: {FECHA_INICIO_OFICIAL}")
+        fecha_inicio = FECHA_INICIO_OFICIAL
+
     _log(f"Descargando transacciones del {fecha_inicio} al {fecha_fin}...")
     exito = True
 
@@ -175,6 +184,11 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
             df_trab_nuevo, df_marc_nuevo, df_he_nuevo = cargar_datos_excel(excel_path_nuevo)
 
         df_marc_master = fusionar_y_deduplicar_data_cruda(df_marc_nuevo, ruta_maestro_raw)
+        # Descartar estrictamente cualquier marcación anterior a la fecha de inicio oficial
+        f_col = 'Fecha' if 'Fecha' in df_marc_master.columns else ('FECHA' if 'FECHA' in df_marc_master.columns else None)
+        if f_col and not df_marc_master.empty:
+            df_marc_master = df_marc_master[df_marc_master[f_col].astype(str) >= FECHA_INICIO_OFICIAL].copy()
+
         conteo_nuevo = len(df_marc_master)
         hay_marcaciones_nuevas = (conteo_nuevo > conteo_previo)
 
@@ -279,7 +293,19 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                     df_asis_dia = df_asis[df_asis['FECHA'].astype(str) == ayer_str]
                     if not df_asis_dia.empty:
                         file_name_dia = f"Reporte_Asistencia_GZG_{ayer_str}.xlsx"
-                        file_path_dia = os.path.join(carp_diario, file_name_dia)
+                        
+                        # Subcarpeta por mes en PC local (ej. downloads/data_procesada/diario/agosto o setiembre)
+                        mes_ayer = ayer_str.split("-")[1] if "-" in ayer_str else "08"
+                        mapa_meses = {
+                            "01": "enero", "02": "febrero", "03": "marzo", "04": "abril",
+                            "05": "mayo", "06": "junio", "07": "julio", "08": "agosto",
+                            "09": "setiembre", "10": "octubre", "11": "noviembre", "12": "diciembre"
+                        }
+                        nombre_subcarpeta = mapa_meses.get(mes_ayer, f"mes_{mes_ayer}")
+                        carp_diario_mes = os.path.join(carp_diario, nombre_subcarpeta)
+                        os.makedirs(carp_diario_mes, exist_ok=True)
+
+                        file_path_dia = os.path.join(carp_diario_mes, file_name_dia)
 
                         excel_bytes = exportar_asistencia_excel(df_trab, df_marc_master, df_asis_dia, df_he_out, df_inc)
                         try:
@@ -289,7 +315,7 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                             subir_archivo_a_gdrive(file_path_dia)
                         except PermissionError:
                             ts_str = datetime.datetime.now().strftime("%H%M%S")
-                            file_path_alt = os.path.join(carp_diario, f"Reporte_Asistencia_GZG_{ayer_str}_{ts_str}.xlsx")
+                            file_path_alt = os.path.join(carp_diario_mes, f"Reporte_Asistencia_GZG_{ayer_str}_{ts_str}.xlsx")
                             with open(file_path_alt, "wb") as f_out:
                                 f_out.write(excel_bytes)
                             _log(f"Aviso: {file_name_dia} abierto en Excel. Guardado copia -> {file_path_alt}")
@@ -381,20 +407,11 @@ def _ayer() -> str:
 
 def _fecha_inicio_acumulado() -> str:
     """
-    Calcula dinámicamente la fecha de inicio del acumulado.
-    Usa el primer día del mes anterior para cubrir marcaciones de Turno Noche
-    que cruzan el cambio de mes (ej. noche del 31 con salida el 1 del mes sig.).
-    Así el acumulado nunca excede ~60 días, evitando el límite de 5000 registros.
+    Fecha de inicio del acumulado oficial de transacciones.
+    Los biométricos iniciaron operaciones oficiales el 2026-08-17.
+    Regla estricta: NUNCA descargar ni acumular datos previos a esta fecha.
     """
-    hoy = datetime.date.today()
-    # Primer día del mes actual
-    primer_dia_mes_actual = hoy.replace(day=1)
-    # Primer día del mes anterior (retroceder al mes anterior)
-    if primer_dia_mes_actual.month == 1:
-        primer_dia_mes_anterior = primer_dia_mes_actual.replace(year=primer_dia_mes_actual.year - 1, month=12)
-    else:
-        primer_dia_mes_anterior = primer_dia_mes_actual.replace(month=primer_dia_mes_actual.month - 1)
-    return primer_dia_mes_anterior.strftime("%Y-%m-%d")
+    return FECHA_INICIO_OFICIAL
 
 
 def _menu_manual():
@@ -442,6 +459,9 @@ def _menu_manual():
         if ini and fin:
             if ini > fin:
                 ini, fin = fin, ini
+            if ini < FECHA_INICIO_OFICIAL:
+                print(f"  Aviso: fecha inicio ajustada al piso oficial: {FECHA_INICIO_OFICIAL}")
+                ini = FECHA_INICIO_OFICIAL
             print(f"\n  Descargando rango: {ini} → {fin}")
             _ejecutar_descarga(ini, fin)
         else:
@@ -539,6 +559,7 @@ if __name__ == '__main__':
     elif len(args) == 1 and _parsear_fecha(args[0]):
         # Fecha específica como argumento: python schedule_downloader.py 2026-08-17
         fecha = _parsear_fecha(args[0])
+        fecha = max(fecha, FECHA_INICIO_OFICIAL)
         _log(f"Ejecución MANUAL con fecha: {fecha}")
         _ejecutar_descarga(fecha, fecha)
 
@@ -546,6 +567,9 @@ if __name__ == '__main__':
         # Rango: python schedule_downloader.py 2026-08-15 2026-08-17
         ini = _parsear_fecha(args[0])
         fin = _parsear_fecha(args[1])
+        if ini > fin:
+            ini, fin = fin, ini
+        ini = max(ini, FECHA_INICIO_OFICIAL)
         _log(f"Ejecución MANUAL con rango: {ini} -> {fin}")
         _ejecutar_descarga(ini, fin)
 

@@ -467,7 +467,8 @@ def guardar_marcaciones_raw(df_marcaciones: pd.DataFrame, archivo_origen: str = 
         tiempo = str(row.get('Tiempo', '')).strip()
         tipo_pase = str(row.get('Tipo de pase de tarjeta', '')).strip()
         
-        if not dni or not fecha:
+        # Regla estricta: Descartar cualquier marcación anterior a 2026-08-17
+        if not dni or not fecha or fecha < '2026-08-17':
             continue
             
         # Limpieza de departamento (extraer texto tras el >)
@@ -513,6 +514,9 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
     # 1. Asistencia
     if not df_asistencia.empty:
         for _, r in df_asistencia.iterrows():
+            f_asis = str(r.get('FECHA', r.get('Fecha', ''))).strip()
+            if not f_asis or f_asis < '2026-08-17':
+                continue
             cursor.execute("""
             INSERT INTO asistencia (
                 fecha, dni, apellidos, nombres, cargo, area, turno,
@@ -536,7 +540,7 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
                 estado_asistencia=excluded.estado_asistencia,
                 observaciones=excluded.observaciones
             """, (
-                str(r.get('FECHA', '')),
+                f_asis,
                 str(r.get('DNI', '')),
                 str(r.get('APELLIDOS', '')),
                 str(r.get('NOMBRES', '')),
@@ -558,6 +562,9 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
     # 2. Horas Extra
     if not df_horas_extra.empty:
         for _, r in df_horas_extra.iterrows():
+            f_he = str(r.get('FECHA', r.get('Fecha', ''))).strip()
+            if not f_he or f_he < '2026-08-17':
+                continue
             cursor.execute("""
             INSERT INTO horas_extra (
                 fecha, dni, apellidos, nombres, cargo, area, turno, inicio_he, fin_he, duracion_min, observacion
@@ -568,7 +575,7 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
                 duracion_min=excluded.duracion_min,
                 observacion=excluded.observacion
             """, (
-                str(r.get('FECHA', '')),
+                f_he,
                 str(r.get('DNI', '')),
                 str(r.get('APELLIDOS', '')),
                 str(r.get('NOMBRES', '')),
@@ -584,12 +591,15 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
     # 3. Incidencias
     if not df_incidencias.empty:
         for _, r in df_incidencias.iterrows():
+            f_inc = str(r.get('FECHA', r.get('Fecha', ''))).strip()
+            if not f_inc or f_inc < '2026-08-17':
+                continue
             cursor.execute("""
             INSERT INTO incidencias (
                 fecha, dni, apellidos, nombres, cargo, area, tipo, hora, descripcion, severidad, observacion
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
-                str(r.get('FECHA', '')),
+                f_inc,
                 str(r.get('DNI', '')),
                 str(r.get('APELLIDOS', '')),
                 str(r.get('NOMBRES', '')),
@@ -1068,7 +1078,8 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
     cursor.execute("""
         DELETE FROM aprobaciones 
         WHERE (
-            LOWER(cargo) LIKE '%administrativo%' 
+            fecha < '2026-08-17'
+            OR LOWER(cargo) LIKE '%administrativo%' 
             OR dni IN ('74546819', '77134790', '48455175', '75227437')
             OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
         )
@@ -1079,6 +1090,8 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         AND (observacion_trabajador IS NULL OR TRIM(observacion_trabajador) = '')
         AND (adjuntos IS NULL OR TRIM(adjuntos) = '')
     """)
+    # Depurar incondicionalmente cualquier fila de fecha previa a la oficial
+    cursor.execute("DELETE FROM aprobaciones WHERE fecha < '2026-08-17';")
     
     # 2. Leer registros de asistencia usando el cargo oficial del Padrón (t.cargo)
     cursor.execute("""
@@ -1088,6 +1101,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         FROM asistencia a
         LEFT JOIN trabajadores t ON a.dni = t.dni
         WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
+          AND a.fecha >= '2026-08-17'
           AND LOWER(COALESCE(t.cargo, a.cargo, '')) NOT LIKE '%administrativo%'
           AND a.dni NOT IN ('74546819', '77134790', '48455175', '75227437')
     """)
@@ -1252,6 +1266,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     fecha = f"{fecha_parts[2]}-{fecha_parts[1]}-{fecha_parts[0]}"
                 else:
                     fecha = fecha_raw
+
+                # Regla estricta: Descartar fechas previas al inicio oficial (2026-08-17)
+                if fecha < '2026-08-17':
+                    continue
 
                 apellidos = str(ws.cell(row=r, column=2).value or '').strip()
                 nombres = str(ws.cell(row=r, column=3).value or '').strip()

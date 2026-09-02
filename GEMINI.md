@@ -24,6 +24,13 @@
 
 ---
 
+## 1.1 REGLA DE FECHA DE INICIO OFICIAL DE BIOMÉTRICOS (17 DE AGOSTO DE 2026)
+- **Fecha de Inicio Inviolable (`2026-08-17`)**: Los biométricos HikCentral empezaron a funcionar oficialmente en mina el **17 de agosto de 2026**.
+- **Prohibición Absoluta de Fechas Previas al 17 de Agosto**: Queda terminantemente PROHIBIDO descargar, almacenar, procesar, sincronizar, reportar o acumular cualquier marcación, reporte diario, reporte acumulado, base de datos SQLite o archivo de aprobaciones con fecha anterior al `2026-08-17`. Las marcaciones registradas antes del 17 de agosto corresponden a pruebas preliminares no oficiales y deben ser ignoradas y descartadas en todas las capas del sistema.
+- **Piso Inferior Inamovible para Rangos y Acumulados**: Cualquier rutina de descarga (ej. `_fecha_inicio_acumulado()`, pasadas automáticas 09:00, 09:30, 10:00, o reprocesos manuales) tiene como límite inferior estricto e inamovible el `2026-08-17`. Toda consulta a HikCentral, fusión de data cruda, procesamiento en el motor de asistencia e inserción en SQLite debe descartar de forma forzosa cualquier fecha `< '2026-08-17'`.
+
+---
+
 ## 2. PRESERVACIÓN DE DATA CRUDA REAL DEL BIOMÉTRICO
 - En los archivos de data cruda (`Transacciones_Acumuladas.xlsx`), se deben mantener **los valores reales exactos** exportados por el biométrico HikCentral (`Registro de entrada`, `Registrar salida`, `Imagen de cara`, `Huella dactilar`, departamentos y cargos reales).
 - **Integridad Estricta de Marcaciones 1-a-1**: El total de marcaciones en `Transacciones_Acumuladas.xlsx` debe ser un reflejo EXACTO del 100% de transacciones de HikCentral Web (ejemplo: 533 en Web = 533 en Excel). Queda estrictamente prohibido usar parsers que descarten o silencien archivos descargados con encabezados nativos (`DNI`, `APELLIDOS`, `NOMBRES`, `FECHA`, `HORA`, `DISPOSITIVO`, `TIPO`).
@@ -205,9 +212,10 @@ La lógica de deducción e Inteligencia Artificial se aplica **únicamente en el
 - **Persistencia Total y Blindaje contra Reinicios de Servidor / Cloud**:
   * Queda estrictamente PROHIBIDO reiniciar contadores o solicitudes en la base de datos o en los archivos Excel sin orden explícita del usuario.
   * **Rehidratación Obligatoria desde Drive al Inicio (`mobile.py`)**: Al iniciar sesión en `mobile.py`, el sistema ejecuta obligatoriamente `sincronizar_aprobaciones_con_gdrive()` utilizando `st.secrets["gcp_service_account"]` para descargar y restaurar en memoria los estados reales desde Google Drive, blindando la persistencia contra cualquier reinicio de Streamlit Cloud.
-- **Rehidratación Bidireccional Previa Obligatoria en la PC Local**:
-  * En la ejecución programada de las 9:00 AM (`scripts/schedule_downloader.py`) y en el monitor local (`scripts/auto_sync_approvals.py`), es **mandatorio** ejecutar `sincronizar_aprobaciones_con_gdrive(DB_PATH)` **antes** de generar el Excel de aprobaciones o subirlo a Google Drive.
-  * Esta regla garantiza que la base de datos local SQLite absorba primero todas las aprobaciones, rechazos y comentarios registrados desde la app móvil en Streamlit Cloud, impidiendo que la PC local sobreescriba accidentalmente la nube con estados pendientes antiguos.
+- **Rehidratación Bidireccional y Demonio de Sincronización Automática en la PC Local**:
+  * En la ejecución programada de las 9:00 AM (`scripts/schedule_downloader.py`) y en el monitor local continuo (`scripts/auto_sync_approvals.py`), es **mandatorio** ejecutar `sincronizar_aprobaciones_con_gdrive(DB_PATH)` para descargar y reconciliar estados tanto del **mes actual** como del **mes previo** (vital para días de cambio de mes y cierres de periodo).
+  * El demonio `auto_sync_approvals.py` monitorea Google Drive cada 45 segundos de forma ultra-ligera (inspeccionando `modifiedTime`), descargando y rehidratando la base local SQLite y el Excel automáticamente en segundo plano. Se ejecuta de forma invisible al iniciar sesión en Windows a través del launcher en la carpeta de Inicio (`Startup`) y dispone del ejecutable manual directo `ACTUALIZAR_APROBACIONES.bat`.
+  * Esta regla garantiza que la base de datos local SQLite absorba permanentemente todas las aprobaciones, rechazos y comentarios registrados desde la app móvil en Streamlit Cloud, impidiendo que la PC local sobreescriba accidentalmente la nube con estados pendientes antiguos.
 - **Bloqueo Estricto de Botones para Personal con Reporte Directo a Superintendencia (`msanchez`)**:
   * Para trabajadores, supervisores o jefes cuyo reporte sea directo a Superintendencia (`aprobador_n1 == 'msanchez'` y sin N2 intermedio), los botones `❌ RECHAZAR` y `✅ APROBAR` en la bandeja de `msanchez` permanecen estrictamente **bloqueados y desactivados (`disabled=True`)** mientras la solicitud no cuente con justificación o fotos registradas por el trabajador en `📝 Mis Horas Extras`.
   * Se muestra un recuadro de advertencia indicando que el trabajador debe registrar su sustento antes de poder evaluar.

@@ -283,10 +283,12 @@ def procesar_asistencia_df(df_trabajadores: pd.DataFrame, df_marcaciones: pd.Dat
     
     tipo_col = 'Tipo de pase de tarjeta' if 'Tipo de pase de tarjeta' in df_marcaciones.columns else 'TIPO'
     
-    # Filtrado Punto 9: Eliminar filas vacías, de encabezados duplicados o sin hora válida
+    # Filtrado Punto 9 y Regla Oficial Inviolable: Eliminar filas vacías y descartar fechas previas al 2026-08-17
+    FECHA_INICIO_OFICIAL = "2026-08-17"
     df_marcaciones = df_marcaciones[
         df_marcaciones['DNI_STR'].notna() &
         df_marcaciones['Fecha_Clean'].notna() &
+        (df_marcaciones['Fecha_Clean'] >= FECHA_INICIO_OFICIAL) &
         df_marcaciones['Hora_Clean'].notna() &
         ~df_marcaciones['DNI_STR'].str.lower().str.contains('fecha:|semana:|periodo:|desconocido|none|nan', regex=True, na=False)
     ]

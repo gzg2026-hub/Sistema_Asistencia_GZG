@@ -4,6 +4,10 @@ import re
 from datetime import datetime, time
 from typing import Tuple, Dict, List
 
+# Regla Oficial Inviolable: inicio oficial de operaciones biométricas en mina
+FECHA_INICIO_OFICIAL = "2026-08-17"
+
+
 def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
     """
     Parsea archivos descargados de transacciones de Hikvision (ej. Transacciones_2026-08-11_2026-08-11.xlsx).
@@ -111,6 +115,10 @@ def parse_hikvision_transaction_file(excel_path_or_file) -> pd.DataFrame:
         df['Semana'] = ''
     if 'Método de verificación' not in df.columns and 'Metodo de verificacion' not in df.columns:
         df['Método de verificación'] = 'Rostro'
+
+    # Regla estricta: Descartar marcaciones previas al inicio oficial (2026-08-17)
+    if 'Fecha' in df.columns:
+        df = df[df['Fecha'].astype(str) >= FECHA_INICIO_OFICIAL].copy()
 
     official_cols = [
         'ID', 'Nombre', 'Apellido', 'Departamento', 'Posición',
@@ -231,6 +239,10 @@ def fusionar_y_deduplicar_data_cruda(df_nuevo: pd.DataFrame, ruta_maestro: str) 
 
     if subset_keys:
         df_combined = df_combined.drop_duplicates(subset=subset_keys, keep='last')
+
+    # Regla estricta: Descartar cualquier marcación previa a la fecha de inicio oficial (2026-08-17)
+    if col_fecha and not df_combined.empty:
+        df_combined = df_combined[df_combined[col_fecha[0]].astype(str) >= FECHA_INICIO_OFICIAL].copy()
 
     # Ordenar por fecha y tiempo cronológicamente
     if col_fecha and col_tiempo:

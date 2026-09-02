@@ -49,6 +49,9 @@ SWIPE_TYPE_MAP = {
 }
 
 
+FECHA_INICIO_OFICIAL = "2026-08-17"
+
+
 def cargar_config_hikvision():
     """Lee la configuración de IP y credenciales desde config_hikvision.json."""
     config_file = os.path.join(PROJECT_ROOT, "config_hikvision.json")
@@ -99,6 +102,12 @@ def descargar_transacciones_hikvision(
         fecha_inicio = ayer
     if not fecha_fin:
         fecha_fin = fecha_inicio
+
+    if fecha_inicio < FECHA_INICIO_OFICIAL:
+        print(f"[HikCentral] Ajustando fecha_inicio de {fecha_inicio} al piso oficial: {FECHA_INICIO_OFICIAL}")
+        fecha_inicio = FECHA_INICIO_OFICIAL
+    if fecha_fin < FECHA_INICIO_OFICIAL:
+        fecha_fin = FECHA_INICIO_OFICIAL
 
     filename = f"Transacciones_{fecha_inicio}_{fecha_fin}.xlsx"
     target_path = os.path.join(carpeta_destino, filename)
@@ -274,16 +283,18 @@ def descargar_transacciones_hikvision(
         cell.alignment = header_align
 
     for r in records:
+        swipe_time = r.get("SwipeTime", "")  # "2026-08-18T07:06:30-05:00"
+        fecha_ev = swipe_time[:10] if len(swipe_time) >= 10 else fecha_inicio
+        if fecha_ev < FECHA_INICIO_OFICIAL:
+            continue
+        hora_ev = swipe_time[11:19] if len(swipe_time) >= 19 else "00:00:00"
+
         info = r.get("PersonInfo", {})
         dni = str(info.get("EmployeeID", ""))
         nombre = info.get("GivenName", "")
         apellido = info.get("FamilyName", "")
         dept = info.get("DepartmentName", "")
         posicion = info.get("Post", "")
-
-        swipe_time = r.get("SwipeTime", "")  # "2026-08-18T07:06:30-05:00"
-        fecha_ev = swipe_time[:10] if len(swipe_time) >= 10 else fecha_inicio
-        hora_ev = swipe_time[11:19] if len(swipe_time) >= 19 else "00:00:00"
 
         # Día de la semana en español
         try:
