@@ -474,6 +474,18 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
         thin = Side(style="thin", color="D9D9D9")
         thin_border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
+        # Filtrar estrictamente días cerrados y fecha oficial de inicio
+        if df_aprobaciones is not None and not df_aprobaciones.empty and 'fecha' in df_aprobaciones.columns:
+            try:
+                from data.database import obtener_ultimo_dia_cerrado
+                f_max_cerrada = obtener_ultimo_dia_cerrado()
+                df_aprobaciones = df_aprobaciones[
+                    (df_aprobaciones['fecha'].astype(str) >= '2026-08-17') &
+                    (df_aprobaciones['fecha'].astype(str) <= f_max_cerrada)
+                ].copy()
+            except Exception:
+                pass
+
         # Fila 1: Banner
         ws.merge_cells("A1:S1")
         ws.row_dimensions[1].height = 30

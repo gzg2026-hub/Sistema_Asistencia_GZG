@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import os
+import datetime
 import streamlit as st
 from typing import Tuple, Dict, Any, Optional
 
@@ -1050,13 +1051,30 @@ def sincronizar_desde_hcweb_downloadcenter(db_path: str = DB_PATH):
             pass
 
 
-def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
-    """Sincronizar marcaciones con incidencias/HE hacia la tabla aprobaciones asociando N1 y N2."""
+def obtener_ultimo_dia_cerrado() -> str:
+    """
+    Retorna la fecha en formato 'YYYY-MM-DD' del último día cerrado según la Regla de 9:00 AM:
+    - Antes de las 09:00 AM de hoy: el último día cerrado es hace 2 días (hoy - 2 días).
+    - A partir de las 09:00 AM de hoy: el último día cerrado es ayer (hoy - 1 día).
+    El día en curso NUNCA se considera cerrado.
+    """
+    now = datetime.datetime.now()
+    if now.hour < 9:
+        return (now.date() - datetime.timedelta(days=2)).strftime("%Y-%m-%d")
+    else:
+        return (now.date() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+
+
+def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH, fecha_max: str = None):
+    """Sincronizar marcaciones con incidencias/HE hacia la tabla aprobaciones asociando N1 y N2 solo para días cerrados."""
     # Respaldo de seguridad previo automático
     try:
         crear_backup_seguridad_sqlite(db_path, sufijo="pre_sync_aprob")
     except Exception as e_bk:
         print(f"[Aviso backup]: {e_bk}")
+
+    if not fecha_max:
+        fecha_max = obtener_ultimo_dia_cerrado()
 
     conn = get_connection(db_path)
     cursor = conn.cursor()
@@ -1079,6 +1097,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         DELETE FROM aprobaciones 
         WHERE (
             fecha < '2026-08-17'
+            OR fecha > ?
             OR LOWER(cargo) LIKE '%administrativo%' 
             OR dni IN ('74546819', '77134790', '48455175', '75227437')
             OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
@@ -1089,11 +1108,11 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         AND (comentario_n2 IS NULL OR TRIM(comentario_n2) = '')
         AND (observacion_trabajador IS NULL OR TRIM(observacion_trabajador) = '')
         AND (adjuntos IS NULL OR TRIM(adjuntos) = '')
-    """)
-    # Depurar incondicionalmente cualquier fila de fecha previa a la oficial
-    cursor.execute("DELETE FROM aprobaciones WHERE fecha < '2026-08-17';")
+    """, (fecha_max,))
+    # Depurar incondicionalmente cualquier fila de fecha previa a la oficial o posterior al último día cerrado
+    cursor.execute("DELETE FROM aprobaciones WHERE fecha < '2026-08-17' OR fecha > ?;", (fecha_max,))
     
-    # 2. Leer registros de asistencia usando el cargo oficial del Padrón (t.cargo)
+    # 2. Leer registros de asistencia usando el cargo oficial del Padrón (t.cargo) acotado estrictamente a días cerrados
     cursor.execute("""
         SELECT a.fecha, a.dni, a.apellidos, a.nombres, COALESCE(t.cargo, a.cargo) as cargo, COALESCE(t.area, a.area) as area, a.entrada, a.salida,
                a.horas_trabajadas, a.exceso_jornada_min, a.total_horas_adicionales_min,
@@ -1102,9 +1121,10 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH):
         LEFT JOIN trabajadores t ON a.dni = t.dni
         WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
           AND a.fecha >= '2026-08-17'
+          AND a.fecha <= ?
           AND LOWER(COALESCE(t.cargo, a.cargo, '')) NOT LIKE '%administrativo%'
           AND a.dni NOT IN ('74546819', '77134790', '48455175', '75227437')
-    """)
+    """, (fecha_max,))
     rows = cursor.fetchall()
     
     for r in rows:
@@ -1267,8 +1287,9 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 else:
                     fecha = fecha_raw
 
-                # Regla estricta: Descartar fechas previas al inicio oficial (2026-08-17)
-                if fecha < '2026-08-17':
+                # Regla estricta: Descartar fechas previas al inicio oficial (2026-08-17) y días no cerrados
+                f_max_cerrada = obtener_ultimo_dia_cerrado()
+                if fecha < '2026-08-17' or fecha > f_max_cerrada:
                     continue
 
                 apellidos = str(ws.cell(row=r, column=2).value or '').strip()
@@ -1510,10 +1531,11 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
     """Obtener DataFrame de solicitudes de aprobacion directamente desde SQLite sin cache para respuesta instantanea."""
     conn = get_connection(db_path)
     
-    query = "SELECT * FROM aprobaciones"
-    params = []
+    fecha_max = obtener_ultimo_dia_cerrado()
+    query = "SELECT * FROM aprobaciones WHERE fecha >= '2026-08-17' AND fecha <= ?"
+    params = [fecha_max]
     if estado_filter and estado_filter.upper() != 'TODAS':
-        query += " WHERE estado = ?"
+        query += " AND estado = ?"
         params.append(estado_filter.upper())
         
     query += " ORDER BY fecha DESC, id DESC"
@@ -1522,11 +1544,12 @@ def obtener_solicitudes_aprobacion(estado_filter: str = None, db_path: str = DB_
     return df
 
 
-def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
+def regenerar_aprobaciones_excel(db_path: str = DB_PATH, mes_afectado: str = None, async_upload: bool = True) -> bool:
     """
-    Regenera el Excel de aprobaciones y lo sube a Google Drive, todo en segundo plano.
-    El llamador (actualizar_estado_aprobacion) no espera a que esto termine.
-    Archivo autorizado: Aprobaciones_GZG_YYYY-MM.xlsx (único archivo de aprobaciones permitido en Drive)
+    Regenera el Excel de aprobaciones y lo sube a Google Drive de forma estrictamente segmentada por mes.
+    - Si se especifica mes_afectado (ej. '2026-08' o '2026-09'), regenera y sube únicamente ese mes.
+    - Si mes_afectado es None, detecta todos los meses presentes (>= '2026-08') y regenera cada uno por separado.
+    - async_upload=True: Ejecuta en segundo plano (hilo background) para no bloquear la app móvil.
     """
     import threading
 
@@ -1538,7 +1561,7 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
     except Exception:
         pass
 
-    def _async_full_regen(p_db, sa):
+    def _do_regen(p_db, sa, m_target):
         try:
             import os, datetime
             import pandas as pd
@@ -1546,33 +1569,48 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH) -> bool:
             root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
             conn = get_connection(p_db)
-            df_aprob = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
+            fecha_max = obtener_ultimo_dia_cerrado()
+            df_aprob_all = pd.read_sql_query(
+                "SELECT * FROM aprobaciones WHERE fecha >= '2026-08-17' AND fecha <= ? ORDER BY fecha DESC, id DESC",
+                conn,
+                params=[fecha_max]
+            )
             conn.close()
 
-            mes_str = None
-            if not df_aprob.empty and 'fecha' in df_aprob.columns:
-                fechas_validas = df_aprob['fecha'].dropna().astype(str).str.strip()
-                fechas_validas = fechas_validas[fechas_validas.str.len() >= 7]
-                if not fechas_validas.empty:
-                    mes_str = fechas_validas.iloc[0][:7]
-            
-            if not mes_str or len(mes_str) != 7:
-                mes_str = obtener_hora_peru_str()[:7]
+            if df_aprob_all.empty or 'fecha' not in df_aprob_all.columns:
+                return
 
-            out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-            os.makedirs(os.path.dirname(out_path), exist_ok=True)
+            if m_target and len(str(m_target).strip()) >= 7:
+                meses_a_procesar = [str(m_target).strip()[:7]]
+            else:
+                meses_a_procesar = sorted([
+                    m for m in df_aprob_all['fecha'].dropna().astype(str).str[:7].unique()
+                    if len(m) == 7 and m >= '2026-08'
+                ])
 
-            ok_local = exportar_aprobaciones_excel(df_aprob, out_path)
-            if ok_local and os.path.exists(out_path):
-                try:
-                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                    subir_archivo_a_gdrive(out_path, sa_dict=sa)
-                except Exception as e_drive:
-                    print(f"[Aviso] Subida Drive Aprobaciones: {e_drive}")
+            for m_str in meses_a_procesar:
+                df_mes = df_aprob_all[df_aprob_all['fecha'].astype(str).str.startswith(m_str)].copy()
+                if df_mes.empty:
+                    continue
+
+                out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{m_str}.xlsx')
+                os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+                ok_local = exportar_aprobaciones_excel(df_mes, out_path)
+                if ok_local and os.path.exists(out_path):
+                    try:
+                        from scripts.gdrive_uploader import subir_archivo_a_gdrive
+                        subir_archivo_a_gdrive(out_path, sa_dict=sa)
+                        print(f"[Aprobaciones] Regenerado y subido con éxito: Aprobaciones_GZG_{m_str}.xlsx ({len(df_mes)} filas)")
+                    except Exception as e_drive:
+                        print(f"[Aviso] Subida Drive Aprobaciones ({m_str}): {e_drive}")
         except Exception as e:
             print(f"[Aviso] Error regenerando Excel de aprobaciones: {e}")
 
-    threading.Thread(target=_async_full_regen, args=(db_path, sa_info), daemon=True).start()
+    if async_upload:
+        threading.Thread(target=_do_regen, args=(db_path, sa_info, mes_afectado), daemon=True).start()
+    else:
+        _do_regen(db_path, sa_info, mes_afectado)
     return True
 
 
@@ -1591,7 +1629,7 @@ def actualizar_estado_aprobacion(
     """
     conn = get_connection(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT aprobador_n1, aprobador_n2, estado_n1, estado_n2 FROM aprobaciones WHERE id = ?", (id_solicitud,))
+    cursor.execute("SELECT aprobador_n1, aprobador_n2, estado_n1, estado_n2, fecha FROM aprobaciones WHERE id = ?", (id_solicitud,))
     row = cursor.fetchone()
     conn.close()
     
@@ -1628,24 +1666,6 @@ def actualizar_estado_aprobacion(
         db_path=db_path
     )
     
-    # Si N1 aprueba y hay un N2 asignado, notificar por Push al N2 (DESHABILITADO TEMPORALMENTE)
-    # if resultado and nivel == 1 and str(nuevo_estado).upper() == 'APROBADO' and row and row[1]:
-    #     n2_target = str(row[1]).strip().lower()
-    #     if n2_target not in ('', 'none', 'nan', '-'):
-    #         try:
-    #             import threading
-    #             from core.push_notifications import enviar_notificacion_push
-    #             threading.Thread(
-    #                 target=enviar_notificacion_push,
-    #                 args=(n2_target, "⭐ Aprobación Nivel 2 Requerida", f"{aprobado_por} dio V°B° a horas extras. Requiere tu aprobación final.")
-    #             ).start()
-    #         except Exception:
-    #             pass
-
-    try:
-        regenerar_aprobaciones_excel(db_path)
-    except Exception:
-        pass
     return resultado
 
 
@@ -1776,7 +1796,13 @@ def actualizar_estado_aprobacion_nivel(
         except Exception:
             pass
         try:
-            regenerar_aprobaciones_excel(db_path)
+            conn_m = get_connection(db_path)
+            cur_m = conn_m.cursor()
+            cur_m.execute("SELECT fecha FROM aprobaciones WHERE id = ?", (id_solicitud,))
+            row_m = cur_m.fetchone()
+            conn_m.close()
+            mes_afectado = str(row_m[0]).strip()[:7] if row_m and row_m[0] else None
+            regenerar_aprobaciones_excel(db_path, mes_afectado=mes_afectado)
         except Exception as e_excel:
             print(f"[Aviso] Excel de aprobaciones no regenerado: {e_excel}")
         return True
@@ -1868,43 +1894,21 @@ def guardar_sustento_trabajador(
                 updated_at = ?
             WHERE id = ?
         """, (observacion_trabajador.strip() if observacion_trabajador.strip() else None, nuevo_c_sup, nuevo_c_sup, final_adjuntos, hora_peru, id_solicitud))
+        
+        cursor.execute("SELECT fecha FROM aprobaciones WHERE id = ?", (id_solicitud,))
+        row_f = cursor.fetchone()
+        mes_sol = str(row_f[0]).strip()[:7] if row_f and row_f[0] else None
+        
         conn.commit()
         conn.close()
         try:
             obtener_solicitudes_aprobacion.clear()
         except Exception:
             pass
-        # Regenerar y subir Excel de forma SINCRÓNICA para garantizar que
+        # Regenerar y subir Excel del mes correspondiente de forma SINCRÓNICA para garantizar que
         # el sustento llegue a Drive antes de retornar (no en hilo daemon)
         try:
-            import pandas as pd
-            from data.exporter import exportar_aprobaciones_excel
-            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            conn2 = get_connection(db_path)
-            df_a = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn2)
-            conn2.close()
-            mes_str = obtener_hora_peru_str()[:7]
-            if not df_a.empty and 'fecha' in df_a.columns:
-                fechas_v = df_a['fecha'].dropna().astype(str).str.strip()
-                fechas_v = fechas_v[fechas_v.str.len() >= 7]
-                if not fechas_v.empty:
-                    mes_str = fechas_v.iloc[0][:7]
-            out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-            os.makedirs(os.path.dirname(out_path), exist_ok=True)
-            ok_local = exportar_aprobaciones_excel(df_a, out_path)
-            if ok_local and os.path.exists(out_path):
-                sa_info = None
-                try:
-                    import streamlit as st_mod
-                    if hasattr(st_mod, "secrets") and "gcp_service_account" in st_mod.secrets:
-                        sa_info = dict(st_mod.secrets["gcp_service_account"])
-                except Exception:
-                    pass
-                try:
-                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                    subir_archivo_a_gdrive(out_path, sa_dict=sa_info)
-                except Exception as e_drive:
-                    print(f"[Aviso] Subida Drive sustento: {e_drive}")
+            regenerar_aprobaciones_excel(db_path, mes_afectado=mes_sol, async_upload=False)
         except Exception as e_excel:
             print(f"[Aviso] Excel de aprobaciones no regenerado: {e_excel}")
         return True
@@ -1923,12 +1927,16 @@ def resetear_sustento_solicitud(id_solicitud: int, db_path: str = DB_PATH) -> bo
     conn = get_connection(db_path)
     cursor = conn.cursor()
     try:
-        cursor.execute("SELECT comentario_supervisor FROM aprobaciones WHERE id = ?", (id_solicitud,))
+        cursor.execute("SELECT comentario_supervisor, fecha FROM aprobaciones WHERE id = ?", (id_solicitud,))
         row = cursor.fetchone()
         nuevo_c_sup = None
-        if row and row[0]:
-            lines_keep = [l.strip() for l in str(row[0]).split('\n') if l.strip().upper().startswith('N1') or l.strip().upper().startswith('N2')]
-            nuevo_c_sup = "\n".join(lines_keep) if lines_keep else None
+        mes_sol = None
+        if row:
+            if row[0]:
+                lines_keep = [l.strip() for l in str(row[0]).split('\n') if l.strip().upper().startswith('N1') or l.strip().upper().startswith('N2')]
+                nuevo_c_sup = "\n".join(lines_keep) if lines_keep else None
+            if row[1]:
+                mes_sol = str(row[1]).strip()[:7]
 
         hora_peru = obtener_hora_peru_str()
         cursor.execute("""
@@ -1948,34 +1956,7 @@ def resetear_sustento_solicitud(id_solicitud: int, db_path: str = DB_PATH) -> bo
             pass
 
         try:
-            import pandas as pd
-            from data.exporter import exportar_aprobaciones_excel
-            root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            conn2 = get_connection(db_path)
-            df_a = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn2)
-            conn2.close()
-            mes_str = obtener_hora_peru_str()[:7]
-            if not df_a.empty and 'fecha' in df_a.columns:
-                fechas_v = df_a['fecha'].dropna().astype(str).str.strip()
-                fechas_v = fechas_v[fechas_v.str.len() >= 7]
-                if not fechas_v.empty:
-                    mes_str = fechas_v.iloc[0][:7]
-            out_path = os.path.join(root_dir, 'downloads', 'data_procesada', f'Aprobaciones_GZG_{mes_str}.xlsx')
-            os.makedirs(os.path.dirname(out_path), exist_ok=True)
-            ok_local = exportar_aprobaciones_excel(df_a, out_path)
-            if ok_local and os.path.exists(out_path):
-                sa_info = None
-                try:
-                    import streamlit as st_mod
-                    if hasattr(st_mod, "secrets") and "gcp_service_account" in st_mod.secrets:
-                        sa_info = dict(st_mod.secrets["gcp_service_account"])
-                except Exception:
-                    pass
-                try:
-                    from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                    subir_archivo_a_gdrive(out_path, sa_dict=sa_info)
-                except Exception as e_drive:
-                    print(f"[Aviso] Subida Drive reset sustento: {e_drive}")
+            regenerar_aprobaciones_excel(db_path, mes_afectado=mes_sol, async_upload=False)
         except Exception as e_excel:
             print(f"[Aviso] Excel de aprobaciones no regenerado en reset: {e_excel}")
 

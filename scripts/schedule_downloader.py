@@ -331,11 +331,15 @@ def _ejecutar_descarga(fecha_inicio: str, fecha_fin: str, es_pase_programada: bo
                     # 1. Rehidratar PRIMERO desde Google Drive para absorber aprobaciones hechas en Streamlit Cloud
                     sincronizar_aprobaciones_con_gdrive(DB_PATH)
                     
-                    # 2. Agregar únicamente nuevos días cerrados sin tocar los existentes
-                    sincronizar_aprobaciones_desde_asistencia(DB_PATH)
+                    # 2. Agregar únicamente nuevos días cerrados sin tocar los existentes (fecha <= ayer_str)
+                    sincronizar_aprobaciones_desde_asistencia(DB_PATH, fecha_max=ayer_str)
                     
                     conn_ap = get_connection(DB_PATH)
-                    df_aprob_all = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn_ap)
+                    df_aprob_all = pd.read_sql_query(
+                        "SELECT * FROM aprobaciones WHERE fecha >= '2026-08-17' AND fecha <= ? ORDER BY fecha DESC, id DESC",
+                        conn_ap,
+                        params=[ayer_str]
+                    )
                     conn_ap.close()
                     
                     if not df_aprob_all.empty and 'fecha' in df_aprob_all.columns:

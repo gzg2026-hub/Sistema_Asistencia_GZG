@@ -106,13 +106,23 @@ cursor.execute("""
 """)
 conn.commit()
 
-df_aprob_final = pd.read_sql_query("SELECT * FROM aprobaciones ORDER BY fecha DESC, id DESC", conn)
+from data.database import obtener_ultimo_dia_cerrado
+f_max = obtener_ultimo_dia_cerrado()
+df_aprob_final = pd.read_sql_query(
+    "SELECT * FROM aprobaciones WHERE fecha >= '2026-08-17' AND fecha <= ? ORDER BY fecha DESC, id DESC", 
+    conn,
+    params=[f_max]
+)
 conn.close()
 
-mes_str = datetime.date.today().strftime('%Y-%m')
-out_aprob = os.path.join(ROOT_DIR, "downloads", "data_procesada", f"Aprobaciones_GZG_{mes_str}.xlsx")
-exportar_aprobaciones_excel(df_aprob_final, out_aprob)
-print(f"   [OK] Aprobaciones_GZG_{mes_str}.xlsx actualizado ({len(df_aprob_final)} filas acumuladas).")
+if not df_aprob_final.empty and 'fecha' in df_aprob_final.columns:
+    meses_presentes = sorted(df_aprob_final['fecha'].astype(str).str[:7].dropna().unique())
+    for m_str in meses_presentes:
+        if len(m_str) == 7 and m_str >= '2026-08':
+            df_mes = df_aprob_final[df_aprob_final['fecha'].astype(str).str.startswith(m_str)]
+            out_aprob = os.path.join(ROOT_DIR, "downloads", "data_procesada", f"Aprobaciones_GZG_{m_str}.xlsx")
+            exportar_aprobaciones_excel(df_mes, out_aprob)
+            print(f"   [OK] Aprobaciones_GZG_{m_str}.xlsx actualizado ({len(df_mes)} filas acumuladas).")
 
 print("\n" + "=" * 70)
 print("ACTUALIZACION COMPLETA REALIZADA EXITOSAMENTE")
