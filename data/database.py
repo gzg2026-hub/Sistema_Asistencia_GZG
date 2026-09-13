@@ -1612,12 +1612,12 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                             comentario_n1 = COALESCE(?, comentario_n1),
                             comentario_n2 = COALESCE(?, comentario_n2),
                             comentario_supervisor = CASE 
-                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN comentario_supervisor
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') AND comentario_supervisor IS NOT NULL AND comentario_supervisor != '' AND comentario_supervisor != 'nan' THEN comentario_supervisor
                                 WHEN ? IS NOT NULL THEN ?
                                 ELSE comentario_supervisor
                             END,
                             observacion_trabajador = CASE 
-                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN observacion_trabajador
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') AND observacion_trabajador IS NOT NULL AND observacion_trabajador != '' AND observacion_trabajador != 'nan' THEN observacion_trabajador
                                 WHEN ? IS NOT NULL THEN ?
                                 ELSE observacion_trabajador
                             END

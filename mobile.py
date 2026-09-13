@@ -1916,10 +1916,31 @@ with tab_mis_horas:
         if not df_mis_horas.empty:
             df_mis_horas = df_mis_horas.drop_duplicates(subset=['fecha', 'dni', 'turno']).copy()
         
+        # Selector de Mes inteligente (por defecto el mes actual más reciente, ej. Setiembre)
+        meses_disponibles = sorted(df_mis_horas['fecha'].astype(str).str[:7].unique(), reverse=True) if not df_mis_horas.empty else []
+        nombres_mes = {'01': 'Enero', '02': 'Febrero', '03': 'Marzo', '04': 'Abril', '05': 'Mayo', '06': 'Junio',
+                       '07': 'Julio', '08': 'Agosto', '09': 'Setiembre', '10': 'Octubre', '11': 'Noviembre', '12': 'Diciembre'}
+        
+        if len(meses_disponibles) > 1:
+            def _lbl_m(m):
+                p = m.split('-')
+                return f"{nombres_mes.get(p[1], p[1])} {p[0]}" if len(p) == 2 else m
+            
+            opciones_mes = [_lbl_m(m) for m in meses_disponibles] + ["📅 Todos los meses"]
+            sel_mes_label = st.selectbox("📅 Selecciona el mes a consultar:", opciones_mes, index=0, key="sel_mes_mis_horas")
+            if sel_mes_label != "📅 Todos los meses":
+                idx_sel = opciones_mes.index(sel_mes_label)
+                mes_code = meses_disponibles[idx_sel]
+                df_mis_horas_vista = df_mis_horas[df_mis_horas['fecha'].astype(str).str.startswith(mes_code)].copy()
+            else:
+                df_mis_horas_vista = df_mis_horas.copy()
+        else:
+            df_mis_horas_vista = df_mis_horas.copy()
+
         # Cajones de Métricas Personales (Pendientes, Aprobadas, Rechazadas)
-        mis_pend = len(df_mis_horas[df_mis_horas['estado'] == 'PENDIENTE'])
-        mis_app = len(df_mis_horas[df_mis_horas['estado'] == 'APROBADO'])
-        mis_rej = len(df_mis_horas[df_mis_horas['estado'] == 'RECHAZADO'])
+        mis_pend = len(df_mis_horas_vista[df_mis_horas_vista['estado'] == 'PENDIENTE'])
+        mis_app = len(df_mis_horas_vista[df_mis_horas_vista['estado'] == 'APROBADO'])
+        mis_rej = len(df_mis_horas_vista[df_mis_horas_vista['estado'] == 'RECHAZADO'])
         
         st.markdown(f"""
         <div style="display: flex; flex-direction: row; gap: 8px; width: 100%; margin-bottom: 15px; box-sizing: border-box;">
@@ -1941,10 +1962,10 @@ with tab_mis_horas:
         </div>
         """, unsafe_allow_html=True)
         
-        if df_mis_horas.empty:
-            st.info("🎉 ¡Excelente! No tienes horas extras ni excesos de jornada pendientes en este mes.")
+        if df_mis_horas_vista.empty:
+            st.info("🎉 ¡Excelente! No tienes horas extras ni excesos de jornada registrados en este periodo.")
         else:
-            for idx, row in df_mis_horas.iterrows():
+            for idx, row in df_mis_horas_vista.iterrows():
                 sol_id = row['id']
                 fecha_sol = row.get('fecha', '')
                 he_hhmm = clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
@@ -1966,14 +1987,28 @@ with tab_mis_horas:
                 adj_list_my = parse_adjuntos(row.get('adjuntos'))
                 tiene_sustento_my = bool(obs_actual or adj_list_my)
 
+                # Máquina de estados estricta de edición
+                puede_editar_sustento = (
+                    estado_global == 'PENDIENTE' and 
+                    estado_n1 == 'PENDIENTE' and 
+                    not tiene_sustento_my
+                )
+
                 if estado_global == 'APROBADO':
                     tag_estado_my = "✅ Aprobado"
+                    btn_send_label = "🔒 HORAS APROBADAS"
                 elif estado_global == 'RECHAZADO':
                     tag_estado_my = "❌ Rechazado"
+                    btn_send_label = "🔒 SOLICITUD RECHAZADA"
+                elif estado_n1 in ('APROBADO', 'RECHAZADO'):
+                    tag_estado_my = f"📋 En Revisión ({estado_n1})"
+                    btn_send_label = f"🔒 EN REVISIÓN ({estado_n1})"
                 elif tiene_sustento_my:
-                    tag_estado_my = "📩 Enviado"
+                    tag_estado_my = "📩 Sustento Enviado"
+                    btn_send_label = "🔒 SUSTENTO YA ENVIADO"
                 else:
-                    tag_estado_my = "⏳ Pendiente"
+                    tag_estado_my = "⏳ Pendiente de Sustento"
+                    btn_send_label = "📤 ENVIAR SUSTENTO"
 
                 worker_name_me = format_worker_name(row.get('nombres', ''), row.get('apellidos', ''))
                 cargo_me = row.get('cargo', 'Operativo')
@@ -1998,12 +2033,51 @@ with tab_mis_horas:
                     </div>
                     """, unsafe_allow_html=True)
                     
+                    # Mensaje visual de aprobación final si aplica
+                    if estado_global == 'APROBADO':
+                        st.markdown("""
+                        <div style="background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 6px; padding: 6px 10px; margin: 6px 0 10px 0; font-size: 12px; color: #2ECC71; font-weight: 600;">
+                            ✅ Horas extras / exceso de jornada validados y aprobados oficialmente.
+                        </div>
+                        """, unsafe_allow_html=True)
+                    elif estado_global == 'RECHAZADO':
+                        st.markdown("""
+                        <div style="background: rgba(231, 76, 60, 0.12); border: 1px solid rgba(231, 76, 60, 0.4); border-radius: 6px; padding: 6px 10px; margin: 6px 0 10px 0; font-size: 12px; color: #E74C3C; font-weight: 600;">
+                            ❌ Solicitud no aprobada por la supervisión / superintendencia.
+                        </div>
+                        """, unsafe_allow_html=True)
+
                     # Mostrar sustento ya registrado si existe
                     if obs_actual:
                         st.markdown(f"""
                         <div style="background: rgba(46, 204, 113, 0.1); border-left: 3px solid #2ECC71; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
                             <strong style="color: #2ECC71;">✍️ Tu Sustento Enviado:</strong><br>
                             <span style="color: #E5E7EB;">{obs_actual}</span>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                    # Mostrar comentarios / validaciones de supervisión si existen
+                    c_n1_val = str(row.get('comentario_n1') or '').strip()
+                    c_n2_val = str(row.get('comentario_n2') or '').strip()
+                    ap_n1_val = str(row.get('aprobado_por_n1') or row.get('aprobador_n1') or '').strip()
+                    ap_n2_val = str(row.get('aprobado_por_n2') or row.get('aprobador_n2') or '').strip()
+                    
+                    val_sup_list = []
+                    if c_n1_val and c_n1_val.lower() not in ('none', 'nan'):
+                        val_sup_list.append(f"<b>N1 ({ap_n1_val or 'Supervisor'}):</b> {c_n1_val}")
+                    elif estado_n1 in ('APROBADO', 'RECHAZADO'):
+                        val_sup_list.append(f"<b>N1 ({ap_n1_val or 'Supervisor'}):</b> {estado_n1.capitalize()}")
+                    
+                    if c_n2_val and c_n2_val.lower() not in ('none', 'nan'):
+                        val_sup_list.append(f"<b>N2 ({ap_n2_val or 'Superintendente'}):</b> {c_n2_val}")
+                    elif estado_n2 in ('APROBADO', 'RECHAZADO'):
+                        val_sup_list.append(f"<b>N2 ({ap_n2_val or 'Superintendente'}):</b> {estado_n2.capitalize()}")
+
+                    if val_sup_list:
+                        st.markdown(f"""
+                        <div style="background: rgba(52, 152, 219, 0.12); border-left: 3px solid #3498DB; padding: 7px 10px; border-radius: 6px; margin: 8px 0; font-size: 12px; color: #FFFFFF;">
+                            <strong style="color: #3498DB;">📋 Validación Supervisión:</strong><br>
+                            <span style="color: #E5E7EB;">{'<br>'.join(val_sup_list)}</span>
                         </div>
                         """, unsafe_allow_html=True)
                     
@@ -2022,17 +2096,17 @@ with tab_mis_horas:
                                     with c_my2:
                                         st.markdown(render_zoomable_photo_html(adj_list_my[i+1], f"zoom_my_{sol_id}_{i+1}", f"Foto {i+2}", thumb_height=130), unsafe_allow_html=True)
 
-                    # Formulario para sustentar (estrictamente bloqueado si ya envió)
+                    # Formulario para sustentar (estrictamente bloqueado si ya envió o está resuelto)
                     st.markdown("<hr style='border-color: #2A2F3D; margin: 10px 0;'>", unsafe_allow_html=True)
                     my_obs_input = st.text_area(
                         "✍️ Motivo / Detalle del trabajo realizado",
                         value=obs_actual,
-                        placeholder="Escribe el trabajo o labor realizada..." if not tiene_sustento_my else "",
-                        disabled=tiene_sustento_my,
+                        placeholder="Escribe el trabajo o labor realizada..." if puede_editar_sustento else "Sustento enviado / Registro finalizado",
+                        disabled=not puede_editar_sustento,
                         key=f"my_txt_{sol_id}"
                     )
                     
-                    if not tiene_sustento_my:
+                    if puede_editar_sustento:
                         my_uploaded_files = st.file_uploader(
                             "📷 Adjuntar Fotos (permite múltiples)",
                             type=["png", "jpg", "jpeg", "webp", "heic", "heif", "bmp"],
@@ -2049,8 +2123,7 @@ with tab_mis_horas:
                     else:
                         my_uploaded_files = None
                     
-                    btn_send_label = "🔒 SUSTENTO YA ENVIADO" if tiene_sustento_my else "📤 ENVIAR"
-                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type="secondary" if tiene_sustento_my else "primary", disabled=tiene_sustento_my, use_container_width=True):
+                    if st.button(btn_send_label, key=f"btn_send_my_{sol_id}", type="primary" if puede_editar_sustento else "secondary", disabled=not puede_editar_sustento, use_container_width=True):
                         if not my_obs_input.strip() and not my_uploaded_files and not adj_list_my:
                             st.warning("⚠️ Por favor ingresa el motivo o adjunta al menos una foto antes de enviar.")
                         else:
