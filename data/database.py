@@ -117,7 +117,9 @@ def init_db(db_path: str = DB_PATH):
         incidencias TEXT,
         estado_asistencia TEXT,
         observaciones TEXT,
-        UNIQUE(fecha, dni) ON CONFLICT REPLACE
+        inicio_he TEXT,
+        fin_he TEXT,
+        UNIQUE(fecha, dni, turno, entrada) ON CONFLICT REPLACE
     )
     """)
     
@@ -207,9 +209,21 @@ def init_db(db_path: str = DB_PATH):
         adjuntos TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(fecha, dni) ON CONFLICT IGNORE
+        aprobador_n1 TEXT,
+        aprobador_n2 TEXT,
+        estado_n1 TEXT DEFAULT 'PENDIENTE',
+        aprobado_por_n1 TEXT,
+        fecha_n1 TIMESTAMP,
+        comentario_n1 TEXT,
+        estado_n2 TEXT DEFAULT 'PENDIENTE',
+        aprobado_por_n2 TEXT,
+        fecha_n2 TIMESTAMP,
+        comentario_n2 TEXT,
+        turno TEXT,
+        UNIQUE(fecha, dni, turno) ON CONFLICT IGNORE
     )
     """)
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS uq_aprob_clean ON aprobaciones(fecha, dni, COALESCE(NULLIF(TRIM(turno), ''), 'DIA'))")
 
     # Migración segura de columnas aprobador_n1 y aprobador_n2 en trabajadores
     cols_trab = [row[1] for row in cursor.execute("PRAGMA table_info(trabajadores)").fetchall()]
@@ -217,6 +231,59 @@ def init_db(db_path: str = DB_PATH):
         cursor.execute("ALTER TABLE trabajadores ADD COLUMN aprobador_n1 TEXT")
     if 'aprobador_n2' not in cols_trab:
         cursor.execute("ALTER TABLE trabajadores ADD COLUMN aprobador_n2 TEXT")
+
+    # Migración segura de columnas en asistencia
+    cols_asis = [row[1] for row in cursor.execute("PRAGMA table_info(asistencia)").fetchall()]
+    if 'inicio_he' not in cols_asis:
+        cursor.execute("ALTER TABLE asistencia ADD COLUMN inicio_he TEXT")
+    if 'fin_he' not in cols_asis:
+        cursor.execute("ALTER TABLE asistencia ADD COLUMN fin_he TEXT")
+
+    # Migración segura de clave única en asistencia (soporte multi-turno por día)
+    asis_indexes = cursor.execute("PRAGMA index_list(asistencia)").fetchall()
+    for idx in asis_indexes:
+        info = cursor.execute(f"PRAGMA index_info('{idx[1]}')").fetchall()
+        cols = [c[2] for c in info]
+        if cols == ['fecha', 'dni']:
+            cursor.execute("""
+            CREATE TABLE asistencia_mig_tmp (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT,
+                dni TEXT,
+                apellidos TEXT,
+                nombres TEXT,
+                cargo TEXT,
+                area TEXT,
+                turno TEXT,
+                entrada TEXT,
+                salida TEXT,
+                horas_trabajadas REAL,
+                tardanza_min INTEGER,
+                salida_anticipada_min INTEGER,
+                exceso_jornada_min INTEGER,
+                total_horas_adicionales_min INTEGER,
+                incidencias TEXT,
+                estado_asistencia TEXT,
+                observaciones TEXT,
+                inicio_he TEXT,
+                fin_he TEXT,
+                UNIQUE(fecha, dni, turno, entrada) ON CONFLICT REPLACE
+            )
+            """)
+            cursor.execute("""
+            INSERT OR IGNORE INTO asistencia_mig_tmp (
+                id, fecha, dni, apellidos, nombres, cargo, area, turno, entrada, salida,
+                horas_trabajadas, tardanza_min, salida_anticipada_min, exceso_jornada_min,
+                total_horas_adicionales_min, incidencias, estado_asistencia, observaciones,
+                inicio_he, fin_he
+            ) SELECT id, fecha, dni, apellidos, nombres, cargo, area, turno, entrada, salida,
+                     horas_trabajadas, tardanza_min, salida_anticipada_min, exceso_jornada_min,
+                     total_horas_adicionales_min, incidencias, estado_asistencia, observaciones,
+                     inicio_he, fin_he FROM asistencia
+            """)
+            cursor.execute("DROP TABLE asistencia")
+            cursor.execute("ALTER TABLE asistencia_mig_tmp RENAME TO asistencia")
+            break
 
     # Migración segura de columnas de aprobación en 2 niveles para aprobaciones
     cols_aprob = [row[1] for row in cursor.execute("PRAGMA table_info(aprobaciones)").fetchall()]
@@ -246,6 +313,77 @@ def init_db(db_path: str = DB_PATH):
         cursor.execute("ALTER TABLE aprobaciones ADD COLUMN comentario_n2 TEXT")
     if 'turno' not in cols_aprob:
         cursor.execute("ALTER TABLE aprobaciones ADD COLUMN turno TEXT")
+
+    # Migración segura de clave única en aprobaciones (soporte multi-turno por día)
+    aprob_indexes = cursor.execute("PRAGMA index_list(aprobaciones)").fetchall()
+    for idx in aprob_indexes:
+        info = cursor.execute(f"PRAGMA index_info('{idx[1]}')").fetchall()
+        cols = [c[2] for c in info]
+        if cols == ['fecha', 'dni']:
+            cursor.execute("""
+            CREATE TABLE aprobaciones_mig_tmp (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT NOT NULL,
+                dni TEXT NOT NULL,
+                apellidos TEXT,
+                nombres TEXT,
+                cargo TEXT,
+                area TEXT,
+                entrada TEXT,
+                salida TEXT,
+                horas_trabajadas REAL,
+                jornada_trabajada_hhmm TEXT,
+                horas_extras_min INTEGER DEFAULT 0,
+                exceso_jornada_min INTEGER DEFAULT 0,
+                horas_extras_hhmm TEXT,
+                exceso_jornada_hhmm TEXT,
+                inicio_he TEXT,
+                fin_he TEXT,
+                motivo TEXT DEFAULT 'Trabajo operativo adicional en turno',
+                observacion_trabajador TEXT,
+                estado TEXT NOT NULL DEFAULT 'PENDIENTE',
+                aprobado_por TEXT,
+                fecha_aprobacion TIMESTAMP,
+                comentario_supervisor TEXT,
+                adjuntos TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                aprobador_n1 TEXT,
+                aprobador_n2 TEXT,
+                estado_n1 TEXT DEFAULT 'PENDIENTE',
+                aprobado_por_n1 TEXT,
+                fecha_n1 TIMESTAMP,
+                comentario_n1 TEXT,
+                estado_n2 TEXT DEFAULT 'PENDIENTE',
+                aprobado_por_n2 TEXT,
+                fecha_n2 TIMESTAMP,
+                comentario_n2 TEXT,
+                turno TEXT,
+                UNIQUE(fecha, dni, turno) ON CONFLICT IGNORE
+            )
+            """)
+            cursor.execute("""
+            INSERT OR IGNORE INTO aprobaciones_mig_tmp (
+                id, fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
+                horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
+                horas_extras_hhmm, exceso_jornada_hhmm, inicio_he, fin_he, motivo,
+                observacion_trabajador, estado, aprobado_por, fecha_aprobacion,
+                comentario_supervisor, adjuntos, created_at, updated_at,
+                aprobador_n1, aprobador_n2, estado_n1, aprobado_por_n1, fecha_n1,
+                comentario_n1, estado_n2, aprobado_por_n2, fecha_n2, comentario_n2, turno
+            ) SELECT 
+                id, fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
+                horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
+                horas_extras_hhmm, exceso_jornada_hhmm, inicio_he, fin_he, motivo,
+                observacion_trabajador, estado, aprobado_por, fecha_aprobacion,
+                comentario_supervisor, adjuntos, created_at, updated_at,
+                aprobador_n1, aprobador_n2, estado_n1, aprobado_por_n1, fecha_n1,
+                comentario_n1, estado_n2, aprobado_por_n2, fecha_n2, comentario_n2, turno
+            FROM aprobaciones
+            """)
+            cursor.execute("DROP TABLE aprobaciones")
+            cursor.execute("ALTER TABLE aprobaciones_mig_tmp RENAME TO aprobaciones")
+            break
 
     # Migración segura de columnas de validación en horas_extra e incidencias
     cols_he = [row[1] for row in cursor.execute("PRAGMA table_info(horas_extra)").fetchall()]
@@ -518,19 +656,23 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
             f_asis = str(r.get('FECHA', r.get('Fecha', ''))).strip()
             if not f_asis or f_asis < '2026-08-17':
                 continue
+            ini_he = str(r.get('HORA_INICIO_HE', '')).strip() if pd.notna(r.get('HORA_INICIO_HE')) and str(r.get('HORA_INICIO_HE')).strip() not in ('-', 'nan', 'none', '') else None
+            fin_he = str(r.get('HORA_FIN_HE', '')).strip() if pd.notna(r.get('HORA_FIN_HE')) and str(r.get('HORA_FIN_HE')).strip() not in ('-', 'nan', 'none', '') else None
+            ent_val = str(r.get('ENTRADA', '')).strip() if pd.notna(r.get('ENTRADA')) and str(r.get('ENTRADA')).strip() not in ('-', 'nan', 'none', '') else None
+            sal_val = str(r.get('SALIDA', '')).strip() if pd.notna(r.get('SALIDA')) and str(r.get('SALIDA')).strip() not in ('-', 'nan', 'none', '') else None
+
             cursor.execute("""
             INSERT INTO asistencia (
                 fecha, dni, apellidos, nombres, cargo, area, turno,
                 entrada, salida, horas_trabajadas, tardanza_min, salida_anticipada_min,
-                exceso_jornada_min, total_horas_adicionales_min, incidencias, estado_asistencia, observaciones
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(fecha, dni) DO UPDATE SET
+                exceso_jornada_min, total_horas_adicionales_min, incidencias, estado_asistencia, observaciones,
+                inicio_he, fin_he
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(fecha, dni, turno, entrada) DO UPDATE SET
                 apellidos=excluded.apellidos,
                 nombres=excluded.nombres,
                 cargo=excluded.cargo,
                 area=excluded.area,
-                turno=excluded.turno,
-                entrada=excluded.entrada,
                 salida=excluded.salida,
                 horas_trabajadas=excluded.horas_trabajadas,
                 tardanza_min=excluded.tardanza_min,
@@ -539,7 +681,9 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
                 total_horas_adicionales_min=excluded.total_horas_adicionales_min,
                 incidencias=excluded.incidencias,
                 estado_asistencia=excluded.estado_asistencia,
-                observaciones=excluded.observaciones
+                observaciones=excluded.observaciones,
+                inicio_he=excluded.inicio_he,
+                fin_he=excluded.fin_he
             """, (
                 f_asis,
                 str(r.get('DNI', '')),
@@ -548,8 +692,8 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
                 str(r.get('CARGO', '')),
                 str(r.get('ÁREA', r.get('AREA', ''))),
                 str(r.get('TURNO', '')),
-                r.get('ENTRADA', None),
-                r.get('SALIDA', None),
+                ent_val,
+                sal_val,
                 float(r.get('HORAS TRABAJADAS', r.get('HORAS_TRABAJADAS', 0.0)) or 0.0),
                 int(r.get('TARDANZA (MIN)', r.get('TARDANZA_MIN', 0)) or 0),
                 int(r.get('SALIDA ANTICIPADA (MIN)', r.get('SALIDA_ANTICIPADA_MIN', 0)) or 0),
@@ -557,7 +701,9 @@ def guardar_asistencia_y_reportes(df_asistencia: pd.DataFrame, df_horas_extra: p
                 int(r.get('TOTAL HORAS ADICIONALES', r.get('TOTAL_HORAS_ADICIONALES_MIN', 0)) or 0),
                 str(r.get('INCIDENCIAS', '')),
                 str(r.get('ESTADO ASISTENCIA', r.get('ESTADO', ''))),
-                str(r.get('OBSERVACIONES', ''))
+                str(r.get('OBSERVACIONES', '')),
+                ini_he,
+                fin_he
             ))
             
     # 2. Horas Extra
@@ -676,6 +822,7 @@ def sincronizar_excel_madre_a_db(excel_path: str = None, db_path: str = DB_PATH)
 def obtener_trabajadores_master(db_path: str = DB_PATH) -> pd.DataFrame:
     """Obtiene la lista master de trabajadores rápidamente para selectores de cargos y personal (deduplicada)."""
     init_db(db_path)
+    sincronizar_padron_desde_excel(db_path=db_path)
     sincronizar_excel_madre_a_db(db_path=db_path)
     conn = get_connection(db_path)
     df = pd.read_sql_query("SELECT dni as DNI, apellidos as APELLIDOS, nombres as NOMBRES, cargo as CARGO, area as AREA FROM trabajadores ORDER BY apellidos, nombres", conn)
@@ -1101,6 +1248,11 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH, fecha_max:
             OR LOWER(cargo) LIKE '%administrativo%' 
             OR dni IN ('74546819', '77134790', '48455175', '75227437')
             OR ((COALESCE(horas_extras_min, 0) <= 0) AND (COALESCE(exceso_jornada_min, 0) <= 0))
+            OR NOT EXISTS (
+                SELECT 1 FROM asistencia a 
+                WHERE a.fecha = aprobaciones.fecha AND a.dni = aprobaciones.dni AND a.turno = aprobaciones.turno
+                  AND (COALESCE(a.exceso_jornada_min, 0) > 0 OR COALESCE(a.total_horas_adicionales_min, 0) > 0)
+            )
         )
         AND estado = 'PENDIENTE'
         AND estado_n1 = 'PENDIENTE'
@@ -1116,7 +1268,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH, fecha_max:
     cursor.execute("""
         SELECT a.fecha, a.dni, a.apellidos, a.nombres, COALESCE(t.cargo, a.cargo) as cargo, COALESCE(t.area, a.area) as area, a.entrada, a.salida,
                a.horas_trabajadas, a.exceso_jornada_min, a.total_horas_adicionales_min,
-               a.observaciones, t.aprobador_n1, t.aprobador_n2, a.turno
+               a.observaciones, t.aprobador_n1, t.aprobador_n2, a.turno, a.inicio_he, a.fin_he
         FROM asistencia a
         LEFT JOIN trabajadores t ON a.dni = t.dni
         WHERE (a.exceso_jornada_min > 0 OR a.total_horas_adicionales_min > 0)
@@ -1128,7 +1280,7 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH, fecha_max:
     rows = cursor.fetchall()
     
     for r in rows:
-        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs, n1_app, n2_app, turno_asist = r
+        fecha, dni, apellidos, nombres, cargo, area, entrada, salida, h_trab, exceso_min, total_adic_min, obs, n1_app, n2_app, turno_asist, ini_he, fin_he = r
         
         # Formatear HH:MM
         exceso_min = exceso_min or 0
@@ -1159,46 +1311,49 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH, fecha_max:
                 fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
                 horas_trabajadas, jornada_trabajada_hhmm, horas_extras_min, exceso_jornada_min,
                 horas_extras_hhmm, exceso_jornada_hhmm, observacion_trabajador,
-                aprobador_n1, aprobador_n2, estado_n1, estado_n2, turno
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, 'PENDIENTE', ?, ?)
+                aprobador_n1, aprobador_n2, estado_n1, estado_n2, turno, inicio_he, fin_he
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, 'PENDIENTE', ?, ?, ?, ?)
         """, (
             fecha, dni, apellidos, nombres, cargo, area, entrada, salida,
             h_trab, jornada_str, he_min, exceso_min, he_str, exceso_str,
-            n1_app, n2_app, st_n2_init, turno_asist
+            n1_app, n2_app, st_n2_init, turno_asist, ini_he, fin_he
         ))
 
         # 1. Actualizar datos de marcación y horas SOLO si la solicitud aún está PENDIENTE (sin evaluar)
         cursor.execute("""
             UPDATE aprobaciones
-            SET entrada = ?, salida = ?, turno = ?,
+            SET entrada = ?, salida = ?,
                 horas_trabajadas = ?, jornada_trabajada_hhmm = ?,
                 horas_extras_min = ?, exceso_jornada_min = ?,
                 horas_extras_hhmm = ?, exceso_jornada_hhmm = ?,
+                inicio_he = ?, fin_he = ?,
                 aprobador_n1 = COALESCE(?, aprobador_n1),
                 aprobador_n2 = COALESCE(?, aprobador_n2),
                 estado_n2 = CASE WHEN ? = '-' THEN '-' ELSE estado_n2 END
-            WHERE fecha = ? AND dni = ?
+            WHERE fecha = ? AND dni = ? AND turno = ?
               AND estado = 'PENDIENTE'
               AND estado_n1 = 'PENDIENTE'
               AND (aprobado_por_n1 IS NULL OR TRIM(aprobado_por_n1) = '')
               AND (aprobado_por_n2 IS NULL OR TRIM(aprobado_por_n2) = '')
         """, (
-            entrada, salida, turno_asist,
+            entrada, salida,
             h_trab, jornada_str,
             he_min, exceso_min,
             he_str, exceso_str,
+            ini_he, fin_he,
             n1_app, n2_app, n2_app,
-            fecha, dni
+            fecha, dni, turno_asist
         ))
 
         # 2. Para solicitudes ya evaluadas/firmadas, las horas y estados son 100% INTANGIBLES.
         # Solo se completan campos informativos de marcación si estaban vacíos (NULL o ''), sin alterar horas ni aprobaciones.
         cursor.execute("""
             UPDATE aprobaciones
-            SET turno = CASE WHEN (turno IS NULL OR TRIM(turno) = '' OR LOWER(TRIM(turno)) = 'nan') THEN ? ELSE turno END,
-                entrada = CASE WHEN (entrada IS NULL OR TRIM(entrada) = '' OR LOWER(TRIM(entrada)) = 'nan') THEN ? ELSE entrada END,
-                salida = CASE WHEN (salida IS NULL OR TRIM(salida) = '' OR LOWER(TRIM(salida)) = 'nan') THEN ? ELSE salida END
-            WHERE fecha = ? AND dni = ?
+            SET entrada = CASE WHEN (entrada IS NULL OR TRIM(entrada) = '' OR LOWER(TRIM(entrada)) = 'nan') THEN ? ELSE entrada END,
+                salida = CASE WHEN (salida IS NULL OR TRIM(salida) = '' OR LOWER(TRIM(salida)) = 'nan') THEN ? ELSE salida END,
+                inicio_he = CASE WHEN (inicio_he IS NULL OR TRIM(inicio_he) = '' OR LOWER(TRIM(inicio_he)) = 'nan') THEN ? ELSE inicio_he END,
+                fin_he = CASE WHEN (fin_he IS NULL OR TRIM(fin_he) = '' OR LOWER(TRIM(fin_he)) = 'nan') THEN ? ELSE fin_he END
+            WHERE fecha = ? AND dni = ? AND turno = ?
               AND (
                   estado != 'PENDIENTE' 
                   OR estado_n1 != 'PENDIENTE' 
@@ -1206,17 +1361,10 @@ def sincronizar_aprobaciones_desde_asistencia(db_path: str = DB_PATH, fecha_max:
                   OR (aprobado_por_n2 IS NOT NULL AND TRIM(aprobado_por_n2) != '')
               );
         """, (
-            turno_asist, entrada, salida,
-            fecha, dni
+            entrada, salida, ini_he, fin_he,
+            fecha, dni, turno_asist
         ))
         
-    # Sincronizar inicio y fin de marcación de horas extras desde horas_extra
-    cursor.execute("""
-        UPDATE aprobaciones
-        SET inicio_he = (SELECT h.inicio_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1),
-            fin_he = (SELECT h.fin_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1)
-        WHERE (horas_extras_min > 0 OR (horas_extras_hhmm IS NOT NULL AND horas_extras_hhmm != '00:00'));
-    """)
     conn.commit()
     conn.close()
 
@@ -1296,6 +1444,7 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 nombres = str(ws.cell(row=r, column=3).value or '').strip()
                 cargo = str(ws.cell(row=r, column=4).value or '').strip()
                 area = str(ws.cell(row=r, column=5).value or '').strip()
+                turno = str(ws.cell(row=r, column=7).value or '').strip().upper()
                 entrada = str(ws.cell(row=r, column=8).value or '').strip()
                 salida = str(ws.cell(row=r, column=9).value or '').strip()
                 jornada_hhmm = str(ws.cell(row=r, column=10).value or '00:00').strip()
@@ -1358,25 +1507,10 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                     except Exception:
                         pass
 
-                # 1. Insertar fila si no existe aún en SQLite (para no depender exclusivamente de git redeploy)
-                cursor.execute("""
-                    INSERT OR IGNORE INTO aprobaciones (
-                        dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
-                        jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
-                        horas_extras_min, exceso_jornada_min,
-                        estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
-                        fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
-                        aprobado_por_n1, aprobado_por_n2
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    dni, apellidos, nombres, cargo, area, fecha, entrada, salida,
-                    jornada_hhmm, he_hhmm, exceso_hhmm,
-                    he_min, exceso_min,
-                    est_global, ap_n1, est_n1, ap_n2, est_n2,
-                    f_aprob, final_cmt, c_n1_extracted, c_n2_extracted,
-                    ap_n1_final if est_n1 in ('APROBADO', 'RECHAZADO') else None,
-                    ap_n2_final if est_n2 in ('APROBADO', 'RECHAZADO') else None
-                ))
+                # Normalizar turno para evitar divergencias entre '' y 'DIA'
+                turno_clean = str(turno or '').strip().upper()
+                if not turno_clean or turno_clean in ('NONE', 'NAN'):
+                    turno_clean = 'DIA'
 
                 # Calcular variables finales en Python
                 final_app_n1 = ap_n1 if (ap_n1 and ap_n1.upper() != 'NONE') else None
@@ -1386,91 +1520,128 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 final_aprobado_por = ap_n1_final if (est_global in ('APROBADO', 'RECHAZADO') and ap_n1_final) else None
                 final_fecha_aprob = f_aprob if (f_aprob and f_aprob.upper() != 'NONE') else None
 
-                # 2. Actualizar estados y firmas sobre filas existentes según el Excel de Drive
-                # BLINDAJE ESTRICTO: SQLite resuelto ('APROBADO' o 'RECHAZADO') gana SIEMPRE (inmutable).
+                # 1. Verificar si ya existe registro previo para este (dni, fecha)
                 cursor.execute("""
-                    UPDATE aprobaciones
-                    SET estado = CASE 
-                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN estado
-                            WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
-                            ELSE ?
-                        END,
-                        estado_n1 = CASE 
-                            WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN estado_n1
-                            WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
-                            ELSE ?
-                        END,
-                        estado_n2 = CASE 
-                            WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN estado_n2
-                            WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
-                            ELSE ?
-                        END,
-                        horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
-                        exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
-                        horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
-                        exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
-                        aprobador_n1 = CASE 
-                            WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n1 
-                            ELSE COALESCE(?, aprobador_n1) 
-                        END,
-                        aprobador_n2 = CASE 
-                            WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n2 
-                            ELSE COALESCE(?, aprobador_n2) 
-                        END,
-                        aprobado_por_n1 = CASE 
-                            WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n1 
-                            ELSE COALESCE(?, aprobado_por_n1) 
-                        END,
-                        aprobado_por_n2 = CASE 
-                            WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n2 
-                            ELSE COALESCE(?, aprobado_por_n2) 
-                        END,
-                        aprobado_por = CASE 
-                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN aprobado_por 
-                            ELSE COALESCE(?, aprobado_por) 
-                        END,
-                        fecha_aprobacion = CASE 
-                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN fecha_aprobacion 
-                            ELSE COALESCE(?, fecha_aprobacion) 
-                        END,
-                        comentario_n1 = COALESCE(?, comentario_n1),
-                        comentario_n2 = COALESCE(?, comentario_n2),
-                        comentario_supervisor = CASE 
-                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN comentario_supervisor
-                            ELSE ?
-                        END,
-                        observacion_trabajador = CASE 
-                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN observacion_trabajador
-                            ELSE ?
-                        END,
-                        adjuntos = CASE
-                            WHEN estado IN ('APROBADO', 'RECHAZADO') THEN adjuntos
-                            WHEN ? IS NULL THEN NULL
-                            ELSE adjuntos
-                        END
+                    SELECT id, turno, estado, estado_n1, estado_n2, aprobado_por_n1, aprobado_por_n2,
+                           aprobado_por, fecha_aprobacion, comentario_n1, comentario_n2,
+                           comentario_supervisor, observacion_trabajador, adjuntos
+                    FROM aprobaciones
                     WHERE dni = ? AND fecha = ?
-                """, (
-                    est_global, est_global, est_global,
-                    est_n1, est_n1, est_n1,
-                    est_n2, est_n2, est_n2,
-                    he_min,
-                    exceso_min,
-                    he_hhmm,
-                    exceso_hhmm,
-                    final_app_n1,
-                    final_app_n2,
-                    final_aprobado_por_n1,
-                    final_aprobado_por_n2,
-                    final_aprobado_por,
-                    final_fecha_aprob,
-                    c_n1_extracted,
-                    c_n2_extracted,
-                    final_cmt,
-                    final_obs,
-                    final_cmt,
-                    dni,
-                    fecha
-                ))
+                """, (dni, fecha))
+                existentes = cursor.fetchall()
+
+                target_id = None
+                if existentes:
+                    # Si hay uno que coincida en turno, usar ese; de lo contrario usar el primero existente
+                    for ex_row in existentes:
+                        ex_turno = str(ex_row[1] or '').strip().upper()
+                        if not ex_turno or ex_turno in ('NONE', 'NAN'):
+                            ex_turno = 'DIA'
+                        if ex_turno == turno_clean:
+                            target_id = ex_row[0]
+                            break
+                    if not target_id:
+                        target_id = existentes[0][0]
+
+                if not target_id:
+                    # Solo insertar si NO existía ningún registro previo
+                    cursor.execute("""
+                        INSERT INTO aprobaciones (
+                            dni, apellidos, nombres, cargo, area, fecha, turno, entrada, salida,
+                            jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
+                            horas_extras_min, exceso_jornada_min,
+                            estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
+                            fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
+                            aprobado_por_n1, aprobado_por_n2, observacion_trabajador
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        dni, apellidos, nombres, cargo, area, fecha, turno_clean, entrada, salida,
+                        jornada_hhmm, he_hhmm, exceso_hhmm,
+                        he_min, exceso_min,
+                        est_global, ap_n1, est_n1, ap_n2, est_n2,
+                        f_aprob, final_cmt, c_n1_extracted, c_n2_extracted,
+                        final_aprobado_por_n1, final_aprobado_por_n2, final_obs
+                    ))
+                else:
+                    # Actualizar sobre el ID existente protegiendo inmutabilidad de aprobados
+                    cursor.execute("""
+                        UPDATE aprobaciones
+                        SET estado = CASE 
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN estado
+                                WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                                ELSE ?
+                            END,
+                            estado_n1 = CASE 
+                                WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN estado_n1
+                                WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                                ELSE ?
+                            END,
+                            estado_n2 = CASE 
+                                WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN estado_n2
+                                WHEN ? IN ('APROBADO', 'RECHAZADO') THEN ?
+                                ELSE ?
+                            END,
+                            horas_extras_min = CASE WHEN COALESCE(horas_extras_min, 0) = 0 THEN ? ELSE horas_extras_min END,
+                            exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
+                            horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
+                            exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
+                            aprobador_n1 = CASE 
+                                WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n1 
+                                ELSE COALESCE(?, aprobador_n1) 
+                            END,
+                            aprobador_n2 = CASE 
+                                WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n2 
+                                ELSE COALESCE(?, aprobador_n2) 
+                            END,
+                            aprobado_por_n1 = CASE 
+                                WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n1 
+                                ELSE COALESCE(?, aprobado_por_n1) 
+                            END,
+                            aprobado_por_n2 = CASE 
+                                WHEN estado_n2 IN ('APROBADO', 'RECHAZADO') THEN aprobado_por_n2 
+                                ELSE COALESCE(?, aprobado_por_n2) 
+                            END,
+                            aprobado_por = CASE 
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN aprobado_por 
+                                ELSE COALESCE(?, aprobado_por) 
+                            END,
+                            fecha_aprobacion = CASE 
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN fecha_aprobacion 
+                                ELSE COALESCE(?, fecha_aprobacion) 
+                            END,
+                            comentario_n1 = COALESCE(?, comentario_n1),
+                            comentario_n2 = COALESCE(?, comentario_n2),
+                            comentario_supervisor = CASE 
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN comentario_supervisor
+                                WHEN ? IS NOT NULL THEN ?
+                                ELSE comentario_supervisor
+                            END,
+                            observacion_trabajador = CASE 
+                                WHEN estado IN ('APROBADO', 'RECHAZADO') THEN observacion_trabajador
+                                WHEN ? IS NOT NULL THEN ?
+                                ELSE observacion_trabajador
+                            END
+                        WHERE id = ?
+                    """, (
+                        est_global, est_global, est_global,
+                        est_n1, est_n1, est_n1,
+                        est_n2, est_n2, est_n2,
+                        he_min,
+                        exceso_min,
+                        he_hhmm,
+                        exceso_hhmm,
+                        final_app_n1,
+                        final_app_n2,
+                        final_aprobado_por_n1,
+                        final_aprobado_por_n2,
+                        final_aprobado_por,
+                        final_fecha_aprob,
+                        c_n1_extracted,
+                        c_n2_extracted,
+                        final_cmt, final_cmt,
+                        final_obs, final_obs,
+                        target_id
+                    ))
             conn.commit()
 
             # 3. Leer fotos de evidencia (adjuntos) si existen en la hoja secundaria de Drive
@@ -1600,8 +1771,9 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH, mes_afectado: str = Non
                 if ok_local and os.path.exists(out_path):
                     try:
                         from scripts.gdrive_uploader import subir_archivo_a_gdrive
-                        subir_archivo_a_gdrive(out_path, sa_dict=sa)
-                        print(f"[Aprobaciones] Regenerado y subido con éxito: Aprobaciones_GZG_{m_str}.xlsx ({len(df_mes)} filas)")
+                        target_mes_folder = m_str[-2:] if len(m_str) >= 2 else ""
+                        subir_archivo_a_gdrive(out_path, target_folder=target_mes_folder, sa_dict=sa)
+                        print(f"[Aprobaciones] Regenerado y subido con éxito: Aprobaciones_GZG_{m_str}.xlsx ({len(df_mes)} filas) a carpeta {target_mes_folder}")
                     except Exception as e_drive:
                         print(f"[Aviso] Subida Drive Aprobaciones ({m_str}): {e_drive}")
         except Exception as e:

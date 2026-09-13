@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import datetime
+import os
+import base64
 from data.database import (
     obtener_solicitudes_aprobacion,
     actualizar_estado_aprobacion,

@@ -18,8 +18,10 @@ def signal_ready():
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import importlib
 import data.database as db_mod
+import scripts.gdrive_uploader as gdrive_mod
 try:
     importlib.reload(db_mod)
+    importlib.reload(gdrive_mod)
 except Exception:
     pass
 
@@ -1374,6 +1376,8 @@ if not st.session_state.get("gdrive_rehydrated") or (now_ts - last_sync_ts) > 45
 
 # Cargar data de aprobaciones directamente de SQLite sin bloqueos de red
 df_all_raw = obtener_solicitudes_aprobacion('TODAS')
+if not df_all_raw.empty:
+    df_all_raw = df_all_raw.drop_duplicates(subset=['id']).copy()
 
 # PUNTO 7: Filtrado por bandeja personal del usuario autenticado
 if rol not in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN') and 'aprobador_n1' in df_all_raw.columns:
@@ -1385,6 +1389,9 @@ if rol not in ('ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN') and 'aprobador_n1' in
     df_all = df_all_raw[mask].copy()
 else:
     df_all = df_all_raw.copy()
+
+if not df_all.empty:
+    df_all = df_all.drop_duplicates(subset=['id']).copy()
 
 
 # Mapeo de DNI del usuario autenticado para la gestión de sus horas personales
@@ -1906,6 +1913,8 @@ with tab_mis_horas:
     else:
         df_raw_dni = df_all_raw['dni'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip().str.lstrip('0').str.zfill(8)
         df_mis_horas = df_all_raw[df_raw_dni == user_dni].copy()
+        if not df_mis_horas.empty:
+            df_mis_horas = df_mis_horas.drop_duplicates(subset=['fecha', 'dni', 'turno']).copy()
         
         # Cajones de Métricas Personales (Pendientes, Aprobadas, Rechazadas)
         mis_pend = len(df_mis_horas[df_mis_horas['estado'] == 'PENDIENTE'])
