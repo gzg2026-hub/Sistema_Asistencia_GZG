@@ -768,6 +768,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
         if df_aprobaciones is not None and not df_aprobaciones.empty and 'adjuntos' in df_aprobaciones.columns:
             try:
                 ws_adj = wb.create_sheet(title="Adjuntos Sustento")
+                ws_adj.sheet_state = 'hidden'  # Oculta visualmente en Excel, pero accesible por la app y SQLite
                 ws_adj.append(["DNI", "Fecha", "Foto_Idx", "Chunk_Idx", "Chunk_Data"])
                 chunk_sz = 30000
                 for _, r_adj in df_aprobaciones.iterrows():
