@@ -487,7 +487,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                 pass
 
         # Fila 1: Banner
-        ws.merge_cells("A1:S1")
+        ws.merge_cells("A1:U1")
         ws.row_dimensions[1].height = 30
         mes_str = ""
         if df_aprobaciones is not None and not df_aprobaciones.empty and 'fecha' in df_aprobaciones.columns:
@@ -501,7 +501,7 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
         ws["A1"].alignment = align_center
 
         # Fila 2: Sub-banner
-        ws.merge_cells("A2:S2")
+        ws.merge_cells("A2:U2")
         ws.row_dimensions[2].height = 18
         fill_sub = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
         ws["A2"] = "GZG Minerales | Sistema Integrado de Control de Asistencia y Aprobaciones v1.0 | Generado automaticamente"
@@ -513,19 +513,20 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
         ws.append([])
         ws.row_dimensions[3].height = 8
 
-        # Fila 4: Encabezados (19 columnas A..S)
+        # Fila 4: Encabezados (21 columnas A..U)
         ws.row_dimensions[4].height = 30
         headers = [
             "DNI", "Apellidos", "Nombres", "Cargo", "Area",
             "Fecha Turno", "Turno", "Hora Entrada", "Hora Salida",
-            "Horas Trabajadas", "Horas Extras", "Exceso Jornada",
+            "Horas Trabajadas", "Hora Inicio H.E.", "Hora Fin H.E.",
+            "Horas Extras", "Exceso Jornada",
             "Estado Final", "Aprobador N1", "Estado N1",
             "Aprobador N2", "Estado N2",
             "Fecha Aprobacion", "Comentario Supervisor"
         ]
         ws.append(headers)
         for c_idx, cell in enumerate(ws[4], 1):
-            cell.fill = fill_header_calc if c_idx in (11, 12) else fill_header_dark
+            cell.fill = fill_header_calc if c_idx in (11, 12, 13, 14) else fill_header_dark
             cell.font = font_header
             cell.alignment = align_center
             cell.border = thin_border
@@ -681,6 +682,16 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                 he_fmt = _clean_hhmm(row.get('horas_extras_hhmm', '00:00'))
                 exceso_fmt = _clean_hhmm(row.get('exceso_jornada_hhmm', '00:00'))
 
+                ini_he_fmt = _clean_text(row.get('inicio_he', ''))
+                fin_he_fmt = _clean_text(row.get('fin_he', ''))
+                if he_fmt == '00:00' and not ini_he_fmt:
+                    ini_he_fmt = '-'
+                    fin_he_fmt = '-'
+                elif not ini_he_fmt:
+                    ini_he_fmt = '-'
+                if not fin_he_fmt:
+                    fin_he_fmt = '-'
+
                 row_data = [
                     dni_val,
                     quitar_tildes(str(row.get('apellidos', '') or '')),
@@ -692,6 +703,8 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                     _clean_text(row.get('entrada', '')),
                     _clean_text(row.get('salida', '')),
                     jornada_fmt,
+                    ini_he_fmt,
+                    fin_he_fmt,
                     he_fmt,
                     exceso_fmt,
                     estado,
@@ -718,32 +731,32 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
                         return fill_pending, font_estado_pend
                     return PatternFill(), font_data
 
-                fill_13, font_13 = _get_status_style(estado)
-                fill_15, font_15 = _get_status_style(est_n1)
-                fill_17, font_17 = _get_status_style(est_n2) if est_n2 != '-' else (PatternFill(), font_data)
+                fill_15, font_15 = _get_status_style(estado)
+                fill_17, font_17 = _get_status_style(est_n1)
+                fill_19, font_19 = _get_status_style(est_n2) if est_n2 != '-' else (PatternFill(), font_data)
 
                 for c_idx in range(1, len(row_data) + 1):
                     cell = ws.cell(row=r_idx, column=c_idx)
-                    if c_idx == 13:
-                        cell.font = font_13
-                        cell.fill = fill_13
-                    elif c_idx == 15:
+                    if c_idx == 15:
                         cell.font = font_15
                         cell.fill = fill_15
                     elif c_idx == 17:
                         cell.font = font_17
                         cell.fill = fill_17
+                    elif c_idx == 19:
+                        cell.font = font_19
+                        cell.fill = fill_19
                     else:
                         cell.font = font_data
                         cell.fill = PatternFill()
 
                     cell.border = thin_border
                     # Columnas centradas: DNI (1), Fecha Turno (6), Turno (7), Entrada (8), Salida (9),
-                    # Horas Trabajadas (10), Horas Extras (11), Exceso Jornada (12), Estado Final (13),
-                    # Aprobador N1 (14), Estado N1 (15), Aprobador N2 (16), Estado N2 (17), Fecha Aprobacion (18)
-                    if c_idx in (1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18):
+                    # Horas Trabajadas (10), Hora Inicio H.E. (11), Hora Fin H.E. (12), Horas Extras (13), Exceso Jornada (14), Estado Final (15),
+                    # Aprobador N1 (16), Estado N1 (17), Aprobador N2 (18), Estado N2 (19), Fecha Aprobacion (20)
+                    if c_idx in (1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20):
                         cell.alignment = align_center
-                    elif c_idx == 19:
+                    elif c_idx == 21:
                         cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
                     else:
                         cell.alignment = align_left
@@ -755,9 +768,9 @@ def exportar_aprobaciones_excel(df_aprobaciones: pd.DataFrame, target_path: str)
         for c_idx, w in {
             1: 14, 2: 28, 3: 26, 4: 24, 5: 16,
             6: 16, 7: 10, 8: 14, 9: 14,
-            10: 18, 11: 20, 12: 22,
-            13: 16, 14: 16, 15: 14,
-            16: 16, 17: 14, 18: 20, 19: 36
+            10: 18, 11: 16, 12: 16, 13: 16, 14: 16,
+            15: 16, 16: 16, 17: 14,
+            18: 16, 19: 14, 20: 20, 21: 40
         }.items():
             ws.column_dimensions[get_column_letter(c_idx)].width = w
 

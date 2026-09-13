@@ -404,8 +404,18 @@ def init_db(db_path: str = DB_PATH):
     try:
         cursor.execute("""
             UPDATE aprobaciones
-            SET inicio_he = (SELECT h.inicio_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1),
-                fin_he = (SELECT h.fin_he FROM horas_extra h WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha LIMIT 1)
+            SET inicio_he = (
+                SELECT h.inicio_he FROM horas_extra h 
+                WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha 
+                ORDER BY ABS(COALESCE(h.duracion_min, 0) - COALESCE(aprobaciones.horas_extras_min, 0)) ASC 
+                LIMIT 1
+            ),
+            fin_he = (
+                SELECT h.fin_he FROM horas_extra h 
+                WHERE h.dni = aprobaciones.dni AND h.fecha = aprobaciones.fecha 
+                ORDER BY ABS(COALESCE(h.duracion_min, 0) - COALESCE(aprobaciones.horas_extras_min, 0)) ASC 
+                LIMIT 1
+            )
             WHERE (horas_extras_min > 0 OR (horas_extras_hhmm IS NOT NULL AND horas_extras_hhmm != '00:00'))
               AND (inicio_he IS NULL OR inicio_he = '');
         """)
@@ -1417,15 +1427,44 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
             if not os.path.exists(local_path):
                 continue
 
-            # 2. Leer registros del Excel oficial
+            # 2. Leer registros del Excel oficial con mapeo dinámico de columnas (19 o 21 cols)
             wb = openpyxl.load_workbook(local_path, data_only=True)
             ws = wb.active
             if ws.max_row < 5:
                 continue
 
+            col_map = {}
+            for col_i in range(1, ws.max_column + 1):
+                val_h = str(ws.cell(row=4, column=col_i).value or '').strip().upper()
+                if val_h:
+                    col_map[val_h] = col_i
+
+            has_new_cols = ('HORA INICIO H.E.' in col_map) or ('INICIO H.E.' in col_map)
+            c_dni = col_map.get('DNI', 1)
+            c_ape = col_map.get('APELLIDOS', 2)
+            c_nom = col_map.get('NOMBRES', 3)
+            c_car = col_map.get('CARGO', 4)
+            c_are = col_map.get('AREA', 5)
+            c_fec = col_map.get('FECHA TURNO', col_map.get('FECHA', 6))
+            c_tur = col_map.get('TURNO', 7)
+            c_ent = col_map.get('HORA ENTRADA', col_map.get('ENTRADA', 8))
+            c_sal = col_map.get('HORA SALIDA', col_map.get('SALIDA', 9))
+            c_jor = col_map.get('HORAS TRABAJADAS', 10)
+            c_ini_he = col_map.get('HORA INICIO H.E.', col_map.get('INICIO H.E.', None))
+            c_fin_he = col_map.get('HORA FIN H.E.', col_map.get('FIN H.E.', None))
+            c_he = col_map.get('HORAS EXTRAS', 13 if has_new_cols else 11)
+            c_exc = col_map.get('EXCESO JORNADA', 14 if has_new_cols else 12)
+            c_est = col_map.get('ESTADO FINAL', col_map.get('ESTADO', 15 if has_new_cols else 13))
+            c_ap1 = col_map.get('APROBADOR N1', 16 if has_new_cols else 14)
+            c_est1 = col_map.get('ESTADO N1', 17 if has_new_cols else 15)
+            c_ap2 = col_map.get('APROBADOR N2', 18 if has_new_cols else 16)
+            c_est2 = col_map.get('ESTADO N2', 19 if has_new_cols else 17)
+            c_fap = col_map.get('FECHA APROBACION', 20 if has_new_cols else 18)
+            c_cmt = col_map.get('COMENTARIO SUPERVISOR', col_map.get('COMENTARIO', 21 if has_new_cols else 19))
+
             for r in range(5, ws.max_row + 1):
-                dni_raw = str(ws.cell(row=r, column=1).value or '').strip()
-                fecha_raw = str(ws.cell(row=r, column=6).value or '').strip()
+                dni_raw = str(ws.cell(row=r, column=c_dni).value or '').strip()
+                fecha_raw = str(ws.cell(row=r, column=c_fec).value or '').strip()
                 if not dni_raw or not fecha_raw:
                     continue
                 dni = dni_raw.lstrip('0').zfill(8)
@@ -1440,23 +1479,29 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                 if fecha < '2026-08-17' or fecha > f_max_cerrada:
                     continue
 
-                apellidos = str(ws.cell(row=r, column=2).value or '').strip()
-                nombres = str(ws.cell(row=r, column=3).value or '').strip()
-                cargo = str(ws.cell(row=r, column=4).value or '').strip()
-                area = str(ws.cell(row=r, column=5).value or '').strip()
-                turno = str(ws.cell(row=r, column=7).value or '').strip().upper()
-                entrada = str(ws.cell(row=r, column=8).value or '').strip()
-                salida = str(ws.cell(row=r, column=9).value or '').strip()
-                jornada_hhmm = str(ws.cell(row=r, column=10).value or '00:00').strip()
-                he_hhmm = str(ws.cell(row=r, column=11).value or '00:00').strip()
-                exceso_hhmm = str(ws.cell(row=r, column=12).value or '00:00').strip()
-                est_global = str(ws.cell(row=r, column=13).value or 'PENDIENTE').strip().upper()
-                ap_n1 = str(ws.cell(row=r, column=14).value or '').strip()
-                est_n1 = str(ws.cell(row=r, column=15).value or 'PENDIENTE').strip().upper()
-                ap_n2 = str(ws.cell(row=r, column=16).value or '').strip()
-                est_n2 = str(ws.cell(row=r, column=17).value or '-').strip().upper()
-                f_aprob = str(ws.cell(row=r, column=18).value or '').strip()
-                cmt = str(ws.cell(row=r, column=19).value or '').strip()
+                apellidos = str(ws.cell(row=r, column=c_ape).value or '').strip()
+                nombres = str(ws.cell(row=r, column=c_nom).value or '').strip()
+                cargo = str(ws.cell(row=r, column=c_car).value or '').strip()
+                area = str(ws.cell(row=r, column=c_are).value or '').strip()
+                turno = str(ws.cell(row=r, column=c_tur).value or '').strip().upper()
+                entrada = str(ws.cell(row=r, column=c_ent).value or '').strip()
+                salida = str(ws.cell(row=r, column=c_sal).value or '').strip()
+                jornada_hhmm = str(ws.cell(row=r, column=c_jor).value or '00:00').strip()
+                
+                excel_ini_he = str(ws.cell(row=r, column=c_ini_he).value or '').strip() if c_ini_he else None
+                excel_fin_he = str(ws.cell(row=r, column=c_fin_he).value or '').strip() if c_fin_he else None
+                if excel_ini_he in ('-', 'None', 'nan', ''): excel_ini_he = None
+                if excel_fin_he in ('-', 'None', 'nan', ''): excel_fin_he = None
+
+                he_hhmm = str(ws.cell(row=r, column=c_he).value or '00:00').strip()
+                exceso_hhmm = str(ws.cell(row=r, column=c_exc).value or '00:00').strip()
+                est_global = str(ws.cell(row=r, column=c_est).value or 'PENDIENTE').strip().upper()
+                ap_n1 = str(ws.cell(row=r, column=c_ap1).value or '').strip()
+                est_n1 = str(ws.cell(row=r, column=c_est1).value or 'PENDIENTE').strip().upper()
+                ap_n2 = str(ws.cell(row=r, column=c_ap2).value or '').strip()
+                est_n2 = str(ws.cell(row=r, column=c_est2).value or '-').strip().upper()
+                f_aprob = str(ws.cell(row=r, column=c_fap).value or '').strip()
+                cmt = str(ws.cell(row=r, column=c_cmt).value or '').strip()
 
                 # Detectar si fue aprobado por admin según el comentario
                 ap_n1_final = 'admin' if 'n1 (admin)' in cmt.lower() else ap_n1
@@ -1550,14 +1595,16 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                             dni, apellidos, nombres, cargo, area, fecha, turno, entrada, salida,
                             jornada_trabajada_hhmm, horas_extras_hhmm, exceso_jornada_hhmm,
                             horas_extras_min, exceso_jornada_min,
+                            inicio_he, fin_he,
                             estado, aprobador_n1, estado_n1, aprobador_n2, estado_n2,
                             fecha_aprobacion, comentario_supervisor, comentario_n1, comentario_n2,
                             aprobado_por_n1, aprobado_por_n2, observacion_trabajador
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """, (
                         dni, apellidos, nombres, cargo, area, fecha, turno_clean, entrada, salida,
                         jornada_hhmm, he_hhmm, exceso_hhmm,
                         he_min, exceso_min,
+                        excel_ini_he, excel_fin_he,
                         est_global, ap_n1, est_n1, ap_n2, est_n2,
                         f_aprob, final_cmt, c_n1_extracted, c_n2_extracted,
                         final_aprobado_por_n1, final_aprobado_por_n2, final_obs
@@ -1585,6 +1632,8 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                             exceso_jornada_min = CASE WHEN COALESCE(exceso_jornada_min, 0) = 0 THEN ? ELSE exceso_jornada_min END,
                             horas_extras_hhmm = CASE WHEN horas_extras_hhmm IS NULL OR horas_extras_hhmm = '' THEN ? ELSE horas_extras_hhmm END,
                             exceso_jornada_hhmm = CASE WHEN exceso_jornada_hhmm IS NULL OR exceso_jornada_hhmm = '' THEN ? ELSE exceso_jornada_hhmm END,
+                            inicio_he = CASE WHEN inicio_he IS NULL OR inicio_he = '' THEN ? ELSE inicio_he END,
+                            fin_he = CASE WHEN fin_he IS NULL OR fin_he = '' THEN ? ELSE fin_he END,
                             aprobador_n1 = CASE 
                                 WHEN estado_n1 IN ('APROBADO', 'RECHAZADO') THEN aprobador_n1 
                                 ELSE COALESCE(?, aprobador_n1) 
@@ -1630,6 +1679,8 @@ def sincronizar_aprobaciones_con_gdrive(db_path: str = DB_PATH):
                         exceso_min,
                         he_hhmm,
                         exceso_hhmm,
+                        excel_ini_he,
+                        excel_fin_he,
                         final_app_n1,
                         final_app_n2,
                         final_aprobado_por_n1,
