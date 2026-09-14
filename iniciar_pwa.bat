@@ -1,15 +1,8 @@
-@echo off
-title Servidor PWA GZG Minerales - Control de Asistencia y Aprobaciones
+﻿@echo off
+title Redirigiendo a Plataforma Unificada GZG Minerales
 echo ======================================================================
-echo    INICIANDO SERVIDOR PWA MÓVIL Y DE ESCRITORIO - GZG MINERALES
+echo  [AVISO] El servidor PWA anterior ha sido migrado y unificado.
+echo  Iniciando Plataforma Integral Unificada (Asistencia + Balanza)...
 echo ======================================================================
-echo.
-echo   La aplicación estará disponible para instalar en:
-echo   - Localmente: http://localhost:8501
-echo   - Desde Celular en Wi-Fi: http://%COMPUTERNAME%:8501
-echo.
-echo ======================================================================
-echo.
-cd /d "%~dp0"
-python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501
-pause
+cd /d "%~dp0\..\Proyecto Balanza"
+call INICIAR_SISTEMA_GZG.bat

@@ -31,6 +31,7 @@ def get_worker_avatar_url(dni: str, worker_name: str) -> str:
     return f"https://ui-avatars.com/api/?name={avatar_name}&background=F58220&color=ffffff&size=80&bold=true&rounded=true"
 
 def render_mobile_approvals():
+    st.info("ℹ️ **AVISO OFICIAL GZG:** El sistema de aprobaciones móviles para celulares ahora opera de forma oficial y ultrarrápida en la nueva App Unificada: **http://192.168.1.239:8501**.")
     """Renderiza el Módulo Móvil PWA de Aprobaciones con el diseño GZG Minerales (Modo Oscuro)."""
     
     # 1. Inyectar CSS personalizado para replicar exactamente las capturas (Dark Mode GZG Mining)

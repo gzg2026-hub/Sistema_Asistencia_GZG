@@ -97,7 +97,7 @@ def generar_excel_metalurgico(df_pesajes, df_paradas, config, kpis):
     # 1. Hoja Resumen
     ws_resumen.merge_cells("A1:D1")
     c_tit = ws_resumen["A1"]
-    c_tit.value = "GZG MINERALES - REPORTE METALÚRGICO DE MOLIENDA"
+    c_tit.value = "GZG MINERALES - REPORTE METALÚRGICO DE BALANZA"
     c_tit.font = font_titulo
     c_tit.fill = fill_azul
     c_tit.alignment = Alignment(horizontal="center", vertical="center")
@@ -222,7 +222,7 @@ def generar_excel_metalurgico(df_pesajes, df_paradas, config, kpis):
 
 
 def render_molienda_balanza():
-    """Renderiza el Módulo de Control de Balanza y Molienda para Superintendencia y Gerencia."""
+    """Renderiza el Módulo de Control de Balanza para Superintendencia y Gerencia."""
     st.markdown("""
     <style>
         .gzg-molienda-card {
@@ -267,7 +267,7 @@ def render_molienda_balanza():
         <div style="display: flex; align-items: center; gap: 12px;">
             <div style="font-size: 30px;">⚖️</div>
             <div>
-                <div style="font-size: 16px; font-weight: 900; color: #FFFFFF; letter-spacing: 1px;">CONTROL DE BALANZA Y MOLIENDA</div>
+                <div style="font-size: 16px; font-weight: 900; color: #FFFFFF; letter-spacing: 1px;">CONTROL DE BALANZA</div>
                 <div style="font-size: 11px; font-weight: 700; color: #38bdf8; letter-spacing: 0.5px;">MONITOREO METALÚRGICO EN TIEMPO REAL - PLANTA GZG</div>
             </div>
         </div>
@@ -459,7 +459,7 @@ def render_molienda_balanza():
         st.markdown(f"""
         <div class="gzg-molienda-card" style="border-left: 4px solid #F58220;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 12px; font-weight: 800; color: #F58220; text-transform: uppercase; letter-spacing: 1px;">Lote Activo en Molienda</span>
+                <span style="font-size: 12px; font-weight: 800; color: #F58220; text-transform: uppercase; letter-spacing: 1px;">Lote Activo en Planta</span>
                 <span style="font-size: 11px; font-weight: 700; color: #94a3b8; background: #1e2430; padding: 2px 8px; border-radius: 6px;">Turno: {lote.get('turno', 'N/A')}</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
