@@ -1790,6 +1790,13 @@ def regenerar_aprobaciones_excel(db_path: str = DB_PATH, mes_afectado: str = Non
             from data.exporter import exportar_aprobaciones_excel
             root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+            # CANDADO DE SEGURIDAD OBLIGATORIO:
+            # Rehidratar SIEMPRE primero desde Google Drive para absorber aprobaciones recientes hechas desde la app móvil en la nube
+            try:
+                sincronizar_aprobaciones_con_gdrive(p_db)
+            except Exception as e_rehyd:
+                print(f"[Aviso] Rehidratación previa desde Drive diferida: {e_rehyd}")
+
             conn = get_connection(p_db)
             fecha_max = obtener_ultimo_dia_cerrado()
             df_aprob_all = pd.read_sql_query(

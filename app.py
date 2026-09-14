@@ -1559,6 +1559,31 @@ if current_user:
 
     st.sidebar.button("🔴 CERRAR SESIÓN", use_container_width=True, key="btn_logout_user", on_click=cb_logout)
 
+    # =====================================================================
+    # SELECTOR DE MÓDULO (MENÚ A LA IZQUIERDA CON CONTROL DE ROLES RBAC)
+    # =====================================================================
+    es_superintendente_o_admin = current_user and current_user.get('rol') in [
+        'SUPERINTENDENTE', 'GERENCIA', 'GERENTE_PLANTA', 'ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'
+    ]
+    modulo_seleccionado_app = "👥 Control de Asistencia"
+    if es_superintendente_o_admin:
+        st.sidebar.markdown("---")
+        st.sidebar.markdown("<p style='font-size: 0.85rem; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;'>📂 MENÚ DE MÓDULOS</p>", unsafe_allow_html=True)
+        modulo_seleccionado_app = st.sidebar.radio(
+            "Seleccionar Módulo:",
+            ["👥 Control de Asistencia", "⚖️ Control de Molienda / Balanza"],
+            index=0,
+            key="sb_modulo_selector_app",
+            label_visibility="collapsed"
+        )
+
+
+
+if es_superintendente_o_admin and modulo_seleccionado_app == "⚖️ Control de Molienda / Balanza":
+    from views.molienda_balanza import render_molienda_balanza
+    render_molienda_balanza()
+    st.stop()
+
 # 1. SELECTOR DE PERSONAL (FILTRO POR MÚLTIPLES CARGOS Y TRABAJADOR)
 st.sidebar.markdown("---")
 st.sidebar.subheader("👤 Selector de Personal")

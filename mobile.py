@@ -411,9 +411,7 @@ st.markdown("""
     div[class*="Header"],
     div[class*="accessibility"],
     button[aria-label="Manage app"],
-    div[data-testid="stDecoration"],
-    section[data-testid="stSidebar"],
-    div[data-testid="stSidebarCollapsedControl"] {
+    div[data-testid="stDecoration"] {
         display: none !important;
         visibility: hidden !important;
         width: 0px !important;
@@ -1127,6 +1125,63 @@ def callback_toggle_pw():
         st.session_state["pw_change_success"] = False
 
 # Mensaje de confirmación de cambio de contraseña exitoso (En el tope visual)
+# =====================================================================
+# MENÚ LATERAL IZQUIERDO Y CONTROL DE ACCESO A BALANZA (RBAC)
+# =====================================================================
+es_super_o_admin = current_user and current_user.get('rol') in (
+    'SUPERINTENDENTE', 'GERENCIA', 'GERENTE_PLANTA', 'ADMINISTRADOR', 'ADMINISTRACION', 'ADMIN'
+)
+modulo_mobile = "📋 Asistencia y Aprobaciones"
+
+if es_super_o_admin:
+    with st.sidebar:
+        st.markdown(f"""
+        <div style="text-align: center; padding: 6px 0 10px 0;">
+            <div style="font-size: 16px; font-weight: 900; color: #FFFFFF; letter-spacing: 1px;">
+                GZG <span style="color: #F58220;">MINERALES</span>
+            </div>
+            <div style="font-size: 9px; font-weight: 700; color: #38bdf8; letter-spacing: 1px; text-transform: uppercase;">
+                MENÚ PRINCIPAL
+            </div>
+        </div>
+        <div style="background: rgba(245, 130, 32, 0.12); border: 1px solid rgba(245, 130, 32, 0.35); border-radius: 10px; padding: 10px 12px; margin-bottom: 14px;">
+            <div style="font-size: 12.5px; font-weight: 800; color: #FFFFFF;">{nombre_saludo}</div>
+            <div style="font-size: 10px; font-weight: 700; color: #F58220; text-transform: uppercase; margin-top: 2px;">{rol}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<p style='font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px;'>SELECCIONAR MÓDULO</p>", unsafe_allow_html=True)
+        modulo_mobile = st.radio(
+            "Módulo Activo:",
+            ["📋 Asistencia y Aprobaciones", "⚖️ Control de Balanza y Molienda"],
+            index=0,
+            key="sb_modulo_selector_mobile",
+            label_visibility="collapsed"
+        )
+        st.markdown("---")
+        st.button("🚪 Cerrar Sesión", on_click=callback_logout, use_container_width=True, key="btn_logout_sidebar_m")
+
+    if modulo_mobile == "⚖️ Control de Balanza y Molienda":
+        from views.molienda_balanza import render_molienda_balanza
+        render_molienda_balanza()
+        st.stop()
+else:
+    # Para supervisores regulares y personal operativo, ocultar sidebar por completo
+    st.markdown("""
+    <style>
+    section[data-testid="stSidebar"],
+    div[data-testid="stSidebarCollapsedControl"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0px !important;
+        height: 0px !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 if st.session_state.get("pw_change_success", False):
     st.success("✅ **¡Contraseña actualizada exitosamente!** Tu nueva clave ya está guardada y activa.")
     st.toast("🎉 ¡Contraseña actualizada exitosamente!", icon="🔑")

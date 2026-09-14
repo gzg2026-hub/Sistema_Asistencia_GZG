@@ -34,3 +34,8 @@ config_hikvision.json
 vapid_keys.json
 data/vapid_keys.json
 *.pem
+
+# Archivos de depuración y scratch
+scratch/
+*.bak*
+
