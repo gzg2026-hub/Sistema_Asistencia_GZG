@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GZG MINERALES - Redireccionando al Sistema Unificado</title>
-  <meta http-equiv="refresh" content="0; url=https://chronic-acid-ooo-divide.trycloudflare.com/">
+  <title>GZG MINERALES - Plataforma Migrada</title>
   <meta name="theme-color" content="#121418">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,76 +22,207 @@
     .card {
       background: #1A1D24;
       border: 1px solid #2A2F3D;
-      border-radius: 16px;
-      padding: 30px 24px;
-      max-width: 420px;
+      border-radius: 20px;
+      padding: 32px 22px;
+      max-width: 440px;
       width: 100%;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.6);
     }
-    .icon { font-size: 48px; margin-bottom: 12px; }
-    h1 { font-size: 20px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px; }
+    .icon { font-size: 50px; margin-bottom: 12px; }
+    h1 { font-size: 19px; font-weight: 800; color: #FFFFFF; margin-bottom: 10px; }
     p { font-size: 13.5px; color: #94A3B8; line-height: 1.55; margin-bottom: 24px; }
-    .btn {
-      display: inline-block;
+    .btn-main {
+      display: block;
       width: 100%;
       background: linear-gradient(135deg, #F58220 0%, #D35400 100%);
-      color: #FFFFFF;
+      color: #FFFFFF !important;
       text-decoration: none;
       font-weight: 800;
-      font-size: 15px;
-      padding: 14px 0;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(245, 130, 32, 0.4);
+      font-size: 16px;
+      padding: 16px 20px;
+      border-radius: 14px;
+      box-shadow: 0 6px 20px rgba(245, 130, 32, 0.45);
+      cursor: pointer;
+      border: none;
+      margin-bottom: 12px;
       transition: transform 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
-    .btn:active { transform: scale(0.98); }
-    .loader {
-      margin: 16px auto 0;
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(245,130,32,0.2);
-      border-top-color: #F58220;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+    .btn-main:active { transform: scale(0.97); }
+    .btn-sec {
+      display: block;
+      width: 100%;
+      background: #242B38;
+      color: #38BDF8 !important;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 13px 16px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      cursor: pointer;
+      margin-bottom: 12px;
+      -webkit-tap-highlight-color: transparent;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-sec:active { background: #1E293B; }
+    .btn-copy {
+      display: block;
+      width: 100%;
+      background: transparent;
+      color: #A1A1AA;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px dashed #3F3F46;
+      cursor: pointer;
+      margin-bottom: 18px;
+    }
+    .btn-copy:active { background: rgba(255,255,255,0.05); }
+    .url-box {
+      background: #121418;
+      border: 1px solid #27272A;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 11.5px;
+      color: #38BDF8;
+      word-break: break-all;
+      user-select: all;
+      margin-bottom: 16px;
+    }
+    .tip {
+      font-size: 11.5px;
+      color: #71717A;
+      line-height: 1.5;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ADE80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #22C55E;
+      color: #000000;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 10px 20px;
+      border-radius: 25px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
   </style>
-  <script>
-    const NUEVA_URL = "https://chronic-acid-ooo-divide.trycloudflare.com/";
-
-    // Limpiar service workers antiguos para que no sirvan contenido viejo
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
-    }
-
-    // Redirigir de inmediato al nuevo sistema unificado
-    try {
-      if (window.top && window.top.location) {
-        window.top.location.replace(NUEVA_URL);
-      } else {
-        window.location.replace(NUEVA_URL);
-      }
-    } catch(e) {
-      window.location.href = NUEVA_URL;
-    }
-  </script>
 </head>
 <body>
   <div class="card">
     <div class="icon">⚖️</div>
-    <h1>SISTEMA MIGRADO Y UNIFICADO</h1>
+    <span class="badge">NUEVA PLATAFORMA UNIFICADA</span>
+    <h1>SISTEMA GZG MIGRADO</h1>
     <p>
-      La versión anterior ha sido <b>desactivada</b>.<br><br>
-      Todo el control (Asistencia + Balanza) funciona ahora en la nueva plataforma de alta velocidad.
+      El acceso directo antiguo ha sido <b>desactivado</b>.<br>
+      Todo el sistema opera ahora de forma integrada y ultrarrápida en el nuevo servidor.
     </p>
-    <a href="https://chronic-acid-ooo-divide.trycloudflare.com/" class="btn">
-      🚀 Abrir Nueva Plataforma GZG
+
+    <!-- Botón 1: Enlace directo con target _blank -->
+    <a href="https://chronic-acid-ooo-divide.trycloudflare.com/" target="_blank" rel="noopener noreferrer" class="btn-main" onclick="abrirNuevaPlataforma(event);">
+      🚀 Entrar al Nuevo Sistema GZG
     </a>
-    <div class="loader"></div>
+
+    <!-- Botón 2: Intent nativo para Google Chrome Android -->
+    <a href="intent://chronic-acid-ooo-divide.trycloudflare.com/#Intent;scheme=https;package=com.android.chrome;end" class="btn-sec" onclick="abrirEnChrome(event);">
+      🌐 Abrir directamente en Google Chrome
+    </a>
+
+    <!-- Caja con enlace visible -->
+    <div class="url-box" id="urlBox">https://chronic-acid-ooo-divide.trycloudflare.com/</div>
+
+    <!-- Botón 3: Copiar enlace -->
+    <button class="btn-copy" onclick="copiarEnlace();">
+      📋 Copiar Enlace para Pegar en Chrome
+    </button>
+
+    <div class="tip">
+      💡 <b>Tip:</b> En Chrome, pulsa los 3 puntos (⋮) y selecciona <b>"Agregar a la pantalla principal"</b> para crear tu nuevo acceso directo oficial con logo transparente.
+    </div>
   </div>
+
+  <div id="toast">¡Enlace copiado! Pégalo en Chrome</div>
+
+  <script>
+    const NUEVA_URL = "https://chronic-acid-ooo-divide.trycloudflare.com/";
+    const CHROME_INTENT = "intent://chronic-acid-ooo-divide.trycloudflare.com/#Intent;scheme=https;package=com.android.chrome;end";
+
+    function abrirNuevaPlataforma(e) {
+      const isAndroid = /android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        try {
+          // Intentar abrir Chrome directamente fuera de la WebAPK
+          window.location.href = CHROME_INTENT;
+          if (e) e.preventDefault();
+          return;
+        } catch(err) {}
+      }
+      try {
+        window.open(NUEVA_URL, '_blank', 'noopener,noreferrer');
+      } catch(err) {
+        window.location.href = NUEVA_URL;
+      }
+    }
+
+    function abrirEnChrome(e) {
+      try {
+        window.location.href = CHROME_INTENT;
+        if (e) e.preventDefault();
+      } catch(err) {
+        window.open(NUEVA_URL, '_blank');
+      }
+    }
+
+    function copiarEnlace() {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(NUEVA_URL).then(mostrarToast);
+      } else {
+        const input = document.createElement('input');
+        input.value = NUEVA_URL;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand('copy');
+        document.body.removeChild(input);
+        mostrarToast();
+      }
+    }
+
+    function mostrarToast() {
+      const t = document.getElementById('toast');
+      t.style.opacity = '1';
+      setTimeout(() => { t.style.opacity = '0'; }, 2500);
+    }
+
+    // Limpiar Service Worker antiguo
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(regs) {
+        for (let r of regs) r.unregister();
+      });
+    }
+
+    // Intento automático suave
+    setTimeout(() => {
+      const isAndroid = /android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        try { window.location.href = CHROME_INTENT; } catch(e) {}
+      }
+    }, 400);
+  </script>
 </body>
 </html>
